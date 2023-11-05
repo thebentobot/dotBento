@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using dotBento.EntityFramework.Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace dotBento.EntityFramework.Context;
 
@@ -10,14 +11,11 @@ public partial class BotDbContext : DbContext
 {
     private readonly IConfiguration _configuration;
 
-    public BotDbContext(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
-    public BotDbContext(DbContextOptions<BotDbContext> options)
+    [ActivatorUtilitiesConstructor]
+    public BotDbContext(IConfiguration configuration, DbContextOptions<BotDbContext> options)
         : base(options)
     {
+        _configuration = configuration;
     }
 
     public virtual DbSet<AnnouncementSchedule> AnnouncementSchedules { get; set; }

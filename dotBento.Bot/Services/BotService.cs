@@ -34,6 +34,7 @@ public class BotService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // TODO: add db context factory and ensure migrations/db is up to date
         _client.Ready += ClientReady;
 
         _client.Log += LogAsync;

@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Services;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Sinks.Discord;
+using dotBento.EntityFramework.Context;
+using Microsoft.EntityFrameworkCore;
 
 var builder = new HostBuilder();
 
@@ -39,6 +42,14 @@ builder.ConfigureServices((hostContext, services) =>
         .CreateLogger();
     
     services.AddLogging(options => options.AddSerilog(loggerConfig, dispose: true));
+    
+    services.AddSingleton<BotDbContextFactory>();
+    services.AddDbContext<BotDbContext>((serviceProvider, options) =>
+    {
+        var factory = serviceProvider.GetRequiredService<BotDbContextFactory>();
+        options.UseNpgsql(configuration["PostgreSQL:ConnectionString"]);
+    });
+
 
     services.AddSingleton(new DiscordSocketClient(
         new DiscordSocketConfig
