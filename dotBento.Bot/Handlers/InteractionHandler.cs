@@ -13,7 +13,10 @@ public class InteractionHandler
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
 
-    public InteractionHandler(DiscordSocketClient client, InteractionService interactionService, IServiceProvider services, ILogger<InteractionHandler> logger)
+    public InteractionHandler(DiscordSocketClient client,
+        InteractionService interactionService,
+        IServiceProvider services,
+        ILogger<InteractionHandler> logger)
     {
         _client = client;
         _interactionService = interactionService;
@@ -42,7 +45,7 @@ public class InteractionHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, ex?.Message);
         }
     }
 
@@ -84,15 +87,19 @@ public class InteractionHandler
             case InteractionCommandError.Unsuccessful:
                 _logger.LogInformation($"Unsuccessful - {result.Error}");
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
+        
+        const string errorMsg = "An error has occurred. We are already investigating it!";
 
         if (!interaction.HasResponded)
         {
-            await interaction.RespondAsync("An error has occurred. We are already investigating it!", ephemeral: true);
+            await interaction.RespondAsync(errorMsg, ephemeral: true);
         }
         else
         {
-            await interaction.FollowupAsync("An error has occurred. We are already investigating it!", ephemeral: true);
+            await interaction.FollowupAsync(errorMsg, ephemeral: true);
         }
     }
 }

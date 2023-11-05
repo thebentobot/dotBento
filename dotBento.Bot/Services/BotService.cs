@@ -5,6 +5,9 @@ using dotBento.Bot.Handlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Prometheus;
+using Serilog;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace dotBento.Bot.Services;
 
@@ -16,7 +19,11 @@ public class BotService : IHostedService
     private readonly ILogger _logger;
     private readonly InteractionHandler _interactionHandler;
 
-    public BotService(DiscordSocketClient client, InteractionService interactions, IConfiguration config, ILogger<BotService> logger, InteractionHandler interactionHandler)
+    public BotService(DiscordSocketClient client,
+        InteractionService interactions,
+        IConfiguration config,
+        ILogger<BotService> logger,
+        InteractionHandler interactionHandler)
     {
         _client = client;
         _interactions = interactions;
@@ -31,12 +38,17 @@ public class BotService : IHostedService
 
         _client.Log += LogAsync;
         _interactions.Log += LogAsync;
+        
+        Log.Information("Starting bot");
 
         await _interactionHandler.InitializeAsync();
-
-        await _client.LoginAsync(TokenType.Bot, _config["Secrets:Discord"]);
+        
+        Log.Information("Logging into Discord");
+        await _client.LoginAsync(TokenType.Bot, _config["Discord:BotToken"]);
 
         await _client.StartAsync();
+        
+        this.StartMetricsPusher();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -51,7 +63,7 @@ public class BotService : IHostedService
         await _interactions.RegisterCommandsGloballyAsync();
     }
 
-    public async Task LogAsync(LogMessage msg)
+    private async Task LogAsync(LogMessage msg)
     {
         var severity = msg.Severity switch
         {
@@ -67,5 +79,26 @@ public class BotService : IHostedService
         _logger.Log(severity, msg.Exception, msg.Message);
 
         await Task.CompletedTask;
+    }
+    
+    private void StartMetricsPusher()
+    {
+        string metricsPusherEndpoint = _config["Prometheus:MetricsPusherEndpoint"] ??
+                                       throw new InvalidOperationException(
+                                           "MetricsPusherEndpoint environment variable are not set.");
+        string metricsPusherName = _config["Prometheus:MetricsPusherName"] ??
+                                   throw new InvalidOperationException(
+                                       "MetricsPusherName environment variable are not set.");
+
+        Log.Information("Starting metrics pusher");
+        var pusher = new MetricPusher(new MetricPusherOptions
+        {
+            Endpoint = metricsPusherEndpoint,
+            Job = metricsPusherName
+        });
+
+        pusher.Start();
+
+        Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
     }
 }
