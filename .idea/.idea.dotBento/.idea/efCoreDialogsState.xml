@@ -3,17 +3,19 @@
   <component name="EfCoreDialogsState">
     <option name="keyValueStorage">
       <map>
+        <entry key="Common:3746c655-7ead-43c8-acb5-b8658ae96077:dbContext" value="dotBento.EntityFramework.Context.BotDbContext" />
         <entry key="Common:buildConfiguration" value="Debug" />
         <entry key="Common:dbContextFolder" value="Context" />
         <entry key="Common:dbContextName" value="BotDbContext" />
         <entry key="Common:generateOnConfiguring" value="true" />
         <entry key="Common:noBuild" value="false" />
-        <entry key="Common:outputFolder" value="Entities" />
+        <entry key="Common:outputFolder" value="Migrations" />
         <entry key="Common:provider" value="Npgsql.EntityFrameworkCore.PostgreSQL" />
         <entry key="Common:schemas" value="" />
         <entry key="Common:tables" value="" />
         <entry key="Common:useAttributes" value="false" />
         <entry key="Common:useDatabaseNames" value="false" />
+        <entry key="Common:useDefaultConnection" value="true" />
         <entry key="Common:usePluralizer" value="true" />
       </map>
     </option>

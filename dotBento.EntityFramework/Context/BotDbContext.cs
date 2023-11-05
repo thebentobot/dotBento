@@ -9,15 +9,6 @@ namespace dotBento.EntityFramework.Context;
 
 public partial class BotDbContext : DbContext
 {
-    private readonly IConfiguration _configuration;
-
-    [ActivatorUtilitiesConstructor]
-    public BotDbContext(IConfiguration configuration, DbContextOptions<BotDbContext> options)
-        : base(options)
-    {
-        _configuration = configuration;
-    }
-
     public virtual DbSet<AnnouncementSchedule> AnnouncementSchedules { get; set; }
 
     public virtual DbSet<AnnouncementTime> AnnouncementTimes { get; set; }
@@ -89,13 +80,25 @@ public partial class BotDbContext : DbContext
     public virtual DbSet<Weather> Weathers { get; set; }
 
     public virtual DbSet<Welcome> Welcomes { get; set; }
+    
+    private readonly IConfiguration _configuration;
+
+    [ActivatorUtilitiesConstructor]
+    public BotDbContext(IConfiguration configuration, DbContextOptions<BotDbContext> options)
+        : base(options)
+    {
+        _configuration = configuration;
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
         {
-            string connectionString = _configuration.GetConnectionString("PostgreSQL:ConnectionString");
+            string connectionString = _configuration.GetConnectionString("PostgreSQL:ConnectionString") ?? throw new InvalidOperationException("PostgreSQL:ConnectionString environment variable are not set.");
             optionsBuilder.UseNpgsql(connectionString);
+            
+            // Uncomment below connection string when creating migrations, and also comment out the above iconfiguration stuff
+            // optionsBuilder.UseNpgsql("Host=localhost;Port=5434;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True");
         }
     }
 
