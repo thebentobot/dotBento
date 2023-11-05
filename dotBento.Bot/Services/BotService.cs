@@ -2,6 +2,8 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Handlers;
+using dotBento.EntityFramework.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,23 +20,36 @@ public class BotService : IHostedService
     private readonly IConfiguration _config;
     private readonly ILogger _logger;
     private readonly InteractionHandler _interactionHandler;
+    private readonly IDbContextFactory<BotDbContext> _contextFactory;
 
     public BotService(DiscordSocketClient client,
         InteractionService interactions,
         IConfiguration config,
         ILogger<BotService> logger,
-        InteractionHandler interactionHandler)
+        InteractionHandler interactionHandler,
+        IDbContextFactory<BotDbContext> contextFactory)
     {
         _client = client;
         _interactions = interactions;
         _config = config;
         _logger = logger;
         _interactionHandler = interactionHandler;
+        _contextFactory = contextFactory;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // TODO: add db context factory and ensure migrations/db is up to date
+        await using var context = await this._contextFactory.CreateDbContextAsync(cancellationToken);
+        try
+        {
+            Log.Information("Ensuring database is up to date");
+            await context.Database.MigrateAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Something went wrong while creating/updating the database!");
+            throw;
+        }
         _client.Ready += ClientReady;
 
         _client.Log += LogAsync;

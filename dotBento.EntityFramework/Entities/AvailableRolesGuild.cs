@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using dotBento.EntityFramework.Enums;
 
 namespace dotBento.EntityFramework.Entities;
 
@@ -12,4 +12,7 @@ public partial class AvailableRolesGuild
     public long GuildId { get; set; }
 
     public virtual Guild Guild { get; set; } = null!;
+    
+    [Column("type")]
+    public RoleType Type { get; set; }
 }

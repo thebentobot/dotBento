@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using dotBento.EntityFramework.Entities;
+using dotBento.EntityFramework.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -104,9 +105,18 @@ public partial class BotDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .HasPostgresEnum("horos", new[] { "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces" })
-            .HasPostgresEnum("roletypes", new[] { "main", "sub", "other" });
+        modelBuilder.Entity<Horoscope>(entity =>
+        {
+            entity.Property(e => e.HoroscopeSign)
+                .HasColumnName("horoscope")
+                .HasConversion<string>();
+        });
+        modelBuilder.Entity<AvailableRolesGuild>(entity =>
+        {
+            entity.Property(e => e.Type)
+                .HasColumnName("type")
+                .HasConversion<string>();
+        });
 
         modelBuilder.Entity<AnnouncementSchedule>(entity =>
         {
