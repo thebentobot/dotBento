@@ -32,6 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\dotBento.Domain\dotBento.Domain.csproj" />
       <ProjectReference Include="..\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
     </ItemGroup>
 

@@ -1,10 +1,11 @@
+using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace dotBento.Bot.Factories;
 
-public class BotDbContextFactory
+public class BotDbContextFactory : IBotDbContextFactory
 {
     private readonly IConfiguration _configuration;
 

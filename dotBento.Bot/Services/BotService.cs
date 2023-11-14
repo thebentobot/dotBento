@@ -2,6 +2,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Handlers;
+using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,7 +10,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Prometheus;
 using Serilog;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace dotBento.Bot.Services;
 
@@ -18,23 +18,23 @@ public class BotService : IHostedService
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactions;
     private readonly IConfiguration _config;
-    private readonly ILogger _logger;
     private readonly InteractionHandler _interactionHandler;
     private readonly IDbContextFactory<BotDbContext> _contextFactory;
+    private readonly UserService _userService;
 
     public BotService(DiscordSocketClient client,
         InteractionService interactions,
         IConfiguration config,
         ILogger<BotService> logger,
         InteractionHandler interactionHandler,
-        IDbContextFactory<BotDbContext> contextFactory)
+        IDbContextFactory<BotDbContext> contextFactory, UserService userService)
     {
         _client = client;
         _interactions = interactions;
         _config = config;
-        _logger = logger;
         _interactionHandler = interactionHandler;
         _contextFactory = contextFactory;
+        _userService = userService;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -51,9 +51,6 @@ public class BotService : IHostedService
             throw;
         }
         _client.Ready += ClientReady;
-
-        _client.Log += LogAsync;
-        _interactions.Log += LogAsync;
         
         Log.Information("Starting bot");
 
@@ -74,27 +71,9 @@ public class BotService : IHostedService
 
     private async Task ClientReady()
     {
-        _logger.LogInformation($"Logged as {_client.CurrentUser}");
+        Log.Information($"Logged as {_client.CurrentUser}");
 
         await _interactions.RegisterCommandsGloballyAsync();
-    }
-
-    private async Task LogAsync(LogMessage msg)
-    {
-        var severity = msg.Severity switch
-        {
-            LogSeverity.Critical => LogLevel.Critical,
-            LogSeverity.Error => LogLevel.Error,
-            LogSeverity.Warning => LogLevel.Warning,
-            LogSeverity.Info => LogLevel.Information,
-            LogSeverity.Verbose => LogLevel.Trace,
-            LogSeverity.Debug => LogLevel.Debug,
-            _ => LogLevel.Information
-        };
-
-        _logger.Log(severity, msg.Exception, msg.Message);
-
-        await Task.CompletedTask;
     }
     
     public async Task RegisterSlashCommands()
@@ -103,6 +82,7 @@ public class BotService : IHostedService
 
 #if DEBUG
         Log.Information("Registering slash commands to guild");
+        //TODO lav en base server id i settings
         //await this._interactions.RegisterCommandsToGuildAsync(this._botSettings.Bot.BaseServerId);
 #else
             Log.Information("Registering slash commands globally");
@@ -129,5 +109,36 @@ public class BotService : IHostedService
         pusher.Start();
 
         Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
+    }
+    
+    private static void PrepareCacheFolder()
+    {
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+    }
+
+    public async Task CacheSlashCommandIds()
+    {
+        var commands = await this._client.Rest.GetGlobalApplicationCommands();
+        Log.Information("Found {slashCommandCount} registered slash commands", commands.Count);
+
+        foreach (var cmd in commands)
+        {
+            PublicProperties.SlashCommands.TryAdd(cmd.Name, cmd.Id);
+        }
+    }
+    
+    private async Task CacheDiscordUserIds()
+    {
+        var users = await this._userService.GetAllDiscordUserIds();
+        Log.Information("Found {slashCommandCount} registered users", users.Count);
+
+        foreach (var user in users)
+        {
+            PublicProperties.RegisteredUsers.TryAdd((ulong)user.UserId, (int)user.UserId);
+        }
     }
 }
