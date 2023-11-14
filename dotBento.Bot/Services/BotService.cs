@@ -97,6 +97,19 @@ public class BotService : IHostedService
         await Task.CompletedTask;
     }
     
+    public async Task RegisterSlashCommands()
+    {
+        Log.Information("Starting slash command registration");
+
+#if DEBUG
+        Log.Information("Registering slash commands to guild");
+        //await this._interactions.RegisterCommandsToGuildAsync(this._botSettings.Bot.BaseServerId);
+#else
+            Log.Information("Registering slash commands globally");
+            await this._interactionService.RegisterCommandsGloballyAsync();
+#endif
+    }
+    
     private void StartMetricsPusher()
     {
         string metricsPusherEndpoint = _config["Prometheus:MetricsPusherEndpoint"] ??

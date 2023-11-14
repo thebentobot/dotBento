@@ -61,6 +61,7 @@ builder.ConfigureServices((hostContext, services) =>
             AlwaysDownloadUsers = true,
             LogGatewayIntentWarnings = true,
             LogLevel = LogSeverity.Info,
+            MessageCacheSize = 0,
         }));
 
     services.AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
@@ -72,6 +73,10 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddSingleton<InteractionHandler>();
 
     services.AddHostedService<BotService>();
+    
+    services.AddHealthChecks();
+
+    services.AddMemoryCache();
 });
 
 var app = builder.Build();

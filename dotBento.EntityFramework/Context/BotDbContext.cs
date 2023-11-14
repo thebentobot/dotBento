@@ -99,7 +99,7 @@ public partial class BotDbContext : DbContext
             optionsBuilder.UseNpgsql(connectionString);
             
             // Uncomment below connection string when creating migrations, and also comment out the above iconfiguration stuff
-            // optionsBuilder.UseNpgsql("Host=localhost;Port=5434;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True");
+            // optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True");
         }
     }
 

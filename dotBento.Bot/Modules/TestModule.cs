@@ -1,15 +1,15 @@
 using Discord.Interactions;
 using dotBento.EntityFramework.Context;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace dotBento.Bot.Modules;
 
 public class CommandModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly ILogger<CommandModule> _logger;
+    private readonly ILogger _logger;
     private readonly BotDbContext _database;
 
-    public CommandModule(ILogger<CommandModule> logger, BotDbContext database)
+    public CommandModule(ILogger logger, BotDbContext database)
     {
         _logger = logger;
         _database = database;
@@ -18,7 +18,7 @@ public class CommandModule : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("test", "Just a test command")]
     public async Task TestCommand()
     {
-        _logger.LogInformation("Test command called");
+        _logger.Information("Test command called");
         var dbUser = _database.Users.FirstOrDefault(x => x.UserId == (long)this.Context.User.Id);
         if (dbUser == null)
         {

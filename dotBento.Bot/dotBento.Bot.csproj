@@ -16,11 +16,12 @@
 
     <ItemGroup>
       <PackageReference Include="Discord.Net" Version="3.12.0" />
+      <PackageReference Include="Fergun.Interactive" Version="1.7.3" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.13" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.13" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.11" />
       <PackageReference Include="prometheus-net" Version="8.1.0" />
       <PackageReference Include="Serilog" Version="3.0.1" />
