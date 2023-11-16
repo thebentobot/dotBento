@@ -84,6 +84,7 @@ public class BotService : IHostedService
         Log.Information("Registering slash commands to guild");
         //TODO lav en base server id i settings
         //await this._interactions.RegisterCommandsToGuildAsync(this._botSettings.Bot.BaseServerId);
+        // der findes også en overwrite registercommands metode
 #else
             Log.Information("Registering slash commands globally");
             await this._interactionService.RegisterCommandsGloballyAsync();
