@@ -7,7 +7,6 @@ using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Prometheus;
 using Serilog;
 
@@ -25,7 +24,6 @@ public class BotService : IHostedService
     public BotService(DiscordSocketClient client,
         InteractionService interactions,
         IConfiguration config,
-        ILogger<BotService> logger,
         InteractionHandler interactionHandler,
         IDbContextFactory<BotDbContext> contextFactory, UserService userService)
     {
