@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using Discord;
 using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
@@ -12,7 +13,7 @@ public class UserService
 {
     private readonly IMemoryCache _cache;
     private readonly IDbContextFactory<BotDbContext> _contextFactory;
-    private readonly IBotDbContextFactory _botDbContextFactory; // _botDbContextFactory
+    private readonly IBotDbContextFactory _botDbContextFactory;
 
     public UserService(IMemoryCache cache,
         IDbContextFactory<BotDbContext> contextFactory,
@@ -22,32 +23,24 @@ public class UserService
         this._contextFactory = contextFactory;
         this._botDbContextFactory = botDbContextFactory;
     }
-    
-    public async Task<User> GetUserSettingsAsync(IUser discordUser)
+
+    public async Task<Maybe<User>> GetUserFromDatabaseAsync(ulong discordUserId)
     {
-        return await GetUserAsync(discordUser.Id);
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var user = await db.Users
+            .AsNoTracking()
+            .FirstAsync(f => f.UserId == (long)discordUserId);
+
+        return user.AsMaybe();
     }
 
-    public async Task<User> GetUserAsync(ulong discordUserId)
+    public Task<Maybe<User>> GetUserFromCache(ulong discordUserId)
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey((long)discordUserId);
 
-        if (this._cache.TryGetValue(discordUserIdCacheKey, out User user))
-        {
-            return user;
-        }
+        _cache.TryGetValue(discordUserIdCacheKey, out User user);
 
-        await using var db = await this._contextFactory.CreateDbContextAsync();
-        user = await db.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
-
-        if (user != null)
-        {
-            this._cache.Set(discordUserIdCacheKey, user, TimeSpan.FromSeconds(5));
-        }
-
-        return user;
+        return Task.FromResult(user.AsMaybe());
     }
 
     private void RemoveUserFromCache(User user)
@@ -95,5 +88,20 @@ public class UserService
         return await db.Users
             .AsQueryable()
             .CountAsync();
+    }
+
+    public async Task DeleteUserAsync(ulong discordUserId)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var user = await db.Users
+            .AsQueryable()
+            .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
+
+        if (user != null)
+        {
+            db.Users.Remove(user);
+            await db.SaveChangesAsync();
+            RemoveUserFromCache(user);
+        }
     }
 }

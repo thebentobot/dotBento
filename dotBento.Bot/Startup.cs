@@ -78,6 +78,7 @@ internal class Program
             services.AddSingleton<ClientLogHandler>();
             services.AddSingleton<ClientJoinedGuildHandler>();
             services.AddSingleton<ClientLeftGuildHandler>();
+            services.AddSingleton<GuildMemberAddHandler>();
 
             services.AddSingleton<IBotDbContextFactory, BotDbContextFactory>();
 

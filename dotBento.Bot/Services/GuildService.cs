@@ -145,4 +145,29 @@ public class GuildService
     {
         return $"guild-{discordGuildId}";
     }
+    // TODO is there a more effective way of deleting something from the database? like not having to look first then delete
+    public async Task DeleteGuildMember(ulong guildId, ulong discordUserId)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var guildMember = await db.GuildMembers
+            .AsQueryable()
+            .FirstOrDefaultAsync(f => f.GuildId == (long)guildId && f.UserId == (long)discordUserId);
+
+        if (guildMember != null)
+        {
+            db.GuildMembers.Remove(guildMember);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    public async Task<List<Guild>> FindGuildsForUser(ulong discordUserId)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var listOfGuildsForUser = await db.GuildMembers
+            .AsQueryable()
+            .Where(f => f.UserId == (long)discordUserId)
+            .Select(s => s.Guild)
+            .ToListAsync();
+        return listOfGuildsForUser;
+    }
 }
