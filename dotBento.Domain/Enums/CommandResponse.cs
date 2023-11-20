@@ -1,4 +1,4 @@
-namespace dotBento.Bot.Enums;
+namespace dotBento.Domain.Enums;
 
 public enum CommandResponse
 {
@@ -11,4 +11,5 @@ public enum CommandResponse
     Cooldown = 7,
     RateLimited = 8,
     OnlySupportedInDm = 9,
+    Help = 10,
 }

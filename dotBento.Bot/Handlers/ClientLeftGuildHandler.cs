@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
+using dotBento.Domain;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
@@ -38,13 +39,10 @@ public class ClientLeftGuildHandler
         {
             keepData = true;
         }
-        /*
-         TODO
-        if (BotTypeExtension.GetBotType(this._client.CurrentUser.Id) == BotType.Beta)
+        if (_client.CurrentUser.Id == Constants.BotDevelopmentId)
         {
             keepData = true;
         }
-        */
         if (!keepData)
         {
             Log.Information(

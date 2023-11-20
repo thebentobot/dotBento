@@ -32,7 +32,7 @@ public class ClientJoinedGuildHandler
         Log.Information(
             "JoinedGuild: {guildName} / {guildId} | {memberCount} members", guild.Name, guild.Id, guild.MemberCount);
         
-        await _guildService.AddGuildAsync(guild.Id);
+        await _guildService.AddGuildAsync(guild);
         try
         {
             await guild.Owner.SendMessageAsync(embed: this.ResponseToNewGuild(guild).Result.Embed.Build());

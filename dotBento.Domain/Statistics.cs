@@ -75,6 +75,12 @@ public static class Statistics
     
     public static readonly Gauge RegisteredUserCount = Metrics
         .CreateGauge("bot_registered_users_count", "Total count of all users in the database");
+    
+    public static readonly Gauge RegisteredDiscordUserCount = Metrics
+        .CreateGauge("bot_registered_discord_users_count", "Total sum of all users aggregated by guild member count");
+
+    public static readonly Gauge ActiveSupporterCount = Metrics
+        .CreateGauge("bot_active_supporter_count", "Total count of all supporters in the database");
 
     public static readonly Gauge RegisteredGuildCount = Metrics
         .CreateGauge("bot_registered_guilds_count", "Total count of all guilds in the database");
@@ -91,4 +97,17 @@ public static class Statistics
     public static readonly Counter UpdatedUsers = Metrics
         .CreateCounter("bot_updated_users", "Amount of updated users");
 
+    public static readonly Counter CommandsFailed = Metrics
+        .CreateCounter("bot_commands_failed", "Amount of commands that failed",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "name" }
+            });
+    
+    public static readonly Counter SlashCommandsFailed = Metrics
+        .CreateCounter("bot_slash_commands_failed", "Amount of slash commands that failed",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "name" }
+            });
 }

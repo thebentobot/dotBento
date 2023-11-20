@@ -1,5 +1,8 @@
 using CSharpFunctionalExtensions;
+using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
+using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +19,6 @@ public class GuildService
     {
         _contextFactory = contextFactory;
         _cache = cache;
-    }
-    
-    public bool CheckIfDM(ICommandContext context)
-    {
-        return context.Guild == null;
     }
     
     public async Task<Maybe<Guild>> GetGuildAsync(ulong? discordGuildId)
@@ -51,7 +49,7 @@ public class GuildService
             .ToDictionaryAsync(f => f.UserId);
     }
     
-    public async Task<Maybe<GuildMember>> GetGuildUserAsync(ulong? discordGuildId,
+    public async Task<Maybe<GuildMember>> GetGuildMemberAsync(ulong? discordGuildId,
         ulong? discordUserId)
     {
         if (discordGuildId == null || discordUserId == null)
@@ -91,27 +89,68 @@ public class GuildService
         }
     }
     
-    public async Task<Maybe<Guild>> AddGuildAsync(ulong discordGuildId)
+    public async Task AddGuildAsync(SocketGuild guild)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
-        var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
+        var databaseGuild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)guild.Id);
 
-        if (guild == null)
+        if (databaseGuild == null)
         {
-            guild = new Guild
+            databaseGuild = new Guild
             {
-                GuildId = (long)discordGuildId,
-                Prefix = "_"
-                // TODO Prefix = this._botSettings.DefaultPrefix
+                GuildId = (long)guild.Id,
+                Prefix = Constants.StartPrefix,
+                GuildName = guild.Name,
+                MemberCount = guild.MemberCount,
             };
-            await db.Guilds.AddAsync(guild);
+            await db.Guilds.AddAsync(databaseGuild);
             await db.SaveChangesAsync();
-            await AddGuildToCache(guild);
+            await AddGuildToCache(databaseGuild);
         }
+    }
 
-        return guild;
+    public async Task AddGuildMemberAsync(SocketGuildUser guildUser)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var guildMember = await db.GuildMembers
+            .AsQueryable()
+            .FirstOrDefaultAsync(f => f.GuildId == (long)guildUser.Guild.Id && f.UserId == (long)guildUser.Id);
+
+        if (guildMember == null)
+        {
+            guildMember = new GuildMember
+            {
+                GuildId = (long)guildUser.Guild.Id,
+                UserId = (long)guildUser.Id,
+                AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512),
+                Xp = 0,
+                Level = 1
+            };
+            await db.GuildMembers.AddAsync(guildMember);
+            await db.SaveChangesAsync();
+            await AddGuildMemberToCache(guildMember);
+        }
+    }
+
+    private Task AddGuildMemberToCache(GuildMember guildMember)
+    {
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetSlidingExpiration(TimeSpan.FromMinutes(5));
+        _cache.Set(CacheKeyForGuildMember((ulong)guildMember.GuildId, (ulong)guildMember.UserId), guildMember, cacheEntryOptions);
+        return Task.CompletedTask;
+    }
+
+    private static string CacheKeyForGuildMember(ulong guildMemberGuildId, ulong guildMemberUserId)
+    {
+        return $"guild-member-{guildMemberGuildId}-{guildMemberUserId}";
     }
     
+    private Task RemoveGuildMemberFromCache(ulong guildMemberGuildId, ulong guildMemberUserId)
+    {
+        _cache.Remove(CacheKeyForGuildMember(guildMemberGuildId, guildMemberUserId));
+        return Task.CompletedTask;
+    }
+
     private Task AddGuildToCache(Guild guild)
     {
         var cacheEntryOptions = new MemoryCacheEntryOptions()
@@ -145,7 +184,7 @@ public class GuildService
     {
         return $"guild-{discordGuildId}";
     }
-    // TODO is there a more effective way of deleting something from the database? like not having to look first then delete
+    
     public async Task DeleteGuildMember(ulong guildId, ulong discordUserId)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
@@ -169,5 +208,29 @@ public class GuildService
             .Select(s => s.Guild)
             .ToListAsync();
         return listOfGuildsForUser;
+    }
+    
+    public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        var user = await db.GuildMembers
+            .AsQueryable()
+            .FirstOrDefaultAsync(f => f.UserId == (long)guildMember.Id && f.GuildId == (long)guildMember.Guild.Id);
+
+        if (user != null)
+        {
+            user.AvatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512);
+            await db.SaveChangesAsync();
+            await RemoveGuildMemberFromCache((ulong)user.GuildId, (ulong)user.UserId);
+            await AddGuildMemberToCache(user);
+        }
+    }
+
+    public async Task<int> GetTotalGuildCountAsync()
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        return await db.Guilds
+            .AsQueryable()
+            .CountAsync();
     }
 }

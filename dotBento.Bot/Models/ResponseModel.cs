@@ -1,5 +1,6 @@
 using Discord;
 using dotBento.Bot.Enums;
+using dotBento.Domain.Enums;
 using Fergun.Interactive.Pagination;
 
 namespace dotBento.Bot.Models;

@@ -1,6 +1,7 @@
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Services;
+using dotBento.Domain;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Handlers;
@@ -31,10 +32,12 @@ public class GuildMemberUpdateHandler
     private async Task GuildMemberUpdated(Cacheable<SocketGuildUser, ulong> cacheable, SocketGuildUser newGuildUser)
     {
         if (newGuildUser.IsBot) return;
+        var getGuildMemberFromDatabaseAsync = await _guildService.GetGuildMemberAsync(newGuildUser.Guild.Id, newGuildUser.Id);
         var oldGuildUser = cacheable.Value;
-        if (oldGuildUser.GetGuildAvatarUrl() != newGuildUser.GetGuildAvatarUrl())
+        if (getGuildMemberFromDatabaseAsync.HasValue && oldGuildUser.GetGuildAvatarUrl() != newGuildUser.GetGuildAvatarUrl())
         {
-            
+            Statistics.DiscordEvents.WithLabels(nameof(GuildMemberUpdated)).Inc();
+            await _guildService.UpdateGuildMemberAvatarAsync(newGuildUser);
         }
     }
 }

@@ -1,17 +1,24 @@
 ﻿using Discord;
+using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
+using dotBento.Bot.Interfaces;
 using dotBento.Bot.Services;
 using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
 using Serilog.Sinks.Discord;
+using BackgroundService = dotBento.Bot.Services.BackgroundService;
+using RunMode = Discord.Commands.RunMode;
 
 namespace dotBento.Bot;
 
@@ -43,9 +50,18 @@ internal class Program
             {
                 throw new FormatException("LogWebhookId is not a valid ulong value.");
             }
+            
+            var consoleLevel = LogEventLevel.Warning;
+            var logLevel = LogEventLevel.Information;
+            #if DEBUG
+            consoleLevel = LogEventLevel.Verbose;
+            logLevel = LogEventLevel.Information;
+            #endif
 
             var loggerConfig = new LoggerConfiguration()
-                .WriteTo.Console()
+                .WriteTo.Console(consoleLevel)
+                .MinimumLevel.Is(logLevel)
+                .Enrich.WithExceptionDetails()
                 .WriteTo.Discord(webhookId, webhookToken)
                 //.WriteTo.File($"logs/log-{DateTime.Now:dd.MM.yy_HH.mm}.log")
                 .CreateLogger();
@@ -53,7 +69,7 @@ internal class Program
             services.AddLogging(options => options.AddSerilog(loggerConfig, dispose: true));
     
             services.AddDbContextFactory<BotDbContext>(b =>
-                b.UseNpgsql(configuration["Database:ConnectionString"]));
+                b.UseNpgsql(configuration["PostgreSQL:ConnectionString"]));
 
             services.AddSingleton(new DiscordSocketClient(
                 new DiscordSocketConfig
@@ -73,17 +89,30 @@ internal class Program
                 {
                     LogLevel = LogSeverity.Info
                 }));
-
+            services.AddSingleton(new CommandService(new CommandServiceConfig
+            {
+                LogLevel = LogSeverity.Info,
+                DefaultRunMode = RunMode.Async,
+            }));
+            services.AddSingleton(Log.Logger);
+            services.AddSingleton<UserService>();
+            services.AddSingleton<GuildService>();
+            services.AddSingleton<IPrefixService, PrefixService>();
+            services.AddSingleton<SupporterService>();
+            services.AddSingleton<BackgroundService>();
             services.AddSingleton<InteractionHandler>();
+            services.AddSingleton<MessageHandler>();
             services.AddSingleton<ClientLogHandler>();
             services.AddSingleton<ClientJoinedGuildHandler>();
             services.AddSingleton<ClientLeftGuildHandler>();
-            services.AddSingleton<GuildMemberAddHandler>();
+            services.AddSingleton<GuildMemberRemoveHandler>();
+            services.AddSingleton<GuildMemberUpdateHandler>();
+            services.AddSingleton<UserUpdateHandler>();
 
             services.AddSingleton<IBotDbContextFactory, BotDbContextFactory>();
 
             services.AddHostedService<BotService>();
-    
+            
             services.AddHealthChecks();
 
             services.AddMemoryCache();
@@ -92,6 +121,8 @@ internal class Program
         var app = builder.Build();
 
         await app.RunAsync();
+        
+        using var server = new BackgroundJobServer();
     }
     
     private static void AppUnhandledException(object sender, UnhandledExceptionEventArgs e)

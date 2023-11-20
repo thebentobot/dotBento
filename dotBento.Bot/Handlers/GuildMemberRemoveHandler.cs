@@ -16,9 +16,16 @@ public class GuildMemberRemoveHandler
         _client = client;
         _guildService = guildService;
         _client.UserLeft += GuildMemberRemovedEvent;
+        _client.UserBanned += GuildMemberBannedEvent;
     }
 
     private Task GuildMemberRemovedEvent(SocketGuild guild, SocketUser user)
+    {
+        _ = Task.Run(() => GuildMemberRemoved(guild, user));
+        return Task.CompletedTask;
+    }
+    
+    private Task GuildMemberBannedEvent(SocketUser user, SocketGuild guild)
     {
         _ = Task.Run(() => GuildMemberRemoved(guild, user));
         return Task.CompletedTask;
