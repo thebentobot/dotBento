@@ -11,17 +11,14 @@ public class InteractionHandler
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;
     private readonly IServiceProvider _services;
-    private readonly ILogger _logger;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
-        IServiceProvider services,
-        ILogger logger)
+        IServiceProvider services)
     {
         _client = client;
         _interactionService = interactionService;
         _services = services;
-        _logger = logger;
     }
 
     public async Task InitializeAsync()
@@ -45,7 +42,7 @@ public class InteractionHandler
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, ex?.Message);
+            Log.Error(ex, ex?.Message);
         }
     }
 
@@ -61,31 +58,31 @@ public class InteractionHandler
         switch (result.Error)
         {
             case InteractionCommandError.UnmetPrecondition:
-                _logger.Error($"Unmet precondition - {result.Error}");
+                Log.Error($"Unmet precondition - {result.Error}");
                 break;
 
             case InteractionCommandError.BadArgs:
-                _logger.Error($"Unmet precondition - {result.Error}");
+                Log.Error($"Unmet precondition - {result.Error}");
                 break;
 
             case InteractionCommandError.ConvertFailed:
-                _logger.Error($"Convert Failed - {result.Error}");
+                Log.Error($"Convert Failed - {result.Error}");
                 break;
 
             case InteractionCommandError.Exception:
-                _logger.Error($"Exception - {result.Error}");
+                Log.Error($"Exception - {result.Error}");
                 break;
 
             case InteractionCommandError.ParseFailed:
-                _logger.Error($"Parse Failed - {result.Error}");
+                Log.Error($"Parse Failed - {result.Error}");
                 break;
 
             case InteractionCommandError.UnknownCommand:
-                _logger.Error($"Unknown Command - {result.Error}");
+                Log.Error($"Unknown Command - {result.Error}");
                 break;
 
             case InteractionCommandError.Unsuccessful:
-                _logger.Error($"Unsuccessful - {result.Error}");
+                Log.Error($"Unsuccessful - {result.Error}");
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

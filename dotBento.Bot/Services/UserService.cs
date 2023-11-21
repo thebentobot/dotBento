@@ -2,12 +2,10 @@ using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Services;
 
@@ -15,15 +13,12 @@ public class UserService
 {
     private readonly IMemoryCache _cache;
     private readonly IDbContextFactory<BotDbContext> _contextFactory;
-    private readonly IBotDbContextFactory _botDbContextFactory;
 
     public UserService(IMemoryCache cache,
-        IDbContextFactory<BotDbContext> contextFactory,
-        IBotDbContextFactory botDbContextFactory)
+        IDbContextFactory<BotDbContext> contextFactory)
     {
-        this._cache = cache;
-        this._contextFactory = contextFactory;
-        this._botDbContextFactory = botDbContextFactory;
+        _cache = cache;
+        _contextFactory = contextFactory;
     }
 
     public async Task<Maybe<User>> GetUserFromDatabaseAsync(ulong discordUserId)
@@ -47,13 +42,13 @@ public class UserService
 
     private void RemoveUserFromCache(User user)
     {
-        this._cache.Remove(UserDiscordIdCacheKey(user.UserId));
+        _cache.Remove(UserDiscordIdCacheKey(user.UserId));
     }
     
     private Task AddUserToCache(User user)
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey(user.UserId);
-        this._cache.Set(discordUserIdCacheKey, user, TimeSpan.FromMinutes(5));
+        _cache.Set(discordUserIdCacheKey, user, TimeSpan.FromMinutes(5));
         return Task.CompletedTask;
     }
 
@@ -64,7 +59,7 @@ public class UserService
     
     public async Task<Dictionary<long, User>> GetMultipleUsers(HashSet<int> userIds)
     {
-        await using var db = await this._contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsNoTracking()
             .Where(w => userIds.Contains((int)w.UserId))
@@ -73,7 +68,7 @@ public class UserService
     
     public async Task<List<User>> GetAllDiscordUserIds()
     {
-        await using var db = await this._contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsNoTracking()
             .ToListAsync();
@@ -93,7 +88,7 @@ public class UserService
     
     public async Task<int> GetTotalDatabaseUserCountAsync()
     {
-        await using var db = await this._contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsQueryable()
             .CountAsync();
@@ -101,7 +96,7 @@ public class UserService
 
     public async Task<int> GetTotalDiscordUserCountAsync()
     {
-        await using var db = await this._contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         return await db.Guilds
             .AsQueryable()
             .SumAsync(s => (int)s.MemberCount);
@@ -239,17 +234,17 @@ public class UserService
         {
             return 46;
         }
-        else if (patreonUser.Enthusiast)
+
+        if (patreonUser.Enthusiast)
         {
             return 69;
         }
-        else if (patreonUser.Disciple)
+
+        if (patreonUser.Disciple)
         {
             return 92;
         }
-        else
-        {
-            return 115;
-        }
+
+        return 115;
     }
 }

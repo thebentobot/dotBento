@@ -6,19 +6,17 @@ namespace dotBento.Bot.Modules;
 
 public class CommandModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly ILogger _logger;
     private readonly BotDbContext _database;
 
-    public CommandModule(ILogger logger, BotDbContext database)
+    public CommandModule(BotDbContext database)
     {
-        _logger = logger;
         _database = database;
     }
     
     [SlashCommand("test", "Just a test command")]
     public async Task TestCommand()
     {
-        _logger.Information("Test command called");
+        Log.Information("Test command called");
         var dbUser = _database.Users.FirstOrDefault(x => x.UserId == (long)this.Context.User.Id);
         if (dbUser == null)
         {

@@ -2,9 +2,11 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
+using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
@@ -22,107 +24,121 @@ using RunMode = Discord.Commands.RunMode;
 
 namespace dotBento.Bot;
 
-internal class Program
+public class Startup
 {
-    public static async Task Main(string[] args)
+    public IConfiguration Configuration { get; }
+    public Startup(string[] args)
     {
-        var builder = new HostBuilder();
+        var configBuilder = new ConfigurationBuilder()
+            .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../../configs"))
+            .AddJsonFile("config.json")
+            .AddEnvironmentVariables();
 
-        var directory = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-        var configPath = Path.Combine(directory ?? throw new InvalidOperationException(), "../../../appsettings.json");
+        Configuration = configBuilder.Build();
+    }
+    
+    public static async Task RunAsync(string[] args)
+    {
+        var startup = new Startup(args);
 
-        builder.ConfigureAppConfiguration(options =>
-            options.AddJsonFile(configPath)
-                .AddEnvironmentVariables());
+        await startup.RunAsync();
+    }
+    
+    private async Task RunAsync()
+    {
+        var consoleLevel = LogEventLevel.Warning;
+        var logLevel = LogEventLevel.Information;
+#if DEBUG
+        consoleLevel = LogEventLevel.Verbose;
+        logLevel = LogEventLevel.Information;
+#endif
 
-        builder.ConfigureServices((hostContext, services) =>
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(consoleLevel)
+            .MinimumLevel.Is(logLevel)
+            .Enrich.WithProperty("Environment", !string.IsNullOrEmpty(this.Configuration.GetSection("Environment")?.Value) ? this.Configuration.GetSection("Environment").Value : "unknown")
+            .Enrich.WithExceptionDetails()
+            .WriteTo.Discord(Convert.ToUInt64(Configuration["Discord:LogWebhookId"]), Configuration["Discord:LogWebhookToken"])
+            //.WriteTo.File($"logs/log-{DateTime.Now:dd.MM.yy_HH.mm}.log")
+            .CreateLogger();
+
+        AppDomain.CurrentDomain.UnhandledException += AppUnhandledException;
+
+        Log.Information("dotBento is starting up...");
+
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        
+        var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<MessageHandler>();
+        provider.GetRequiredService<InteractionHandler>();
+        provider.GetRequiredService<ClientLogHandler>();
+        provider.GetRequiredService<UserUpdateHandler>();
+        provider.GetRequiredService<GuildMemberUpdateHandler>();
+        provider.GetRequiredService<GuildMemberRemoveHandler>();
+        provider.GetRequiredService<ClientJoinedGuildHandler>();
+        provider.GetRequiredService<ClientLeftGuildHandler>();
+        
+        await provider.GetRequiredService<BotService>().StartAsync();
+        
+        using var server = new BackgroundJobServer();
+        
+        await Task.Delay(-1);
+    }
+
+    private void ConfigureServices(IServiceCollection services)
+    {
+        services.Configure<BotEnvConfig>(Configuration);
+
+        var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            var configuration = hostContext.Configuration;
+            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
+                             GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
+                             GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
+            FormatUsersInBidirectionalUnicode = false,
+            AlwaysDownloadUsers = true,
+            LogGatewayIntentWarnings = true,
+            LogLevel = LogSeverity.Info,
+            MessageCacheSize = 0,
+        });
 
-            var webhookIdString = configuration["Discord:LogWebhookId"] ??
-                                  throw new InvalidOperationException("LogWebhookId environment variable are not set.");
-            var webhookToken = configuration["Discord:LogWebhookToken"] ??
-                               throw new InvalidOperationException("LogWebhookToken environment variable are not set.");
-            
-            AppDomain.CurrentDomain.UnhandledException += AppUnhandledException;
-
-            if (!ulong.TryParse(webhookIdString, out var webhookId))
-            {
-                throw new FormatException("LogWebhookId is not a valid ulong value.");
-            }
-            
-            var consoleLevel = LogEventLevel.Warning;
-            var logLevel = LogEventLevel.Information;
-            #if DEBUG
-            consoleLevel = LogEventLevel.Verbose;
-            logLevel = LogEventLevel.Information;
-            #endif
-
-            var loggerConfig = new LoggerConfiguration()
-                .WriteTo.Console(consoleLevel)
-                .MinimumLevel.Is(logLevel)
-                .Enrich.WithExceptionDetails()
-                .WriteTo.Discord(webhookId, webhookToken)
-                //.WriteTo.File($"logs/log-{DateTime.Now:dd.MM.yy_HH.mm}.log")
-                .CreateLogger();
-    
-            services.AddLogging(options => options.AddSerilog(loggerConfig, dispose: true));
-    
-            services.AddDbContextFactory<BotDbContext>(b =>
-                b.UseNpgsql(configuration["PostgreSQL:ConnectionString"]));
-
-            services.AddSingleton(new DiscordSocketClient(
-                new DiscordSocketConfig
-                {
-                    GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
-                                     GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
-                                     GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
-                    FormatUsersInBidirectionalUnicode = false,
-                    AlwaysDownloadUsers = true,
-                    LogGatewayIntentWarnings = true,
-                    LogLevel = LogSeverity.Info,
-                    MessageCacheSize = 0,
-                }));
-
-            services.AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
-                new InteractionServiceConfig()
-                {
-                    LogLevel = LogSeverity.Info
-                }));
-            services.AddSingleton(new CommandService(new CommandServiceConfig
+        services
+            .AddSingleton(discordClient)
+            .AddSingleton(new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Info,
                 DefaultRunMode = RunMode.Async,
-            }));
-            services.AddSingleton(Log.Logger);
-            services.AddSingleton<UserService>();
-            services.AddSingleton<GuildService>();
-            services.AddSingleton<IPrefixService, PrefixService>();
-            services.AddSingleton<SupporterService>();
-            services.AddSingleton<BackgroundService>();
-            services.AddSingleton<InteractionHandler>();
-            services.AddSingleton<MessageHandler>();
-            services.AddSingleton<ClientLogHandler>();
-            services.AddSingleton<ClientJoinedGuildHandler>();
-            services.AddSingleton<ClientLeftGuildHandler>();
-            services.AddSingleton<GuildMemberRemoveHandler>();
-            services.AddSingleton<GuildMemberUpdateHandler>();
-            services.AddSingleton<UserUpdateHandler>();
+            }))
+            .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
+                new InteractionServiceConfig()
+                {
+                    LogLevel = LogSeverity.Info
+                }))
+            .AddSingleton<InteractionHandler>()
+            .AddSingleton<UserService>()
+            .AddSingleton<GuildService>()
+            .AddSingleton<IPrefixService, PrefixService>()
+            .AddSingleton<SupporterService>()
+            .AddSingleton<BackgroundService>()
+            .AddSingleton<MessageHandler>()
+            .AddSingleton<ClientLogHandler>()
+            .AddSingleton<ClientJoinedGuildHandler>()
+            .AddSingleton<ClientLeftGuildHandler>()
+            .AddSingleton<GuildMemberRemoveHandler>()
+            .AddSingleton<GuildMemberUpdateHandler>()
+            .AddSingleton<UserUpdateHandler>()
+            .AddSingleton<BotService>()
+            .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
+            .AddSingleton<IConfiguration>(Configuration);
 
-            services.AddSingleton<IBotDbContextFactory, BotDbContextFactory>();
+        services.AddSingleton<InteractionHandler>();
 
-            services.AddHostedService<BotService>();
-            
-            services.AddHealthChecks();
-
-            services.AddMemoryCache();
-        });
-
-        var app = builder.Build();
-
-        await app.RunAsync();
+        services.AddHealthChecks();
         
-        using var server = new BackgroundJobServer();
+        services.AddDbContextFactory<BotDbContext>(b => 
+            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]));
+        
+        services.AddMemoryCache();
     }
     
     private static void AppUnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -6,24 +6,23 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
+using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Prometheus;
 using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BotService : IHostedService
+public class BotService
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactions;
     private readonly CommandService _commands;
-    private readonly IConfiguration _config;
     private readonly IServiceProvider _provider;
     private readonly InteractionHandler _interactionHandler;
     private readonly IDbContextFactory<BotDbContext> _contextFactory;
@@ -32,10 +31,10 @@ public class BotService : IHostedService
     private readonly MessageHandler _messageHandler;
     private readonly IPrefixService _prefixService;
     private readonly BackgroundService _backgroundService;
+    private readonly BotEnvConfig _config;
 
     public BotService(DiscordSocketClient client,
         InteractionService interactions,
-        IConfiguration config,
         InteractionHandler interactionHandler,
         IDbContextFactory<BotDbContext> contextFactory,
         UserService userService,
@@ -44,11 +43,11 @@ public class BotService : IHostedService
         IPrefixService prefixService,
         CommandService commands,
         IServiceProvider provider,
-        BackgroundService backgroundService)
+        BackgroundService backgroundService,
+        IOptions<BotEnvConfig> config)
     {
         _client = client;
         _interactions = interactions;
-        _config = config;
         _interactionHandler = interactionHandler;
         _contextFactory = contextFactory;
         _userService = userService;
@@ -58,15 +57,16 @@ public class BotService : IHostedService
         _commands = commands;
         _provider = provider;
         _backgroundService = backgroundService;
+        _config = config.Value;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync()
     {
-        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync();
         try
         {
             Log.Information("Ensuring database is up to date");
-            await context.Database.MigrateAsync(cancellationToken);
+            await context.Database.MigrateAsync();
         }
         catch (Exception e)
         {
@@ -100,7 +100,7 @@ public class BotService : IHostedService
         PrepareCacheFolder();
         
         Log.Information("Logging into Discord");
-        await _client.LoginAsync(TokenType.Bot, _config["Discord:BotToken"]);
+        await _client.LoginAsync(TokenType.Bot, _config.Discord.Token);
 
         await _client.StartAsync();
         
@@ -130,7 +130,7 @@ public class BotService : IHostedService
 
         var listConfig = new ListConfig
         {
-            TopGG = _config["TopGG:Token"]
+            TopGG = _config.BotLists.TopGgApiToken
         };
 
         try
@@ -172,10 +172,10 @@ public class BotService : IHostedService
     
     private void StartMetricsPusher()
     {
-        string metricsPusherEndpoint = _config["Prometheus:MetricsPusherEndpoint"] ??
+        string metricsPusherEndpoint = _config.Prometheus.MetricsPusherEndpoint ??
                                        throw new InvalidOperationException(
                                            "MetricsPusherEndpoint environment variable are not set.");
-        string metricsPusherName = _config["Prometheus:MetricsPusherName"] ??
+        string metricsPusherName = _config.Prometheus.MetricsPusherName ??
                                    throw new InvalidOperationException(
                                        "MetricsPusherName environment variable are not set.");
 
