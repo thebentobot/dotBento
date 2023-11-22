@@ -122,7 +122,7 @@ public class BotService(DiscordSocketClient client,
         }
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync()
     {
         await client.StopAsync();
     }

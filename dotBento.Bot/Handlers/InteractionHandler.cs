@@ -42,7 +42,7 @@ public class InteractionHandler(DiscordSocketClient client,
         return Task.CompletedTask;
     }
 
-    private async Task HandleInteractionExecutionResult(IDiscordInteraction interaction, IResult result)
+    private static async Task HandleInteractionExecutionResult(IDiscordInteraction interaction, IResult result)
     {
         switch (result.Error)
         {
@@ -77,7 +77,7 @@ public class InteractionHandler(DiscordSocketClient client,
                 throw new ArgumentOutOfRangeException();
         }
         
-        const string errorMsg = "An error has occurred. We are already investigating it!";
+        const string errorMsg = "An error has occurred. We we will investigate it ASAP!";
 
         if (!interaction.HasResponded)
         {

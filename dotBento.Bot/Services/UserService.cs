@@ -43,7 +43,7 @@ public class UserService(IMemoryCache cache,
         return Task.CompletedTask;
     }
 
-    public static string UserDiscordIdCacheKey(long discordUserId)
+    private static string UserDiscordIdCacheKey(long discordUserId)
     {
         return $"user-{discordUserId}";
     }
@@ -146,6 +146,7 @@ public class UserService(IMemoryCache cache,
             user.AvatarUrl = newUser.GetAvatarUrl(ImageFormat.Auto, 512);
             await db.SaveChangesAsync();
             RemoveUserFromCache(user);
+            await AddUserToCache(user);
         }
     }
 
@@ -161,6 +162,7 @@ public class UserService(IMemoryCache cache,
             user.Username = newUser.Username;
             await db.SaveChangesAsync();
             RemoveUserFromCache(user);
+            await AddUserToCache(user);
         }
     }
 

@@ -1,22 +1,18 @@
-using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Services;
 using dotBento.Domain;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Handlers;
 
 public class UserUpdateHandler
 {
-    private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
     private readonly UserService _userService;
     
-    public UserUpdateHandler(DiscordSocketClient client, IMemoryCache cache, UserService userService)
+    public UserUpdateHandler(DiscordSocketClient client, UserService userService)
     {
         _userService = userService;
         _client = client;
-        _cache = cache;
         _client.UserUpdated += UserUpdateEvent;
     }
 

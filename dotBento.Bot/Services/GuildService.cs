@@ -1,6 +1,5 @@
 using CSharpFunctionalExtensions;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
