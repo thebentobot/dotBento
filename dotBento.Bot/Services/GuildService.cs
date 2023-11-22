@@ -10,17 +10,8 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Services;
 
-public class GuildService
+public class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
 {
-    private readonly IDbContextFactory<BotDbContext> _contextFactory;
-    private readonly IMemoryCache _cache;
-
-    public GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
-    {
-        _contextFactory = contextFactory;
-        _cache = cache;
-    }
-    
     public async Task<Maybe<Guild>> GetGuildAsync(ulong? discordGuildId)
     {
         if (discordGuildId == null)
@@ -28,7 +19,7 @@ public class GuildService
             return null;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Guilds
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
@@ -42,7 +33,7 @@ public class GuildService
             return null;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.GuildMembers
             .AsQueryable()
             .Where(f => f.GuildId == (long)discordGuildId)
@@ -57,7 +48,7 @@ public class GuildService
             return null;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.GuildMembers
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId && f.UserId == (long)discordUserId);
@@ -70,7 +61,7 @@ public class GuildService
             return null;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
@@ -78,7 +69,7 @@ public class GuildService
     
     public async Task RemoveGuildAsync(ulong discordGuildId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
 
         if (guild != null)
@@ -91,7 +82,7 @@ public class GuildService
     
     public async Task AddGuildAsync(SocketGuild guild)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var databaseGuild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)guild.Id);
 
         if (databaseGuild == null)
@@ -111,7 +102,7 @@ public class GuildService
 
     public async Task AddGuildMemberAsync(SocketGuildUser guildUser)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var guildMember = await db.GuildMembers
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)guildUser.Guild.Id && f.UserId == (long)guildUser.Id);
@@ -136,7 +127,7 @@ public class GuildService
     {
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetSlidingExpiration(TimeSpan.FromMinutes(5));
-        _cache.Set(CacheKeyForGuildMember((ulong)guildMember.GuildId, (ulong)guildMember.UserId), guildMember, cacheEntryOptions);
+        cache.Set(CacheKeyForGuildMember((ulong)guildMember.GuildId, (ulong)guildMember.UserId), guildMember, cacheEntryOptions);
         return Task.CompletedTask;
     }
 
@@ -147,7 +138,7 @@ public class GuildService
     
     private Task RemoveGuildMemberFromCache(ulong guildMemberGuildId, ulong guildMemberUserId)
     {
-        _cache.Remove(CacheKeyForGuildMember(guildMemberGuildId, guildMemberUserId));
+        cache.Remove(CacheKeyForGuildMember(guildMemberGuildId, guildMemberUserId));
         return Task.CompletedTask;
     }
 
@@ -155,13 +146,13 @@ public class GuildService
     {
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetSlidingExpiration(TimeSpan.FromMinutes(5));
-        _cache.Set(CacheKeyForGuild((ulong)guild.GuildId), guild, cacheEntryOptions);
+        cache.Set(CacheKeyForGuild((ulong)guild.GuildId), guild, cacheEntryOptions);
         return Task.CompletedTask;
     }
     
     public async Task<Maybe<Guild>> UpdateGuildPrefixAsync(ulong discordGuildId, string prefix)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
 
         if (guild != null)
@@ -176,7 +167,7 @@ public class GuildService
     
     private Task RemoveGuildFromCache(ulong discordGuildId)
     {
-        _cache.Remove(CacheKeyForGuild(discordGuildId));
+        cache.Remove(CacheKeyForGuild(discordGuildId));
         return Task.CompletedTask;
     }
 
@@ -187,7 +178,7 @@ public class GuildService
     
     public async Task DeleteGuildMember(ulong guildId, ulong discordUserId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var guildMember = await db.GuildMembers
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)guildId && f.UserId == (long)discordUserId);
@@ -201,7 +192,7 @@ public class GuildService
 
     public async Task<List<Guild>> FindGuildsForUser(ulong discordUserId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var listOfGuildsForUser = await db.GuildMembers
             .AsQueryable()
             .Where(f => f.UserId == (long)discordUserId)
@@ -212,7 +203,7 @@ public class GuildService
     
     public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.GuildMembers
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)guildMember.Id && f.GuildId == (long)guildMember.Guild.Id);
@@ -228,7 +219,7 @@ public class GuildService
 
     public async Task<int> GetTotalGuildCountAsync()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Guilds
             .AsQueryable()
             .CountAsync();

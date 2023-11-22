@@ -19,7 +19,6 @@ public static class ConfigData
 
         if (!File.Exists(ConfigFolder + "/" + ConfigFile))
         {
-            // Default config template
             Data = new BotEnvConfig
             {
                 PostgreSQL =

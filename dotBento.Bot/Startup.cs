@@ -2,7 +2,6 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
@@ -14,7 +13,6 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
@@ -26,7 +24,7 @@ namespace dotBento.Bot;
 
 public class Startup
 {
-    public IConfiguration Configuration { get; }
+    private IConfiguration Configuration { get; }
     public Startup(string[] args)
     {
         var configBuilder = new ConfigurationBuilder()
@@ -56,7 +54,7 @@ public class Startup
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console(consoleLevel)
             .MinimumLevel.Is(logLevel)
-            .Enrich.WithProperty("Environment", !string.IsNullOrEmpty(this.Configuration.GetSection("Environment")?.Value) ? this.Configuration.GetSection("Environment").Value : "unknown")
+            .Enrich.WithProperty("Environment", !string.IsNullOrEmpty(Configuration.GetSection("Environment").Value) ? Configuration.GetSection("Environment").Value : "unknown")
             .Enrich.WithExceptionDetails()
             .WriteTo.Discord(Convert.ToUInt64(Configuration["Discord:LogWebhookId"]), Configuration["Discord:LogWebhookToken"])
             //.WriteTo.File($"logs/log-{DateTime.Now:dd.MM.yy_HH.mm}.log")
@@ -129,7 +127,7 @@ public class Startup
             .AddSingleton<UserUpdateHandler>()
             .AddSingleton<BotService>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
-            .AddSingleton<IConfiguration>(Configuration);
+            .AddSingleton(Configuration);
 
         services.AddSingleton<InteractionHandler>();
 

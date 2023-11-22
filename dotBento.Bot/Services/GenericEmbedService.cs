@@ -7,7 +7,6 @@ namespace dotBento.Bot.Services;
 
 public static class GenericEmbedService
 {
-    
     public static void HelpResponse(this EmbedBuilder embed, CommandInfo commandInfo, string prefix, string username)
     {
         //TODO embed.WithColor(DiscordConstants.InformationColorBlue);

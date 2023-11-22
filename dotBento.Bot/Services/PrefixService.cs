@@ -8,16 +8,9 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class PrefixService : IPrefixService
+public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPrefixService
 {
-    private readonly IDbContextFactory<BotDbContext> _contextFactory;
-
     private static readonly ConcurrentDictionary<ulong, string> ServerPrefixes = new();
-
-    public PrefixService(IDbContextFactory<BotDbContext> contextFactory)
-    {
-        this._contextFactory = contextFactory;
-    }
 
     public void StorePrefix(string prefix, ulong key)
     {
@@ -67,7 +60,7 @@ public class PrefixService : IPrefixService
 
     public async Task LoadAllPrefixes()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var servers = await db.Guilds.Where(w => w.Prefix != null).ToListAsync();
         foreach (var server in servers)
         {
@@ -77,7 +70,7 @@ public class PrefixService : IPrefixService
 
     public async Task ReloadPrefix(ulong discordGuildId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var server = await db.Guilds
             .Where(w => w.GuildId == (long)discordGuildId)
             .FirstOrDefaultAsync();
