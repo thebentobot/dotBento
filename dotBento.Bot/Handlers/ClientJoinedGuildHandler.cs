@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
-using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
@@ -14,7 +13,7 @@ public class ClientJoinedGuildHandler
     private readonly GuildService _guildService;
     
     public ClientJoinedGuildHandler(DiscordSocketClient client,
-        GuildService guildService, IMemoryCache cache)
+        GuildService guildService)
     {
         _client = client;
         _guildService = guildService;
@@ -35,7 +34,7 @@ public class ClientJoinedGuildHandler
         await _guildService.AddGuildAsync(guild);
         try
         {
-            await guild.Owner.SendMessageAsync(embed: this.ResponseToNewGuild(guild).Result.Embed.Build());
+            await guild.Owner.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
         }
         catch (Exception e)
         {
@@ -45,7 +44,7 @@ public class ClientJoinedGuildHandler
 
         try
         {
-            await guild.SystemChannel.SendMessageAsync(embed: this.ResponseToNewGuild(guild).Result.Embed.Build());
+            await guild.SystemChannel.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
         }
         catch (Exception e)
         {
@@ -54,7 +53,7 @@ public class ClientJoinedGuildHandler
         }
     }
 
-    private Task<ResponseModel> ResponseToNewGuild(SocketGuild guild)
+    private Task<ResponseModel> ResponseToNewGuild()
     {
         var responseToGuildOwner = new ResponseModel
         {

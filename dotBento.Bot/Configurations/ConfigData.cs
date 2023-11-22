@@ -8,6 +8,7 @@ public static class ConfigData
     private const string ConfigFolder = "configs";
     private const string ConfigFile = "config.json";
 
+    // ReSharper disable once MemberCanBePrivate.Global
     public static BotEnvConfig Data { get; }
 
     static ConfigData()
@@ -54,7 +55,7 @@ public static class ConfigData
             var json = JsonSerializer.Serialize(Data, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Path.Combine(ConfigFolder, ConfigFile), json);
 
-            Console.WriteLine($"Created new bot configuration file with default values. \nPlease set your API keys in {ConfigFolder}/{ConfigFile} before running the bot again. \n \nExiting in 10 seconds...", ConsoleColor.Red);
+            Console.WriteLine($"Created new bot configuration file with default values.\nPlease set your API keys in {ConfigFolder}/{ConfigFile} before running the bot again.\n\nExiting in 10 seconds...");
 
             Thread.Sleep(10000);
             Environment.Exit(0);

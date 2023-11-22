@@ -6,36 +6,25 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class InteractionHandler
+public class InteractionHandler(DiscordSocketClient client,
+    InteractionService interactionService,
+    IServiceProvider services)
 {
-    private readonly DiscordSocketClient _client;
-    private readonly InteractionService _interactionService;
-    private readonly IServiceProvider _services;
-
-    public InteractionHandler(DiscordSocketClient client,
-        InteractionService interactionService,
-        IServiceProvider services)
-    {
-        _client = client;
-        _interactionService = interactionService;
-        _services = services;
-    }
-
     public async Task InitializeAsync()
     {
-        await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        await interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
-        _client.InteractionCreated += HandleInteraction;
-        _interactionService.InteractionExecuted += HandleInteractionExecuted;
+        client.InteractionCreated += HandleInteraction;
+        interactionService.InteractionExecuted += HandleInteractionExecuted;
     }
 
     private async Task HandleInteraction(SocketInteraction interaction)
     {
         try
         {
-            var context = new SocketInteractionContext(_client, interaction);
+            var context = new SocketInteractionContext(client, interaction);
 
-            var result = await _interactionService.ExecuteCommandAsync(context, _services);
+            var result = await interactionService.ExecuteCommandAsync(context, services);
 
             if (!result.IsSuccess)
                 _ = Task.Run(() => HandleInteractionExecutionResult(interaction, result));
@@ -53,7 +42,7 @@ public class InteractionHandler
         return Task.CompletedTask;
     }
 
-    private async Task HandleInteractionExecutionResult(IDiscordInteraction interaction, IResult result)
+    private static async Task HandleInteractionExecutionResult(IDiscordInteraction interaction, IResult result)
     {
         switch (result.Error)
         {
@@ -88,7 +77,7 @@ public class InteractionHandler
                 throw new ArgumentOutOfRangeException();
         }
         
-        const string errorMsg = "An error has occurred. We are already investigating it!";
+        const string errorMsg = "An error has occurred. We we will investigate it ASAP!";
 
         if (!interaction.HasResponded)
         {

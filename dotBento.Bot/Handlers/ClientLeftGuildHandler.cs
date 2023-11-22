@@ -1,7 +1,4 @@
-using Discord;
 using Discord.WebSocket;
-using dotBento.Bot.Enums;
-using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.Domain;
 using Microsoft.Extensions.Caching.Memory;

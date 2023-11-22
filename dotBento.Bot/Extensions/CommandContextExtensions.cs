@@ -1,5 +1,4 @@
 using Discord.Commands;
-using dotBento.Bot.Enums;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
 using Serilog;

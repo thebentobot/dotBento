@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
-using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Extensions;
@@ -22,7 +21,6 @@ public class MessageHandler
     private readonly IMemoryCache _cache;
     private readonly UserService _userService;
     private readonly GuildService _guildService;
-    private readonly InteractionService _interactions;
     private readonly CommandService _commands;
     private readonly IPrefixService _prefixService;
     private readonly IServiceProvider _provider;
@@ -31,7 +29,6 @@ public class MessageHandler
         IMemoryCache cache,
         UserService userService,
         GuildService guildService,
-        InteractionService interactions,
         CommandService commands,
         IPrefixService prefixService, 
         IServiceProvider provider)
@@ -40,7 +37,6 @@ public class MessageHandler
         _cache = cache;
         _userService = userService;
         _guildService = guildService;
-        _interactions = interactions;
         _commands = commands;
         _prefixService = prefixService;
         _provider = provider;
@@ -157,7 +153,7 @@ public class MessageHandler
             }
             else
             {
-                Log.Error(result?.ToString() ?? "Command error (null)", context.Message.Content);
+                Log.Error(result.ToString() ?? "Command error (null)", context.Message.Content);
                 Statistics.CommandsFailed.WithLabels(commandName).Inc();
             }
         }
@@ -165,7 +161,7 @@ public class MessageHandler
     
     private bool CheckUserRateLimit(ulong discordUserId)
     {
-        var cacheKey = $"{discordUserId}-ratelimit";
+        var cacheKey = $"{discordUserId}-rateLimit";
         if (this._cache.TryGetValue(cacheKey, out int requestsInLastMinute))
         {
             if (requestsInLastMinute > 35)

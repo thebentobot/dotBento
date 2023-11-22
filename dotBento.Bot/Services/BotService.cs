@@ -18,51 +18,22 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BotService
+public class BotService(DiscordSocketClient client,
+    InteractionService interactions,
+    InteractionHandler interactionHandler,
+    IDbContextFactory<BotDbContext> contextFactory,
+    UserService userService,
+    IPrefixService prefixService,
+    CommandService commands,
+    IServiceProvider provider,
+    BackgroundService backgroundService,
+    IOptions<BotEnvConfig> config)
 {
-    private readonly DiscordSocketClient _client;
-    private readonly InteractionService _interactions;
-    private readonly CommandService _commands;
-    private readonly IServiceProvider _provider;
-    private readonly InteractionHandler _interactionHandler;
-    private readonly IDbContextFactory<BotDbContext> _contextFactory;
-    private readonly UserService _userService;
-    private readonly GuildService _guildService;
-    private readonly MessageHandler _messageHandler;
-    private readonly IPrefixService _prefixService;
-    private readonly BackgroundService _backgroundService;
-    private readonly BotEnvConfig _config;
-
-    public BotService(DiscordSocketClient client,
-        InteractionService interactions,
-        InteractionHandler interactionHandler,
-        IDbContextFactory<BotDbContext> contextFactory,
-        UserService userService,
-        GuildService guildService,
-        MessageHandler messageHandler,
-        IPrefixService prefixService,
-        CommandService commands,
-        IServiceProvider provider,
-        BackgroundService backgroundService,
-        IOptions<BotEnvConfig> config)
-    {
-        _client = client;
-        _interactions = interactions;
-        _interactionHandler = interactionHandler;
-        _contextFactory = contextFactory;
-        _userService = userService;
-        _guildService = guildService;
-        _messageHandler = messageHandler;
-        _prefixService = prefixService;
-        _commands = commands;
-        _provider = provider;
-        _backgroundService = backgroundService;
-        _config = config.Value;
-    }
+    private readonly BotEnvConfig _config = config.Value;
 
     public async Task StartAsync()
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await contextFactory.CreateDbContextAsync();
         try
         {
             Log.Information("Ensuring database is up to date");
@@ -75,17 +46,17 @@ public class BotService
         }
         
         Log.Information("Loading all prefixes");
-        await _prefixService.LoadAllPrefixes();
+        await prefixService.LoadAllPrefixes();
         
-        _client.Ready += ClientReady;
+        client.Ready += ClientReady;
         
         Log.Information("Starting bot");
         
         Log.Information("Loading command modules");
-        await _commands
+        await commands
             .AddModulesAsync(
                 Assembly.GetEntryAssembly(),
-                _provider);
+                provider);
 
         Log.Information("Loading interaction modules");
         /*
@@ -94,20 +65,20 @@ public class BotService
                 Assembly.GetEntryAssembly(),
                 _provider);
         */
-        await _interactionHandler.InitializeAsync();
+        await interactionHandler.InitializeAsync();
         
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
         
         Log.Information("Logging into Discord");
-        await _client.LoginAsync(TokenType.Bot, _config.Discord.Token);
+        await client.LoginAsync(TokenType.Bot, _config.Discord.Token);
 
-        await _client.StartAsync();
+        await client.StartAsync();
         
-        await _backgroundService.UpdateMetrics();
+        await backgroundService.UpdateMetrics();
 
         InitializeHangfireConfig();
-        _backgroundService.QueueJobs();
+        backgroundService.QueueJobs();
         
         StartMetricsPusher();
         
@@ -120,7 +91,7 @@ public class BotService
 
     public void StartBotSiteUpdater()
     {
-        if (!_client.CurrentUser.Id.Equals(Constants.BotProductionId))
+        if (!client.CurrentUser.Id.Equals(Constants.BotProductionId))
         {
             Log.Information("Cancelled botlist updater, non-production bot detected");
             return;
@@ -135,7 +106,7 @@ public class BotService
 
         try
         {
-            var listClient = new ListClient(_client, listConfig);
+            var listClient = new ListClient(client, listConfig);
 
             listClient.Start();
         }
@@ -145,16 +116,16 @@ public class BotService
         }
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync()
     {
-        await _client.StopAsync();
+        await client.StopAsync();
     }
 
     private async Task ClientReady()
     {
-        Log.Information($"Logged as {_client.CurrentUser}");
+        Log.Information($"Logged as {client.CurrentUser}");
 
-        await _interactions.RegisterCommandsGloballyAsync();
+        await interactions.RegisterCommandsGloballyAsync();
     }
     
     public async Task RegisterSlashCommands()
@@ -163,7 +134,7 @@ public class BotService
 
 #if DEBUG
         Log.Information("Registering slash commands to guild");
-        await _interactions.RegisterCommandsToGuildAsync(Constants.BotDevelopmentId);
+        await interactions.RegisterCommandsToGuildAsync(Constants.BotDevelopmentId);
 #else
         Log.Information("Registering slash commands globally");
         await _interactionService.RegisterCommandsGloballyAsync();
@@ -202,7 +173,7 @@ public class BotService
 
     public async Task CacheSlashCommandIds()
     {
-        var commands = await _client.Rest.GetGlobalApplicationCommands();
+        var commands = await client.Rest.GetGlobalApplicationCommands();
         Log.Information("Found {slashCommandCount} registered slash commands", commands.Count);
 
         foreach (var cmd in commands)
@@ -213,7 +184,7 @@ public class BotService
     
     private async Task CacheDiscordUserIds()
     {
-        var users = await _userService.GetAllDiscordUserIds();
+        var users = await userService.GetAllDiscordUserIds();
         Log.Information("Found {slashCommandCount} registered users", users.Count);
 
         foreach (var user in users)
@@ -230,6 +201,6 @@ public class BotService
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UseMemoryStorage()
-            .UseActivator(new HangfireActivator(_provider));
+            .UseActivator(new HangfireActivator(provider));
     }
 }

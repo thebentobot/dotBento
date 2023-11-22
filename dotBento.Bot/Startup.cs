@@ -2,7 +2,6 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
@@ -14,7 +13,6 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;

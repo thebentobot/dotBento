@@ -5,17 +5,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace dotBento.Bot.Factories;
 
-public class BotDbContextFactory : IBotDbContextFactory
+public class BotDbContextFactory(IConfiguration configuration) : IBotDbContextFactory
 {
-    private readonly IConfiguration _configuration;
-
-    public BotDbContextFactory(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
     public BotDbContext Create(DbContextOptions<BotDbContext> options)
     {
-        return new BotDbContext(_configuration, options);
+        return new BotDbContext(configuration, options);
     }
 }

@@ -3,7 +3,6 @@ using dotBento.Bot.Interfaces;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace dotBento.Bot.Services;

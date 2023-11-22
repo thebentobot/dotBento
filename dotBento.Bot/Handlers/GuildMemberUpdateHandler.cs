@@ -2,24 +2,19 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Services;
 using dotBento.Domain;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Handlers;
 
 public class GuildMemberUpdateHandler
 {
-    private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
-    private readonly UserService _userService;
-    
+
     public GuildMemberUpdateHandler(DiscordSocketClient client,
-        GuildService guildService, IMemoryCache cache, UserService userService)
+        GuildService guildService)
     {
-        _userService = userService;
         _client = client;
         _guildService = guildService;
-        _cache = cache;
         _client.GuildMemberUpdated += GuildMemberUpdateEvent;
     }
 
