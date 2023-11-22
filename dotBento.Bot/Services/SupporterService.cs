@@ -5,25 +5,17 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Services;
 
-public class SupporterService
+public class SupporterService(IDbContextFactory<BotDbContext> contextFactory,
+    IMemoryCache cache,
+    DiscordSocketClient client)
 {
-    private readonly IDbContextFactory<BotDbContext> _contextFactory;
-    private readonly IMemoryCache _cache;
-    private readonly DiscordSocketClient _client;
-
-    public SupporterService(IDbContextFactory<BotDbContext> contextFactory,
-        IMemoryCache cache,
-        DiscordSocketClient client)
-    {
-        _contextFactory = contextFactory;
-        _cache = cache;
-        _client = client;
-    }
+    private readonly IMemoryCache _cache = cache;
+    private readonly DiscordSocketClient _client = client;
 
 
     public async Task<int> GetActiveSupporterCountAsync()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Patreons
             .AsQueryable()
             .CountAsync();

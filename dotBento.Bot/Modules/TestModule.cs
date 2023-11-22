@@ -4,20 +4,13 @@ using Serilog;
 
 namespace dotBento.Bot.Modules;
 
-public class CommandModule : InteractionModuleBase<SocketInteractionContext>
+public class CommandModule(BotDbContext database) : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly BotDbContext _database;
-
-    public CommandModule(BotDbContext database)
-    {
-        _database = database;
-    }
-    
     [SlashCommand("test", "Just a test command")]
     public async Task TestCommand()
     {
         Log.Information("Test command called");
-        var dbUser = _database.Users.FirstOrDefault(x => x.UserId == (long)this.Context.User.Id);
+        var dbUser = database.Users.FirstOrDefault(x => x.UserId == (long)this.Context.User.Id);
         if (dbUser == null)
         {
             await RespondAsync($"Hello There {this.Context.User.Username}. I could not find you in the database unfortunately");

@@ -10,8 +10,11 @@ namespace dotBento.Bot.Services;
 public class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
+    IMemoryCache cache,
     SupporterService supporterService)
 {
+    private readonly IMemoryCache _cache = cache;
+
     public void QueueJobs()
     {
         Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");

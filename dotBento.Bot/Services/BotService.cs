@@ -23,12 +23,16 @@ public class BotService(DiscordSocketClient client,
     InteractionHandler interactionHandler,
     IDbContextFactory<BotDbContext> contextFactory,
     UserService userService,
+    GuildService guildService,
+    MessageHandler messageHandler,
     IPrefixService prefixService,
     CommandService commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
 {
+    private readonly GuildService _guildService = guildService;
+    private readonly MessageHandler _messageHandler = messageHandler;
     private readonly BotEnvConfig _config = config.Value;
 
     public async Task StartAsync()
@@ -89,6 +93,8 @@ public class BotService(DiscordSocketClient client,
         await CacheDiscordUserIds();
     }
 
+    // public instead of private because of Hangfire BackgroundJob
+    // ReSharper disable once MemberCanBePrivate.Global
     public void StartBotSiteUpdater()
     {
         if (!client.CurrentUser.Id.Equals(Constants.BotProductionId))
@@ -123,11 +129,13 @@ public class BotService(DiscordSocketClient client,
 
     private async Task ClientReady()
     {
-        Log.Information($"Logged as {client.CurrentUser}");
+        Log.Information("Logged as {ClientCurrentUser}", client.CurrentUser);
 
         await interactions.RegisterCommandsGloballyAsync();
     }
     
+    // public instead of private because of Hangfire BackgroundJob
+    // ReSharper disable once MemberCanBePrivate.Global
     public async Task RegisterSlashCommands()
     {
         Log.Information("Starting slash command registration");
@@ -171,10 +179,12 @@ public class BotService(DiscordSocketClient client,
         }
     }
 
+    // public instead of private because of Hangfire BackgroundJob
+    // ReSharper disable once MemberCanBePrivate.Global
     public async Task CacheSlashCommandIds()
     {
         var commands = await client.Rest.GetGlobalApplicationCommands();
-        Log.Information("Found {slashCommandCount} registered slash commands", commands.Count);
+        Log.Information("Found {SlashCommandCount} registered slash commands", commands.Count);
 
         foreach (var cmd in commands)
         {
@@ -185,7 +195,7 @@ public class BotService(DiscordSocketClient client,
     private async Task CacheDiscordUserIds()
     {
         var users = await userService.GetAllDiscordUserIds();
-        Log.Information("Found {slashCommandCount} registered users", users.Count);
+        Log.Information("Found {SlashCommandCount} registered users", users.Count);
 
         foreach (var user in users)
         {

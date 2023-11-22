@@ -9,21 +9,12 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Bot.Services;
 
-public class UserService
+public class UserService(IMemoryCache cache,
+    IDbContextFactory<BotDbContext> contextFactory)
 {
-    private readonly IMemoryCache _cache;
-    private readonly IDbContextFactory<BotDbContext> _contextFactory;
-
-    public UserService(IMemoryCache cache,
-        IDbContextFactory<BotDbContext> contextFactory)
-    {
-        _cache = cache;
-        _contextFactory = contextFactory;
-    }
-
     public async Task<Maybe<User>> GetUserFromDatabaseAsync(ulong discordUserId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsNoTracking()
             .FirstAsync(f => f.UserId == (long)discordUserId);
@@ -35,20 +26,20 @@ public class UserService
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey((long)discordUserId);
 
-        _cache.TryGetValue(discordUserIdCacheKey, out User user);
+        cache.TryGetValue(discordUserIdCacheKey, out User user);
 
         return Task.FromResult(user.AsMaybe());
     }
 
     private void RemoveUserFromCache(User user)
     {
-        _cache.Remove(UserDiscordIdCacheKey(user.UserId));
+        cache.Remove(UserDiscordIdCacheKey(user.UserId));
     }
     
     private Task AddUserToCache(User user)
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey(user.UserId);
-        _cache.Set(discordUserIdCacheKey, user, TimeSpan.FromMinutes(5));
+        cache.Set(discordUserIdCacheKey, user, TimeSpan.FromMinutes(5));
         return Task.CompletedTask;
     }
 
@@ -59,7 +50,7 @@ public class UserService
     
     public async Task<Dictionary<long, User>> GetMultipleUsers(HashSet<int> userIds)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsNoTracking()
             .Where(w => userIds.Contains((int)w.UserId))
@@ -68,7 +59,7 @@ public class UserService
     
     public async Task<List<User>> GetAllDiscordUserIds()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsNoTracking()
             .ToListAsync();
@@ -88,7 +79,7 @@ public class UserService
     
     public async Task<int> GetTotalDatabaseUserCountAsync()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Users
             .AsQueryable()
             .CountAsync();
@@ -96,7 +87,7 @@ public class UserService
 
     public async Task<int> GetTotalDiscordUserCountAsync()
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         return await db.Guilds
             .AsQueryable()
             .SumAsync(s => (int)s.MemberCount);
@@ -104,7 +95,7 @@ public class UserService
 
     public async Task DeleteUserAsync(ulong discordUserId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
@@ -119,7 +110,7 @@ public class UserService
 
     public async Task AddUserAsync(SocketUser discordUser)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
@@ -145,7 +136,7 @@ public class UserService
 
     public async Task UpdateUserAvatarAsync(SocketUser newUser)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)newUser.Id);
@@ -161,7 +152,7 @@ public class UserService
 
     public async Task UpdateUserUsernameAsync(SocketUser newUser)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)newUser.Id);
@@ -177,7 +168,7 @@ public class UserService
 
     public async Task<Maybe<Patreon>> GetPatreonUserAsync(ulong userId)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var patreon = await db.Patreons
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.UserId == (long)userId);
@@ -187,7 +178,7 @@ public class UserService
 
     public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)context.User.Id);
