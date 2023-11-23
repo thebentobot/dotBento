@@ -2,6 +2,7 @@ using System.Text;
 using Discord;
 using Discord.Commands;
 using dotBento.Bot.Attributes;
+using dotBento.Bot.Resources;
 
 namespace dotBento.Bot.Services;
 
@@ -9,7 +10,7 @@ public static class GenericEmbedService
 {
     public static void HelpResponse(this EmbedBuilder embed, CommandInfo commandInfo, string prefix, string username)
     {
-        //TODO embed.WithColor(DiscordConstants.InformationColorBlue);
+        embed.WithColor(DiscordConstants.InformationColorBlue);
         embed.WithTitle($"Information about '{prefix}{commandInfo.Name}' for {username}");
 
         if (!string.IsNullOrWhiteSpace(commandInfo.Summary))

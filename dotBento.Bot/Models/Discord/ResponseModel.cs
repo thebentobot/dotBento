@@ -3,7 +3,7 @@ using dotBento.Bot.Enums;
 using dotBento.Domain.Enums;
 using Fergun.Interactive.Pagination;
 
-namespace dotBento.Bot.Models;
+namespace dotBento.Bot.Models.Discord;
 
 public class ResponseModel
 {

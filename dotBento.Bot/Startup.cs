@@ -25,6 +25,7 @@ namespace dotBento.Bot;
 public class Startup
 {
     private IConfiguration Configuration { get; }
+    
     public Startup(string[] args)
     {
         var configBuilder = new ConfigurationBuilder()

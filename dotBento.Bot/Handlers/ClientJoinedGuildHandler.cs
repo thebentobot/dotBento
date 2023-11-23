@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
+using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
 using Serilog;
 
