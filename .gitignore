@@ -87,3 +87,4 @@ dotBento.Bot/configs
 .idea/.idea.dotBento/.idea/dataSources.xml
 
 dotBento.Bot/configs/config.json
+src/dotBento.Bot/configs

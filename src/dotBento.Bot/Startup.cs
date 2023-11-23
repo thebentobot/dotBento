@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
@@ -28,6 +29,8 @@ public class Startup
     
     public Startup(string[] args)
     {
+        var config = ConfigData.Data;
+
         var configBuilder = new ConfigurationBuilder()
             .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../../configs"))
             .AddJsonFile("config.json")

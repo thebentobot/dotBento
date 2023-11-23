@@ -42,8 +42,4 @@
       <ProjectReference Include="..\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="configs\" />
-    </ItemGroup>
-
 </Project>
