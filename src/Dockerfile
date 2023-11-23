@@ -9,10 +9,10 @@ COPY ["src/dotBento.EntityFramework/dotBento.EntityFramework.csproj", "dotBento.
 RUN dotnet restore "dotBento.Bot/dotBento.Bot.csproj"
 COPY . .
 WORKDIR "/src/dotBento.Bot"
-RUN dotnet build "dotBento.Bot.csproj" -c Release -o /app/build
+RUN dotnet build "src/dotBento.Bot/dotBento.Bot.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "dotBento.Bot.csproj" -c Release -o /app/publish
+RUN dotnet publish "src/dotBento.Bot/dotBento.Bot.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
