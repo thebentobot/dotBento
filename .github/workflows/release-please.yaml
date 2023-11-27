@@ -13,16 +13,29 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Check for Full Release Commit
-        id: check_release
+
+      - name: Show Current Directory
+        run: pwd
+
+      - name: List Directory Contents
+        run: ls -la
+
+      - name: Show Last Commit Message
+        run: git log -1 --pretty=%B
+
+      - name: Set PRERELEASE Variable
         run: |
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if echo "$LAST_COMMIT_MSG" | grep -q "chore(master): release"; then
-            echo "SET_PRERELEASE=false" >> $GITHUB_ENV
+          if git log -1 --pretty=%B | grep -q "chore(master): release"; then
+            echo "PRERELEASE=false" >> $GITHUB_ENV
           else
-            echo "SET_PRERELEASE=true" >> $GITHUB_ENV
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+          echo "SET_PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
+
+      - name: Show SET_PRERELEASE
+        run: echo "SET_PRERELEASE is $SET_PRERELEASE"
+
       - uses: google-github-actions/release-please-action@v3
         with:
           release-type: simple
