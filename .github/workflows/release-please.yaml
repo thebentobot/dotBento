@@ -16,25 +16,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Show Current Directory
-        run: pwd
-
-      - name: List Directory Contents
-        run: ls -la
-
       - name: Show Last Commit Message
         run: git log -1 --pretty=%B
 
-      - name: Set PRERELEASE Variable
+      - name: Check Release Type
+        id: check_release
         run: |
-          if git log -1 --pretty=%B | grep -q "chore(master): release"; then
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"chore(master): release"* ]]; then
+            echo "PRERELEASE=false"
             echo "PRERELEASE=false" >> $GITHUB_ENV
           else
+            echo "PRERELEASE=true"
             echo "PRERELEASE=true" >> $GITHUB_ENV
-          echo "SET_PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
+          fi
 
-      - name: Show SET_PRERELEASE
-        run: echo "SET_PRERELEASE is $SET_PRERELEASE"
+      - name: Show PRERELEASE Value
+        run: echo "PRERELEASE is $PRERELEASE"
 
       - uses: google-github-actions/release-please-action@v3
         with:
@@ -42,4 +40,4 @@ jobs:
           package-name: dotBento
           token: ${{ secrets.PAT }}
           include-v-in-tag: true
-          prerelease: ${{ env.SET_PRERELEASE }}
+          prerelease: ${{ env.PRERELEASE }}
