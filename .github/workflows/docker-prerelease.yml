@@ -2,8 +2,8 @@ name: Docker - Pre-release
 
 on:
   push:
-    branches:
-      - "master"
+    tags:
+      - v*
 
 jobs:
   docker:
@@ -16,16 +16,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
+          # type=match,pattern=\d.\d.\d
           images: |
             ghcr.io/thebentobot/dotBento     
-          # generate Docker tags based on the following events/attributes
-          flavor: |
-            latest=auto
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
