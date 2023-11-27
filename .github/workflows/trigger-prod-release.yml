@@ -15,6 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
       - name: Fetch PR
         run: |
           git fetch origin pull/${{ github.event.inputs.prNumber }}/head:pr-${{ github.event.inputs.prNumber }}
