@@ -19,7 +19,7 @@ jobs:
         run: |
           git fetch origin pull/${{ github.event.inputs.prNumber }}/head:pr-${{ github.event.inputs.prNumber }}
           git checkout pr-${{ github.event.inputs.prNumber }}
-          git merge master --no-edit
+          git merge master --no-edit --allow-unrelated-histories
           git push origin HEAD:master
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
