@@ -16,23 +16,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Show Last Commit Message
-        run: git log -1 --pretty=%B
-
-      - name: Check Release Type
-        id: check_release
+      - name: Determine Release Type
         run: |
           LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
           if [[ "$LAST_COMMIT_MSG" == *"chore(master): release"* ]]; then
-            echo "PRERELEASE=false"
             echo "PRERELEASE=false" >> $GITHUB_ENV
           else
-            echo "PRERELEASE=true"
             echo "PRERELEASE=true" >> $GITHUB_ENV
           fi
-
-      - name: Show PRERELEASE Value
-        run: echo "PRERELEASE is $PRERELEASE"
 
       - uses: google-github-actions/release-please-action@v3
         with:
