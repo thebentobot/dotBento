@@ -16,7 +16,7 @@ jobs:
       - name: Check for Full Release Commit
         id: check_release
         run: |
-          if git log -1 --pretty=%B | grep -q 'chore(master): release'; then
+          if [[ $(git log -1 --pretty=%B) == *"chore(master): release"* ]]; then
             echo "SET_PRERELEASE=false" >> $GITHUB_ENV
           else
             echo "SET_PRERELEASE=true" >> $GITHUB_ENV
