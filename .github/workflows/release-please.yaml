@@ -13,9 +13,17 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Check for Full Release Commit
+        id: check_release
+        run: |
+          if git log -1 --pretty=%B | grep '\[FULL RELEASE\]'; then
+            echo "SET_PRERELEASE=false" >> $GITHUB_ENV
+          else
+            echo "SET_PRERELEASE=true" >> $GITHUB_ENV
       - uses: google-github-actions/release-please-action@v3
         with:
           release-type: simple
           package-name: dotBento
           token: ${{ secrets.PAT }}
           include-v-in-tag: true
+          prerelease: ${{ env.SET_PRERELEASE }}
