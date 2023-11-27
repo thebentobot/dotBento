@@ -5,7 +5,7 @@ name: Build dotBento
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build:
@@ -21,4 +21,4 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build ./src/dotBento.sln --configuration Release --no-restore
+      run: dotnet build ../../src/dotBento.sln --configuration Release --no-restore
