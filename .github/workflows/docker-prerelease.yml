@@ -19,6 +19,7 @@ jobs:
             echo "SKIP_PRERELEASE=true" >> $GITHUB_ENV
           else
             echo "SKIP_PRERELEASE=false" >> $GITHUB_ENV
+          fi
 
       - name: Generate Tag
         if: env.SKIP_PRERELEASE == 'false'
