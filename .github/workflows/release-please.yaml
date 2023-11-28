@@ -1,34 +1,38 @@
-name: release-please
+name: Release Workflow
 
 on:
   push:
     branches:
       - master
-
-permissions:
-  contents: write
-  pull-requests: write
+    paths:
+      - 'release-dates.md' # Trigger release when this file changes
+      - '**'               # Trigger for any other change
 
 jobs:
-  release-please:
+  release:
+    if: github.event.push.paths == 'release-dates.md'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Determine Release Type
-        run: |
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$LAST_COMMIT_MSG" == *"chore(master): release"* ]]; then
-            echo "PRERELEASE=false" >> $GITHUB_ENV
-          else
-            echo "PRERELEASE=true" >> $GITHUB_ENV
-          fi
-
-      - uses: google-github-actions/release-please-action@v3
+      - uses: actions/checkout@v4
+      - name: Release
+        uses: google-github-actions/release-please-action@v3
         with:
           release-type: simple
           package-name: dotBento
           token: ${{ secrets.PAT }}
           include-v-in-tag: true
-          prerelease: ${{ env.PRERELEASE }}
+          prerelease: false
+
+  prerelease:
+    if: github.event.push.paths != 'release-dates.md'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prerelease
+        uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: simple
+          package-name: dotBento
+          token: ${{ secrets.PAT }}
+          include-v-in-tag: true
+          prerelease: true
