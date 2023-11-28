@@ -41,6 +41,8 @@ jobs:
           tag: ${{ env.NEW_TAG }}
           prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
+          makeLatest: false
       - name: Docker meta
         if: env.SKIP_PRERELEASE == 'false'
         id: meta
@@ -51,7 +53,7 @@ jobs:
           images: |
             ghcr.io/thebentobot/dotBento
           tags: |
-            type=semver,pattern={{version}},suffix="pre-release-${{ github.sha }}"
+            type=semver,pattern={{version}},suffix=pre-${{ github.sha }}
       - name: Set up QEMU
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/setup-qemu-action@v3
