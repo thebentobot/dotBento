@@ -28,7 +28,7 @@ jobs:
       - name: Generate Tag
         if: env.SKIP_PRERELEASE == 'false'
         run: |
-          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/-pre-.*//')
           NEW_TAG="${LAST_TAG}-pre-${GITHUB_SHA::8}"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "RELEASE_NAME=Pre-release $NEW_TAG" >> $GITHUB_ENV
@@ -53,7 +53,7 @@ jobs:
           images: |
             ghcr.io/thebentobot/dotBento
           tags: |
-            type=semver,pattern={{version}},value=${{ env.NEW_TAG }}
+            type=semver,pattern={{version}},suffix=pre-${{ github.sha }}
       - name: Set up QEMU
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/setup-qemu-action@v3
@@ -82,5 +82,5 @@ jobs:
           file: src/Dockerfile
           platforms: linux/amd64,
           push: true
-          tags: ${{ env.NEW_TAG }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
