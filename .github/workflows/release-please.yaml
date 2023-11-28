@@ -4,31 +4,35 @@ on:
   push:
     branches:
       - master
-
-permissions:
-  contents: write
-  pull-requests: write
+  workflow_dispatch:
 
 jobs:
-  release-please:
+  prerelease:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Determine Release Type
-        run: |
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$LAST_COMMIT_MSG" == *"chore(master): release"* ]]; then
-            echo "PRERELEASE=false" >> $GITHUB_ENV
-          else
-            echo "PRERELEASE=true" >> $GITHUB_ENV
-          fi
-
+      - uses: actions/checkout@v4
+      # Other steps to setup and configure
       - uses: google-github-actions/release-please-action@v3
         with:
           release-type: simple
           package-name: dotBento
           token: ${{ secrets.PAT }}
           include-v-in-tag: true
-          prerelease: ${{ env.PRERELEASE }}
+          prerelease: true
+          command: github-release
+
+  release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Other steps to setup and configure
+      - uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: simple
+          package-name: dotBento
+          token: ${{ secrets.PAT }}
+          include-v-in-tag: true
+          prerelease: false
+          
