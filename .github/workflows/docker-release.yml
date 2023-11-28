@@ -6,7 +6,7 @@ on:
       - v*
 
 jobs:
-  docker:
+  docker-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,6 +19,8 @@ jobs:
           # type=match,pattern=\d.\d.\d
           images: |
             ghcr.io/thebentobot/dotBento
+          flavor: |
+            latest=auto
           tags: |
             type=semver,pattern={{version}}
       - name: Set up QEMU
