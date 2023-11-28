@@ -53,7 +53,7 @@ jobs:
           images: |
             ghcr.io/thebentobot/dotBento
           tags: |
-            type=semver,pattern={{version}},suffix=pre-${{ github.sha }}
+            type=raw,value=v0.1.0-pre-${{ github.sha }}
       - name: Set up QEMU
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/setup-qemu-action@v3
@@ -79,6 +79,9 @@ jobs:
         if: env.SKIP_PRERELEASE == 'false'
         run: | 
           echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+      - name: Print GitHub SHA
+        run: | 
+          echo "GitHub SHA: ${{ github.sha }}"
       - name: Build and push
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/build-push-action@v5
