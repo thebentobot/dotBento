@@ -53,7 +53,7 @@ jobs:
           images: |
             ghcr.io/thebentobot/dotBento
           tags: |
-            type=semver,pattern={{version}},suffix=pre-${{ github.sha }}
+            type=semver,pattern={{version}},value=${{ env.NEW_TAG }}
       - name: Set up QEMU
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/setup-qemu-action@v3
@@ -82,5 +82,5 @@ jobs:
           file: src/Dockerfile
           platforms: linux/amd64,
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.NEW_TAG }}
           labels: ${{ steps.meta.outputs.labels }}
