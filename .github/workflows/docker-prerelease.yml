@@ -75,6 +75,10 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+      - name: Print generated tags
+        if: env.SKIP_PRERELEASE == 'false'
+        run: | 
+          echo "Generated tags: ${{ steps.meta.outputs.tags }}"
       - name: Build and push
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/build-push-action@v5
