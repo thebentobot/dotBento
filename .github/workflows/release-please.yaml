@@ -6,7 +6,6 @@ on:
       - master
     paths:
       - 'release-dates.md' # Trigger release when this file changes
-      - '**'               # Trigger for any other change
 
 jobs:
   release:
