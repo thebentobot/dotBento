@@ -89,3 +89,4 @@ dotBento.Bot/configs
 dotBento.Bot/configs/config.json
 src/dotBento.Bot/configs
 .idea
+.DS_Store
