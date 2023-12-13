@@ -16,6 +16,4 @@ jobs:
       - uses: google-github-actions/release-please-action@v4
         with:
           release-type: simple
-          package-name: dotBento
-          token: ${{ secrets.PAT }}
-          include-v-in-tag: true
+          token: ${{ secrets.PAT }}          
