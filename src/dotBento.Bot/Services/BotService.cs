@@ -23,18 +23,13 @@ public class BotService(DiscordSocketClient client,
     InteractionHandler interactionHandler,
     IDbContextFactory<BotDbContext> contextFactory,
     UserService userService,
-    GuildService guildService,
-    MessageHandler messageHandler,
     IPrefixService prefixService,
     CommandService commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
 {
-    private readonly GuildService _guildService = guildService;
-    private readonly MessageHandler _messageHandler = messageHandler;
-    private readonly BotEnvConfig _config = config.Value;
-
+    
     public async Task StartAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -63,19 +58,19 @@ public class BotService(DiscordSocketClient client,
                 provider);
 
         Log.Information("Loading interaction modules");
-        /*
-        await _interactions
+        
+        await interactions
             .AddModulesAsync(
                 Assembly.GetEntryAssembly(),
-                _provider);
-        */
+                provider);
+        
         await interactionHandler.InitializeAsync();
         
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
         
         Log.Information("Logging into Discord");
-        await client.LoginAsync(TokenType.Bot, _config.Discord.Token);
+        await client.LoginAsync(TokenType.Bot, config.Value.Discord.Token);
 
         await client.StartAsync();
         
@@ -107,7 +102,7 @@ public class BotService(DiscordSocketClient client,
 
         var listConfig = new ListConfig
         {
-            TopGG = _config.BotLists.TopGgApiToken
+            TopGG = config.Value.BotLists.TopGgApiToken
         };
 
         try
@@ -151,10 +146,10 @@ public class BotService(DiscordSocketClient client,
     
     private void StartMetricsPusher()
     {
-        string metricsPusherEndpoint = _config.Prometheus.MetricsPusherEndpoint ??
+        string metricsPusherEndpoint = config.Value.Prometheus.MetricsPusherEndpoint ??
                                        throw new InvalidOperationException(
                                            "MetricsPusherEndpoint environment variable are not set.");
-        string metricsPusherName = _config.Prometheus.MetricsPusherName ??
+        string metricsPusherName = config.Value.Prometheus.MetricsPusherName ??
                                    throw new InvalidOperationException(
                                        "MetricsPusherName environment variable are not set.");
 
@@ -183,10 +178,10 @@ public class BotService(DiscordSocketClient client,
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task CacheSlashCommandIds()
     {
-        var commands = await client.Rest.GetGlobalApplicationCommands();
-        Log.Information("Found {SlashCommandCount} registered slash commands", commands.Count);
+        var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommands();
+        Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
 
-        foreach (var cmd in commands)
+        foreach (var cmd in globalApplicationCommands)
         {
             PublicProperties.SlashCommands.TryAdd(cmd.Name, cmd.Id);
         }
