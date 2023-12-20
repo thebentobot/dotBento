@@ -1,0 +1,52 @@
+using Discord;
+using Discord.Interactions;
+using dotBento.Bot.Enums;
+using dotBento.Bot.Extensions;
+using dotBento.Bot.Models.Discord;
+using dotBento.Domain.Enums;
+using dotBento.EntityFramework.Context;
+using Fergun.Interactive;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+
+namespace dotBento.Bot.SlashCommands;
+
+public class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService)
+    : InteractionModuleBase<SocketInteractionContext>
+{
+    [SlashCommand("ping", "Test the Bento's latency")]
+    public async Task PingCommand()
+    {
+        var messageTimeStart = DateTime.UtcNow;
+        var initialResponseEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
+        initialResponseEmbed.Embed.WithTitle("\ud83c\udfd3 Pinging...");
+        await Context.SendResponse(interactiveService, initialResponseEmbed, true);
+        var messageTimeEnd = DateTime.UtcNow;
+        var messageTime = Math.Round((messageTimeEnd - messageTimeStart).TotalMilliseconds);
+
+        try
+        {
+            var dbTimeStart = DateTime.UtcNow;
+            await botDbContext.Database.ExecuteSqlRawAsync("SELECT 1 + 1");
+            var dbTimeEnd = DateTime.UtcNow;
+            var dbTime = Math.Round((dbTimeEnd - dbTimeStart).TotalMilliseconds);
+            
+            var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+            embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
+                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
+                .WithColor(Color.Gold);
+            await Context.SendFollowUpResponse(interactiveService, embed, true);
+            Context.LogCommandUsed();
+        }
+        catch (Exception e)
+        {
+            var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+            embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
+                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
+                .WithColor(Color.Gold);
+            await Context.SendFollowUpResponse(interactiveService, embed, true);
+            Context.LogCommandUsed(CommandResponse.Error);
+            Log.Error(e, "Ping Slash Command failed");
+        }
+    }
+}
