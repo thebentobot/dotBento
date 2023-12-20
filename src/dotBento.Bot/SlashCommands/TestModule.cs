@@ -2,7 +2,7 @@ using Discord.Interactions;
 using dotBento.EntityFramework.Context;
 using Serilog;
 
-namespace dotBento.Bot.Modules;
+namespace dotBento.Bot.SlashCommands;
 
 public class CommandModule(BotDbContext database) : InteractionModuleBase<SocketInteractionContext>
 {
@@ -18,7 +18,6 @@ public class CommandModule(BotDbContext database) : InteractionModuleBase<Socket
         else
         {
             await RespondAsync($"Hello There {dbUser.Username} you are level {dbUser.Level} and got {dbUser.Xp} xp");
-
         }
     }
 }
