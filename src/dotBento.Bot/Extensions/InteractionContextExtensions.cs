@@ -1,7 +1,6 @@
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
-using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
@@ -119,7 +118,6 @@ public static class InteractionContextExtensions
                     : "") +
                 imageName +
                 ".png",
-                null,
                 ephemeral: ephemeral);
                 await response.Stream.DisposeAsync();
                 break;
@@ -159,7 +157,7 @@ public static class InteractionContextExtensions
         await context.ModifyMessage(message, response);
     }
 
-    private static async Task ModifyMessage(this IInteractionContext context, IUserMessage message, ResponseModel response)
+    public static async Task ModifyMessage(this IInteractionContext context, IUserMessage message, ResponseModel response)
     {
         await message.ModifyAsync(m =>
         {
