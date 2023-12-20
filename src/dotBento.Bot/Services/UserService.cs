@@ -175,6 +175,22 @@ public class UserService(IMemoryCache cache,
 
         return patreon.AsMaybe();
     }
+    
+    public async Task<Maybe<User>> GetUserAsync(ulong userId)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var user = await db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.UserId == (long)userId);
+        var maybeUser = user.AsMaybe();
+        
+        if (maybeUser.HasValue)
+        {
+            await AddUserToCache(maybeUser.Value);
+        }
+
+        return user;
+    }
 
     public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
     {
