@@ -10,6 +10,7 @@ using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
+using Fergun.Interactive;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -94,7 +95,7 @@ public class Startup
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
+            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent |
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
             FormatUsersInBidirectionalUnicode = false,
@@ -116,8 +117,8 @@ public class Startup
                 {
                     LogLevel = LogSeverity.Info
                 }))
-            .AddSingleton<InteractionHandler>()
             .AddSingleton<UserService>()
+            .AddSingleton<InteractiveService>()
             .AddSingleton<GuildService>()
             .AddSingleton<IPrefixService, PrefixService>()
             .AddSingleton<SupporterService>()
