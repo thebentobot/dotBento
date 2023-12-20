@@ -1,91 +1,144 @@
-using System.Reflection;
-using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Services;
+using dotBento.Domain;
+using Microsoft.Extensions.Caching.Memory;
+using Prometheus;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class InteractionHandler(DiscordSocketClient client,
-    InteractionService interactionService,
-    IServiceProvider services)
+public class InteractionHandler
 {
-    public async Task InitializeAsync()
-    {
-        await interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+    private readonly DiscordSocketClient _client;
+    private readonly InteractionService _interactionService;
+    private readonly IServiceProvider _provider;
+    private readonly UserService _userService;
+    private readonly GuildService _guildService;
 
-        client.InteractionCreated += HandleInteraction;
-        interactionService.InteractionExecuted += HandleInteractionExecuted;
+    private readonly IMemoryCache _cache;
+
+    public InteractionHandler(DiscordSocketClient client,
+        InteractionService interactionService,
+        IServiceProvider provider,
+        UserService userService,
+        GuildService guildService,
+        IMemoryCache cache)
+    {
+        _client = client;
+        _interactionService = interactionService;
+        _provider = provider;
+        _userService = userService;
+        _guildService = guildService;
+        _cache = cache;
+        _client.SlashCommandExecuted += SlashCommandExecuted;
+        _client.AutocompleteExecuted += AutoCompleteExecuted;
+        _client.SelectMenuExecuted += SelectMenuExecuted;
+        _client.ModalSubmitted += ModalSubmitted;
+        _client.UserCommandExecuted += UserCommandExecuted;
+        _client.ButtonExecuted += ButtonExecuted;
     }
 
-    private async Task HandleInteraction(SocketInteraction interaction)
+    private async Task SlashCommandExecuted(SocketInteraction socketInteraction)
     {
-        try
+        Statistics.DiscordEvents.WithLabels(nameof(SlashCommandExecuted)).Inc();
+
+        if (socketInteraction is not SocketSlashCommand socketSlashCommand)
         {
-            var context = new SocketInteractionContext(client, interaction);
-
-            var result = await interactionService.ExecuteCommandAsync(context, services);
-
-            if (!result.IsSuccess)
-                _ = Task.Run(() => HandleInteractionExecutionResult(interaction, result));
+            return;
         }
-        catch (Exception ex)
+
+        using (Statistics.SlashCommandHandlerDuration.NewTimer())
         {
-            Log.Error(ex, ex?.Message);
+            var context = new SocketInteractionContext(_client, socketInteraction);
+            var contextUser = await _userService.GetUserAsync(context.User.Id);
+
+            var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
+
+            if (!commandSearch.IsSuccess)
+            {
+                Log.Error("Someone tried to execute a non-existent slash command! {slashCommand}",
+                    socketSlashCommand.CommandName);
+                return;
+            }
+
+            var command = commandSearch.Command;
+
+            await _interactionService.ExecuteCommandAsync(context, _provider);
+
+            Statistics.SlashCommandsExecuted.WithLabels(command.Name).Inc();
+
+            _ = Task.Run(() => _userService.AddUserSlashCommandInteraction(context, command.Name));
         }
     }
 
-    private Task HandleInteractionExecuted(ICommandInfo command, IInteractionContext context, IResult result)
+    private async Task UserCommandExecuted(SocketInteraction socketInteraction)
     {
-        if (!result.IsSuccess)
-            _ = Task.Run(() => HandleInteractionExecutionResult(context.Interaction, result));
-        return Task.CompletedTask;
+        Statistics.DiscordEvents.WithLabels(nameof(UserCommandExecuted)).Inc();
+
+        if (socketInteraction is not SocketUserCommand socketUserCommand)
+        {
+            return;
+        }
+
+        var context = new SocketInteractionContext(_client, socketInteraction);
+        var commandSearch = _interactionService.SearchUserCommand(socketUserCommand);
+
+        if (!commandSearch.IsSuccess)
+        {
+            return;
+        }
+
+        await _interactionService.ExecuteCommandAsync(context, _provider);
+
+        Statistics.UserCommandsExecuted.Inc();
     }
 
-    private static async Task HandleInteractionExecutionResult(IDiscordInteraction interaction, IResult result)
+    private async Task AutoCompleteExecuted(SocketInteraction socketInteraction)
     {
-        switch (result.Error)
+        Statistics.DiscordEvents.WithLabels(nameof(AutoCompleteExecuted)).Inc();
+
+        var context = new SocketInteractionContext(_client, socketInteraction);
+        await _interactionService.ExecuteCommandAsync(context, _provider);
+
+        Statistics.AutoCompletesExecuted.Inc();
+    }
+
+    private async Task SelectMenuExecuted(SocketInteraction socketInteraction)
+    {
+        Statistics.DiscordEvents.WithLabels(nameof(SelectMenuExecuted)).Inc();
+
+        var context = new SocketInteractionContext(_client, socketInteraction);
+        await _interactionService.ExecuteCommandAsync(context, _provider);
+
+        Statistics.SelectMenusExecuted.Inc();
+    }
+
+    private async Task ModalSubmitted(SocketModal socketModal)
+    {
+        Statistics.DiscordEvents.WithLabels(nameof(ModalSubmitted)).Inc();
+
+        var context = new SocketInteractionContext(_client, socketModal);
+        await _interactionService.ExecuteCommandAsync(context, _provider);
+
+        Statistics.ModalsExecuted.Inc();
+    }
+
+    private async Task ButtonExecuted(SocketMessageComponent socketMessageComponent)
+    {
+        Statistics.DiscordEvents.WithLabels(nameof(ButtonExecuted)).Inc();
+
+        var context = new SocketInteractionContext(_client, socketMessageComponent);
+
+        var commandSearch = _interactionService.SearchComponentCommand(socketMessageComponent);
+
+        if (!commandSearch.IsSuccess)
         {
-            case InteractionCommandError.UnmetPrecondition:
-                Log.Error($"Unmet precondition - {result.Error}");
-                break;
-
-            case InteractionCommandError.BadArgs:
-                Log.Error($"Unmet precondition - {result.Error}");
-                break;
-
-            case InteractionCommandError.ConvertFailed:
-                Log.Error($"Convert Failed - {result.Error}");
-                break;
-
-            case InteractionCommandError.Exception:
-                Log.Error($"Exception - {result.Error}");
-                break;
-
-            case InteractionCommandError.ParseFailed:
-                Log.Error($"Parse Failed - {result.Error}");
-                break;
-
-            case InteractionCommandError.UnknownCommand:
-                Log.Error($"Unknown Command - {result.Error}");
-                break;
-
-            case InteractionCommandError.Unsuccessful:
-                Log.Error($"Unsuccessful - {result.Error}");
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
+            return;
         }
-        
-        const string errorMsg = "An error has occurred. We we will investigate it ASAP!";
 
-        if (!interaction.HasResponded)
-        {
-            await interaction.RespondAsync(errorMsg, ephemeral: true);
-        }
-        else
-        {
-            await interaction.FollowupAsync(errorMsg, ephemeral: true);
-        }
+        await _interactionService.ExecuteCommandAsync(context, _provider);
+
+        Statistics.ButtonExecuted.Inc();
     }
 }

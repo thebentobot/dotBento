@@ -1,11 +1,15 @@
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Domain;
+using dotBento.Domain.Enums;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 
 namespace dotBento.Bot.Services;
 
@@ -255,5 +259,62 @@ public class UserService(IMemoryCache cache,
         }
 
         return 115;
+    }
+
+    public async Task AddUserSlashCommandInteraction(SocketInteractionContext context, string commandName)
+    {
+        var user = await GetUserAsync(context.User.Id);
+
+        await Task.Delay(10000);
+
+        try
+        {
+            if (user.HasValue)
+            {
+                var commandResponse = CommandResponse.Ok;
+                if (PublicProperties.UsedCommandsResponses.TryGetValue(context.Interaction.Id, out var fetchedResponse))
+                {
+                    commandResponse = fetchedResponse;
+                }
+
+                string errorReference = null;
+                if (PublicProperties.UsedCommandsErrorReferences.TryGetValue(context.Interaction.Id, out var fetchedErrorId))
+                {
+                    errorReference = fetchedErrorId;
+                }
+
+                var options = new Dictionary<string, string>();
+                if (context.Interaction is SocketSlashCommand command)
+                {
+                    foreach (var option in command.Data.Options)
+                    {
+                        options.Add(option.Name, option.Value?.ToString());
+                    }
+                }
+                /* TODO
+                var interaction = new UserInteraction
+                {
+                    Timestamp = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                    CommandName = commandName,
+                    CommandOptions = options.Any() ? options : null,
+                    UserId = user.UserId,
+                    DiscordGuildId = context.Guild?.Id,
+                    DiscordChannelId = context.Channel?.Id,
+                    DiscordId = context.Interaction.Id,
+                    Response = commandResponse,
+                    Type = UserInteractionType.SlashCommand,
+                    ErrorReferenceId = errorReference
+                };
+                
+                await using var db = await this._contextFactory.CreateDbContextAsync();
+                await db.UserInteractions.AddAsync(interaction);
+                await db.SaveChangesAsync();
+                */
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "AddUserSlashCommandInteraction: Error while adding user interaction");
+        }
     }
 }

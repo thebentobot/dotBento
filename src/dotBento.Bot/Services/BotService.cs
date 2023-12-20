@@ -20,7 +20,6 @@ namespace dotBento.Bot.Services;
 
 public class BotService(DiscordSocketClient client,
     InteractionService interactions,
-    InteractionHandler interactionHandler,
     IDbContextFactory<BotDbContext> contextFactory,
     UserService userService,
     IPrefixService prefixService,
@@ -63,8 +62,6 @@ public class BotService(DiscordSocketClient client,
             .AddModulesAsync(
                 Assembly.GetEntryAssembly(),
                 provider);
-        
-        await interactionHandler.InitializeAsync();
         
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
