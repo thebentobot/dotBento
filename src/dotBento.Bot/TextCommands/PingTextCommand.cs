@@ -12,15 +12,17 @@ using Serilog;
 
 namespace dotBento.Bot.TextCommands;
 
-[Name("Ping Text Command")]
+[Name("Ping")]
 public class PingTextCommand(
     IOptions<BotEnvConfig> botSettings,
     BotDbContext botDbContext) : BaseCommandModule(botSettings)
 {
-    [Command("ping")]
+    [Command("ping", RunMode = RunMode.Async)]
     [Summary("Test the Bento's latency")]
     public async Task PingCommand()
     {
+        _ = Context.Channel.TriggerTypingAsync();
+
         var messageTimeStart = DateTime.UtcNow;
         var message = await ReplyAsync("\ud83c\udfd3 Pinging...");
         var messageTimeEnd = DateTime.UtcNow;
@@ -38,7 +40,6 @@ public class PingTextCommand(
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
                 .WithColor(Color.Gold);
             await message.ModifyAsync(x => { x.Embed = embed.Embed.Build(); x.Content = null; });
-            Context.LogCommandUsed();
         }
         catch (Exception e)
         {
