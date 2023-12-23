@@ -17,10 +17,10 @@ public class AvatarTextCommand(
     InteractiveService interactiveService) : BaseCommandModule(botSettings)
 {
     [Command("avatar", RunMode = RunMode.Async)]
-    [Summary("Get the avatar of a user")]
+    [Summary("Get the avatar of a User Profile")]
     [Alias("av", "pfp")]
     [GuildOnly]
-    public async Task AvatarCommand([Summary("The user to get avatar from")] SocketUser user = null)
+    public async Task AvatarCommand([Summary("The user to get the User Profile Avatar from")] SocketUser user = null)
     {
         _ = Context.Channel.TriggerTypingAsync();
         user ??= Context.User;
