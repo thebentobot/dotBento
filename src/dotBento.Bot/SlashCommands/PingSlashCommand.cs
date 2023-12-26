@@ -36,7 +36,6 @@ public class PingSlashCommand(BotDbContext botDbContext, InteractiveService inte
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
                 .WithColor(Color.Gold);
             await Context.SendFollowUpResponse(interactiveService, embed, true);
-            Context.LogCommandUsed();
         }
         catch (Exception e)
         {
