@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.2.0](https://github.com/thebentobot/dotBento/compare/v0.1.0...v0.2.0) (2024-01-07)
+
+
+### Features
+
+* **avatar:** add avatar slash and text commands ([d6e2d0d](https://github.com/thebentobot/dotBento/commit/d6e2d0dd930ceb103fe424ea44b327e1348d3d34))
+* **banner cmd:** add slash and text cmds ([7552e7c](https://github.com/thebentobot/dotBento/commit/7552e7ce9bb57ad326a902c0658f2bbcc8300819))
+* **commands:** Add Ping command ([006914b](https://github.com/thebentobot/dotBento/commit/006914bab75170eef2edab61629e0f8432506198))
+* **commands:** rearrange command folders and BaseCommandModule ([aeb0e52](https://github.com/thebentobot/dotBento/commit/aeb0e52d75a307f975dc753d1394ee50c72589d1))
+* **devops:** add husky and commitlint ([cccaa14](https://github.com/thebentobot/dotBento/commit/cccaa1402d15319448def88c4f63a06f9fddcb7e))
+* **devops:** add npm to dependabot ([a7e7354](https://github.com/thebentobot/dotBento/commit/a7e73548b925f26830d07eaa121e7848ce26c456))
+* **docker-prerelease:** Update docker-prerelease.yml to do on master ([616e321](https://github.com/thebentobot/dotBento/commit/616e3217287268651ed84da97fe6e9c1c28f4e47))
+* **interactionContextExtensions:** make modifyMessage public ([fb8be07](https://github.com/thebentobot/dotBento/commit/fb8be07dfbb8c6b2b3ab0096895eaed8d1d59dad))
+* **startUp:** add fergun and messageContent ([d145955](https://github.com/thebentobot/dotBento/commit/d145955534342f93a777a4f5afcbe3130fccd3b6))
+* **userService:** add getUserAsync ([97a353c](https://github.com/thebentobot/dotBento/commit/97a353c0bb77a2f551f8a6ab6315b03005357fb2))
+
+
+### Bug Fixes
+
+* add fetch and tags depth to docker-prerelease.yml ([8d98544](https://github.com/thebentobot/dotBento/commit/8d98544938532ae34e0405eea1c0c394df3aa9be))
+* add meta id ([2097a6d](https://github.com/thebentobot/dotBento/commit/2097a6d32fcca836906377fc9e0a72d4b774ecd1))
+* adjust docker-prerelease.yml ([16f244f](https://github.com/thebentobot/dotBento/commit/16f244fba0b4493e52dac2362c425c7df1a61f89))
+* **avatar text cmd:** correct info ([4342c21](https://github.com/thebentobot/dotBento/commit/4342c215af145e7d53fb2d2792297600e42f277b))
+* avoid ds store files ([d408c59](https://github.com/thebentobot/dotBento/commit/d408c59343ec514173df7a110d773d1807b2bbd5))
+* **botService:** remove unused and outcomment interactions cmds ([e9e6d29](https://github.com/thebentobot/dotBento/commit/e9e6d29686b986062e14ef7d83cf50c5ae867641))
+* check for all changes in release-please ([c3e07c1](https://github.com/thebentobot/dotBento/commit/c3e07c1d4c91ac1c1855af2f646835e8ddbea591))
+* **interactionHandler:** support fergun interactions ([8af3dc5](https://github.com/thebentobot/dotBento/commit/8af3dc50dae07ee376597791037f132432df68df))
+* lets try again ([2b7253e](https://github.com/thebentobot/dotBento/commit/2b7253ec2fd5bdb28c3efc959af6f7d6c6efdd75))
+* new major version for release-please ([67a9112](https://github.com/thebentobot/dotBento/commit/67a91125a3d43405266357c1a4b0a830b98c4fe3))
+* **ping text cmd:** fix text cmd syntax and trigger typing ([7518c1b](https://github.com/thebentobot/dotBento/commit/7518c1befc319ee15e9268c2aa4e009a02d06fc6))
+* **pingSlashCommand:** remove log ([92f050a](https://github.com/thebentobot/dotBento/commit/92f050a0b880412568802f10d84e5e69775d206d))
+* remove redundant line, as well check release ([4c58e1f](https://github.com/thebentobot/dotBento/commit/4c58e1fad0e69a18a790f8184f8d82d86ac001f6))
+* revert release-please.yaml back to original ([66df7d7](https://github.com/thebentobot/dotBento/commit/66df7d7b9f070f52ba119be75bdf85df062d6f80))
+* **startup:** remove duplicate register of cmds ([cb9cddc](https://github.com/thebentobot/dotBento/commit/cb9cddc69e11a9ef7e7766395c70777ef7f382a6))
+* **startup:** support env vars ([1c20641](https://github.com/thebentobot/dotBento/commit/1c206419f76f822012b4b3c8390666c3d301a875))
+* Update dependabot.yml ([400df25](https://github.com/thebentobot/dotBento/commit/400df251de450afa2f70fa081ed5645a912c3e21))
+* Update dependabot.yml ([83114cb](https://github.com/thebentobot/dotBento/commit/83114cb104521cf294b7a8a3faa7d07675c60624))
+* update docker github actions to accommodate pre-release and release ([93d5e58](https://github.com/thebentobot/dotBento/commit/93d5e58fd01564d5673189ce426da7fa22fa8bb6))
+* Update docker-prerelease.yml ([7c935ad](https://github.com/thebentobot/dotBento/commit/7c935ad5d7e6bc33736c6d73a8501d219e298f4a))
+* Update docker-prerelease.yml again ([3f0749c](https://github.com/thebentobot/dotBento/commit/3f0749c1dcfbd13627930feb7ea7924d83461066))
+* update name on security policy ([bd425ca](https://github.com/thebentobot/dotBento/commit/bd425ca1c2e6d449f99bad579ffe85ddd3d01a46))
+
 ## [0.1.0](https://github.com/thebentobot/dotBento/compare/v0.0.1...v0.1.0) (2023-11-28)
 
 
