@@ -1,0 +1,23 @@
+{
+  "name": "dotbento",
+  "version": "0.1.0",
+  "description": ".NET rewrite of Bento bot",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebentobot/dotBento.git"
+  },
+  "author": "banner4422",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/thebentobot/dotBento/issues"
+  },
+  "homepage": "https://github.com/thebentobot/dotBento#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.4",
+    "@commitlint/config-conventional": "^18.4.4",
+    "husky": "^8.0.3"
+  }
+}
