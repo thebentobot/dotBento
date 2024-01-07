@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0-pre-ab96f6f3](https://github.com/thebentobot/dotBento/compare/v0.1.0-pre-ab96f6f3...v0.2.0-pre-ab96f6f3) (2024-01-07)
+
+
+### Features
+
+* open source ([48fd25e](https://github.com/thebentobot/dotBento/commit/48fd25ef6613cfcc90108141d0fb85383a4f51ff))
+
+
+### Bug Fixes
+
+* **env var:** remove config json ([9238552](https://github.com/thebentobot/dotBento/commit/9238552fc8a268814823d61a9f7f7311a22ba766))
+* **env var:** use env var instead ([7f89f01](https://github.com/thebentobot/dotBento/commit/7f89f01c5f3f2a787417ffe49a42fe221a2eb1e5))
+* **fuck:** ffs ([21bb4e3](https://github.com/thebentobot/dotBento/commit/21bb4e3c82802c51cc2bdcbcee9d140365ef78e2))
+
 ## [0.1.0](https://github.com/thebentobot/dotBento/compare/v0.0.1...v0.1.0) (2023-11-28)
 
 
