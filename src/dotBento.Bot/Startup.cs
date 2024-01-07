@@ -30,14 +30,14 @@ public class Startup
     
     public Startup(string[] args)
     {
-        var config = ConfigData.Data;
-
         var configBuilder = new ConfigurationBuilder()
             .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../../configs"))
             .AddJsonFile("config.json", optional: true)
             .AddEnvironmentVariables();
 
         Configuration = configBuilder.Build();
+        
+        Configuration.Bind(ConfigData.Data);
     }
     
     public static async Task RunAsync(string[] args)

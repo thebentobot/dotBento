@@ -1,60 +1,63 @@
 using System.Text.Json;
 using dotBento.Bot.Models;
+using Microsoft.Extensions.Configuration;
 
-namespace dotBento.Bot.Configurations;
-
-public static class ConfigData
+namespace dotBento.Bot.Configurations
 {
-    private const string ConfigFolder = "../../../configs";
-    private const string ConfigFile = "config.json";
-
-    // ReSharper disable once MemberCanBePrivate.Global
-    public static BotEnvConfig Data { get; }
-
-    static ConfigData()
+    public static class ConfigData
     {
-        if (!Directory.Exists(ConfigFolder))
-        {
-            Directory.CreateDirectory(ConfigFolder);
-        }
+        private const string ConfigFolder = "../../../configs";
+        private const string ConfigFile = "config.json";
 
-        if (!File.Exists(ConfigFolder + "/" + ConfigFile))
+        public static BotEnvConfig Data { get; private set; }
+
+        static ConfigData()
         {
+            // Initialize with default values
             Data = new BotEnvConfig
             {
-                PostgreSQL = new DatabaseConfig(),
-                Bot = new BotConfig(),
+                PostgreSQL = new DatabaseConfig
+                {
+                    ConnectionString = "Host=localhost;Port=5432;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True"
+                },
+                Bot = new BotConfig
+                {
+                    AnnouncementChannelId = 0000000000000,
+                    Prefix = "_",
+                    Status = "We out here",
+                    BaseServerId = 0000000000000
+                },
                 Environment = "local",
-                Discord = new DiscordConfig(),
-                Prometheus = new PrometheusConfig(),
-                BotLists = new BotListConfig(),
+                Discord = new DiscordConfig
+                {
+                    Token = "CHANGE-ME-DISCORD-TOKEN",
+                    LogWebhookId = "CHANGE-ME-WEBHOOK-ID",
+                    LogWebhookToken = "CHANGE-ME-WEBHOOK-TOKEN"
+                },
+                Prometheus = new PrometheusConfig
+                {
+                    MetricsPusherEndpoint = "",
+                    MetricsPusherName = ""
+                },
+                BotLists = new BotListConfig
+                {
+                    TopGgApiToken = "CHANGE-ME-TOPGG-API-TOKEN"
+                }
             };
 
-            // Set default values after initializing the properties
-            Data.PostgreSQL.ConnectionString = "Host=localhost;Port=5432;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True";
-            Data.Bot.AnnouncementChannelId = 0000000000000;
-            Data.Bot.Prefix = "_";
-            Data.Bot.Status = "We out here";
-            Data.Bot.BaseServerId = 0000000000000;
-            Data.Discord.Token = "CHANGE-ME-DISCORD-TOKEN";
-            Data.Discord.LogWebhookId = "CHANGE-ME-WEBHOOK-ID";
-            Data.Discord.LogWebhookToken = "CHANGE-ME-WEBHOOK-TOKEN";
-            Data.Prometheus.MetricsPusherEndpoint = "";
-            Data.Prometheus.MetricsPusherName = "";
-            Data.BotLists.TopGgApiToken = "CHANGE-ME-TOPGG-API-TOKEN";
+            // Load from config.json if it exists
+            var configPath = Path.Combine(ConfigFolder, ConfigFile);
+            if (File.Exists(configPath))
+            {
+                string json = File.ReadAllText(configPath);
+                Data = JsonSerializer.Deserialize<BotEnvConfig>(json);
+            }
 
-            var json = JsonSerializer.Serialize(Data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(Path.Combine(ConfigFolder, ConfigFile), json);
-
-            Console.WriteLine($"Created new bot configuration file with default values.\nPlease set your API keys in {ConfigFolder}/{ConfigFile} before running the bot again.\n\nExiting in 10 seconds...");
-
-            Thread.Sleep(10000);
-            Environment.Exit(0);
-        }
-        else
-        {
-            var json = File.ReadAllText(Path.Combine(ConfigFolder, ConfigFile));
-            Data = JsonSerializer.Deserialize<BotEnvConfig>(json);
+            // Override with environment variables
+            var configBuilder = new ConfigurationBuilder()
+                .AddEnvironmentVariables();
+            var config = configBuilder.Build();
+            config.Bind(Data);
         }
     }
 }
