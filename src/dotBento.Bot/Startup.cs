@@ -34,7 +34,7 @@ public class Startup
 
         var configBuilder = new ConfigurationBuilder()
             .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../../configs"))
-            .AddJsonFile("config.json")
+            .AddJsonFile("config.json", optional: true)
             .AddEnvironmentVariables();
 
         Configuration = configBuilder.Build();
