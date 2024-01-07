@@ -82,7 +82,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             # Update the docker-compose.yml file with the new pre-release image tag
             sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' /home/banner/bentobot/docker-compose.yml
