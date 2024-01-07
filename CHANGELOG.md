@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0 (2024-01-07)
+
+
+### Features
+
+* **docker-prerelease:** add auto deploy to VPS ([52d2a2b](https://github.com/thebentobot/dotBento/commit/52d2a2b542827cca0dc9c76ff1b1618886722097))
+
+
+### Bug Fixes
+
+* **messageHandler:** change order of user check ([64ace2c](https://github.com/thebentobot/dotBento/commit/64ace2c1beb012f0124949edb47ec9c5e78f01b6))
+
 ## [0.1.0](https://github.com/thebentobot/dotBento/compare/v0.0.1...v0.1.0) (2023-11-28)
 
 
