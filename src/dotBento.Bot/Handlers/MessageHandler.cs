@@ -63,9 +63,9 @@ public class MessageHandler
         {
             return;
         }
-
-        await _guildService.AddGuildMemberAsync(context.Guild.GetUser(context.User.Id));
+        
         await _userService.AddUserAsync(context.User);
+        await _guildService.AddGuildMemberAsync(context.Guild.GetUser(context.User.Id));
         
         var patreonUser = await _userService.GetPatreonUserAsync(context.User.Id);
 
