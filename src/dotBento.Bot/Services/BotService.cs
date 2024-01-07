@@ -46,9 +46,10 @@ public class BotService(DiscordSocketClient client,
         Log.Information("Loading all prefixes");
         await prefixService.LoadAllPrefixes();
         
-        client.Ready += ClientReady;
-        
         Log.Information("Starting bot");
+        var discordToken = config.Value.Discord.Token ??
+                              throw new InvalidOperationException(
+                                  "Discord:Token environment variable are not set.");
         
         Log.Information("Loading command modules");
         await commands
@@ -67,7 +68,7 @@ public class BotService(DiscordSocketClient client,
         PrepareCacheFolder();
         
         Log.Information("Logging into Discord");
-        await client.LoginAsync(TokenType.Bot, config.Value.Discord.Token);
+        await client.LoginAsync(TokenType.Bot, discordToken);
 
         await client.StartAsync();
         
@@ -117,13 +118,6 @@ public class BotService(DiscordSocketClient client,
     public async Task StopAsync()
     {
         await client.StopAsync();
-    }
-
-    private async Task ClientReady()
-    {
-        Log.Information("Logged as {ClientCurrentUser}", client.CurrentUser);
-
-        await interactions.RegisterCommandsGloballyAsync();
     }
     
     // public instead of private because of Hangfire BackgroundJob
