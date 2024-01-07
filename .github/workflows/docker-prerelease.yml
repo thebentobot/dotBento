@@ -75,21 +75,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  deploy-pre-release:
-    runs-on: ubuntu-latest
-    needs: github-docker-pre-release
-    if: needs.github-docker-pre-release.outputs.SKIP_PRERELEASE == 'false'
-    steps:
+      
       - name: Deploy to Server
+        if: env.SKIP_PRERELEASE == 'false'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             # Update the docker-compose.yml file with the new pre-release image tag
-            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ needs.github-docker-pre-release.outputs.NEW_TAG }}|' /home/banner/bentobot/docker-compose.yml
+            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' /home/banner/bentobot/docker-compose.yml
             
             # Pull the new image and redeploy the service
             docker-compose -f /home/banner/bentobot/docker-compose.yml pull bot-sta
