@@ -1,4 +1,3 @@
-using System.Text.Json;
 using dotBento.Bot.Models;
 using Microsoft.Extensions.Configuration;
 
@@ -6,14 +5,10 @@ namespace dotBento.Bot.Configurations
 {
     public static class ConfigData
     {
-        private const string ConfigFolder = "../../../configs";
-        private const string ConfigFile = "config.json";
-
         public static BotEnvConfig Data { get; private set; }
 
         static ConfigData()
         {
-            // Initialize with default values
             Data = new BotEnvConfig
             {
                 PostgreSQL = new DatabaseConfig
@@ -45,15 +40,6 @@ namespace dotBento.Bot.Configurations
                 }
             };
 
-            // Load from config.json if it exists
-            var configPath = Path.Combine(ConfigFolder, ConfigFile);
-            if (File.Exists(configPath))
-            {
-                string json = File.ReadAllText(configPath);
-                Data = JsonSerializer.Deserialize<BotEnvConfig>(json);
-            }
-
-            // Override with environment variables
             var configBuilder = new ConfigurationBuilder()
                 .AddEnvironmentVariables();
             var config = configBuilder.Build();
