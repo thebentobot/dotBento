@@ -19,7 +19,7 @@ public class AvatarSlashCommand(InteractiveService interactiveService) : Interac
     {
         user ??= Context.User;
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle($"{user.Username}'s User Profile Avatar")
+        embed.Embed.WithTitle($"{user.GlobalName}'s User Profile Avatar")
             .WithImageUrl(user.GetAvatarUrl(size: 2048, format: ImageFormat.Auto));
         await Context.SendResponse(interactiveService, embed, hide ?? false);
     }
@@ -32,8 +32,9 @@ public class AvatarSlashCommand(InteractiveService interactiveService) : Interac
     )
     {
         user ??= Context.Guild.Users.Single(x => x.Id == Context.User.Id);
+        var name = user.Nickname ?? user.DisplayName;
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle($"{user.Nickname}'s Server Profile Avatar")
+        embed.Embed.WithTitle($"{name}'s Server Profile Avatar")
             .WithImageUrl(user.GetGuildAvatarUrl(size: 2048, format: ImageFormat.Auto));
         await Context.SendResponse(interactiveService, embed, hide ?? false);
     }
