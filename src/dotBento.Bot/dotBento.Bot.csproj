@@ -42,4 +42,10 @@
       <ProjectReference Include="..\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="configs\config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
