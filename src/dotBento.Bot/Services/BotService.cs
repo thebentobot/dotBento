@@ -4,7 +4,6 @@ using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Bot.Handlers;
 using dotBento.Bot.Interfaces;
 using dotBento.Bot.Models;
 using dotBento.Domain;
