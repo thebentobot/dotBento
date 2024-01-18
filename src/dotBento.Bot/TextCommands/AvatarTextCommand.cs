@@ -27,7 +27,7 @@ public class AvatarTextCommand(
         var guildMember = Context.Guild.Users.Single(guildUser => guildUser.Id == user.Id);
         
         var userProfileEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        userProfileEmbed.Embed.WithTitle($"{user.Username}'s User Profile avatar")
+        userProfileEmbed.Embed.WithTitle($"{user.GlobalName}'s User Profile avatar")
             .WithImageUrl(user.GetAvatarUrl(size: 2048, format: ImageFormat.Auto));
 
         if (user.GetDefaultAvatarUrl() == guildMember.GetDisplayAvatarUrl())
@@ -38,7 +38,7 @@ public class AvatarTextCommand(
         {
             
             var serverProfileEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
-            serverProfileEmbed.Embed.WithTitle($"{guildMember.Nickname}'s Server Profile avatar")
+            serverProfileEmbed.Embed.WithTitle($"{guildMember.Nickname ?? guildMember.DisplayName}'s Server Profile avatar")
                 .WithImageUrl(guildMember.GetGuildAvatarUrl(size: 2048, format: ImageFormat.Auto));
             
             await Context.SendResponse(interactiveService, serverProfileEmbed);
