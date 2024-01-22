@@ -5,9 +5,10 @@ namespace dotBento.Bot.Resources;
 
 public class DiscordConstants
 {
+    public static Color BentoYellow = new(253, 224, 71);
+    
     public static Color LastFmColorRed = new(186, 0, 0);
 
-    /// <summary>The Discord color for a warning embed.</summary>
     public static Color WarningColorOrange = new(255, 174, 66);
 
     public static Color SuccessColorGreen = new(50, 205, 50);
