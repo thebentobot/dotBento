@@ -6,6 +6,7 @@ WORKDIR /src
 COPY ["src/dotBento.Bot", "dotBento.Bot/"]
 COPY ["src/dotBento.Domain", "dotBento.Domain/"]
 COPY ["src/dotBento.EntityFramework", "dotBento.EntityFramework/"]
+COPY ["src/dotBento.Infrastructure", "dotBento.Infrastructure/"]
 RUN dotnet restore "dotBento.Bot/dotBento.Bot.csproj"
 COPY . .
 WORKDIR "/src/dotBento.Bot"
