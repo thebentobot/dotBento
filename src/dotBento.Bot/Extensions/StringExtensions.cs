@@ -20,7 +20,7 @@ public static class StringExtensions
         return pattern.Replace(str, "");
     }
 
-    public static bool ContainsUnicodeCharacter(string input)
+    public static bool ContainsUnicodeCharacter(this string input)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -32,7 +32,7 @@ public static class StringExtensions
         return input.Any(c => c > MaxAnsiCode);
     }
 
-    public static string ReplaceInvalidChars(string filename)
+    public static string ReplaceInvalidChars(this string filename)
     {
         filename = filename.Replace("\"", "_");
         filename = filename.Replace("'", "_");
@@ -56,7 +56,7 @@ public static class StringExtensions
         "#",
     };
 
-    public static string Sanitize(string text)
+    public static string Sanitize(this string text)
     {
         if (text != null)
         {
@@ -68,7 +68,7 @@ public static class StringExtensions
         return text;
     }
 
-    public static string TruncateLongString(string str, int maxLength)
+    public static string TruncateLongString(this string str, int maxLength)
     {
         if (string.IsNullOrEmpty(str))
         {
