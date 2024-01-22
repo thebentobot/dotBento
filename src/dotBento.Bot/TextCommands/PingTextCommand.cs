@@ -4,6 +4,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
 using dotBento.Domain.Enums;
 using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ public class PingTextCommand(
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
-                .WithColor(Color.Gold);
+                .WithColor(DiscordConstants.BentoYellow);
             await message.ModifyAsync(x => { x.Embed = embed.Embed.Build(); x.Content = null; });
         }
         catch (Exception e)
@@ -46,7 +47,7 @@ public class PingTextCommand(
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
-                .WithColor(Color.Gold);
+                .WithColor(DiscordConstants.BentoYellow);
             await message.ModifyAsync(x => { x.Embed = embed.Embed.Build(); x.Content = null; });
             Context.LogCommandUsed(CommandResponse.Error);
             Log.Error(e, "Ping Slash Command failed");

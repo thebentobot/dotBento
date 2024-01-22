@@ -15,7 +15,8 @@ public class PingSlashCommand(BotDbContext botDbContext, InteractiveService inte
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("ping", "Test the Bento's latency")]
-    public async Task PingCommand()
+    public async Task PingCommand(
+    [Summary("hide", "Only show the result for you")] bool? hide = false)
     {
         var messageTimeStart = DateTime.UtcNow;
         var initialResponseEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
