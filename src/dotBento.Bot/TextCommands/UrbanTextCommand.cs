@@ -11,7 +11,6 @@ using dotBento.Bot.Services;
 using dotBento.Domain.Enums;
 using dotBento.Domain.Enums.Games;
 using dotBento.Domain.Extensions.Games;
-using dotBento.Infrastructure.Commands;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +20,6 @@ namespace dotBento.Bot.TextCommands;
 public class UrbanTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
-    GameCommands gameCommands,
     UrbanDictionaryService urbanDictionaryService) : BaseCommandModule(botSettings)
 {
     [Command("urban", RunMode = RunMode.Async)]

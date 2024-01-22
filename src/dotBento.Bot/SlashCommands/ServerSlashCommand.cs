@@ -4,14 +4,13 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
-using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.SlashCommands;
 
 [Group("server", "Commands for the Discord Server")]
-public class ServerSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService, StylingUtilities stylingUtilities)
+public class ServerSlashCommand(InteractiveService interactiveService, StylingUtilities stylingUtilities)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("user", "Show info for a server user")]

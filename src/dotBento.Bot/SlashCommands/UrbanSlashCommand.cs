@@ -6,13 +6,11 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
-using dotBento.EntityFramework.Context;
-using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.SlashCommands;
 
-public class UrbanSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService, StylingUtilities stylingUtilities, UrbanDictionaryService urbanDictionaryService)
+public class UrbanSlashCommand(InteractiveService interactiveService, UrbanDictionaryService urbanDictionaryService)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("urban", "Search Urban Dictionary for a term")]
