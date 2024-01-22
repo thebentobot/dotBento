@@ -5,11 +5,12 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.SlashCommands;
 
-public class BannerSlashCommand(InteractiveService interactiveService) : InteractionModuleBase<SocketInteractionContext>
+public class BannerSlashCommand(InteractiveService interactiveService, StylingUtilities stylingUtilities) : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("banner", "Get the banner of a User Profile")]
     public async Task UserBannerCommand(
@@ -18,6 +19,7 @@ public class BannerSlashCommand(InteractiveService interactiveService) : Interac
     )
     {
         user ??= Context.User;
+        await user.ReturnIfBot(Context, interactiveService);
         var restUser = (await Context.Client.Rest.GetUserAsync(user.Id)).AsMaybe();
         if (restUser.HasNoValue)
         {
@@ -30,7 +32,9 @@ public class BannerSlashCommand(InteractiveService interactiveService) : Interac
                 return;
             }
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+            var bannerColour = await stylingUtilities.GetDominantColorAsync(restUser.Value.GetBannerUrl(ImageFormat.WebP, 128));
             embed.Embed.WithTitle($"{user.Username}'s User Profile Banner")
+                .WithColor(bannerColour)
                 .WithImageUrl(restUser.Value.GetBannerUrl(size: 2048, format: ImageFormat.Auto));
             await Context.SendResponse(interactiveService, embed, hide ?? false);
         }
