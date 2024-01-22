@@ -10,6 +10,9 @@ using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
+using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
@@ -129,10 +132,16 @@ public class Startup
             .AddSingleton<GuildMemberUpdateHandler>()
             .AddSingleton<UserUpdateHandler>()
             .AddSingleton<BotService>()
+            .AddSingleton<StylingUtilities>()
+            .AddSingleton<GameService>()
+            .AddSingleton<GameCommands>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
         services.AddSingleton<InteractionHandler>();
+        
+        services.AddHttpClient<StylingUtilities>();
+        services.AddHttpClient<UrbanDictionaryService>();
 
         services.AddHealthChecks();
         
