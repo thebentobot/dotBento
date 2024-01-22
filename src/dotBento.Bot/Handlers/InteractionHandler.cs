@@ -1,7 +1,12 @@
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Enums;
+using dotBento.Bot.Extensions;
+using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
 using dotBento.Domain;
+using Fergun.Interactive;
 using Microsoft.Extensions.Caching.Memory;
 using Prometheus;
 using Serilog;
@@ -12,6 +17,7 @@ public class InteractionHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;
+    private readonly InteractiveService _FergunInteractiveService;
     private readonly IServiceProvider _provider;
     private readonly UserService _userService;
     private readonly GuildService _guildService;
@@ -23,7 +29,8 @@ public class InteractionHandler
         IServiceProvider provider,
         UserService userService,
         GuildService guildService,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        InteractiveService fergunInteractiveService)
     {
         _client = client;
         _interactionService = interactionService;
@@ -31,6 +38,7 @@ public class InteractionHandler
         _userService = userService;
         _guildService = guildService;
         _cache = cache;
+        _FergunInteractiveService = fergunInteractiveService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
         _client.SelectMenuExecuted += SelectMenuExecuted;
@@ -89,9 +97,63 @@ public class InteractionHandler
             return;
         }
 
-        await _interactionService.ExecuteCommandAsync(context, _provider);
+        var result = await _interactionService.ExecuteCommandAsync(context, _provider);
 
-        Statistics.UserCommandsExecuted.Inc();
+        if (result.IsSuccess)
+        {
+            Statistics.UserCommandsExecuted.Inc();
+        } else switch (result.Error)
+        {
+            case InteractionCommandError.ParseFailed:
+            {
+                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                embed.Embed.WithTitle("Error: Invalid input")
+                    .WithDescription($"{result.ErrorReason}")
+                    .WithColor(Color.Red);
+                await context.SendResponse(_FergunInteractiveService, embed);
+                break;
+            }
+            case InteractionCommandError.BadArgs:
+            {
+                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                embed.Embed.WithTitle("Error: Bad argument count")
+                    .WithDescription($"You have provided too many or too few arguments for the command `{commandSearch.Command.Name}`")
+                    .WithColor(Color.Red);
+                await context.SendResponse(_FergunInteractiveService, embed);
+                break;
+            }
+            case InteractionCommandError.Exception:
+            {
+                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                embed.Embed.WithTitle("Error: Exception")
+                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
+                    .WithColor(Color.Red);
+                await context.SendResponse(_FergunInteractiveService, embed);
+                break;
+            }
+            case InteractionCommandError.Unsuccessful:
+            {
+                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                embed.Embed.WithTitle("Error: Unsuccessful")
+                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
+                    .WithColor(Color.Red);
+                await context.SendResponse(_FergunInteractiveService, embed);
+                break;
+            }
+            // TODO would be nice to log when one of these errors below gets hit
+            case null:
+            case InteractionCommandError.UnknownCommand:
+            case InteractionCommandError.ConvertFailed:
+            case InteractionCommandError.UnmetPrecondition:
+            default:
+                Log.Error(result.ToString() ?? "Command error (null)", context.Interaction);
+                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                break;
+        }
     }
 
     private async Task AutoCompleteExecuted(SocketInteraction socketInteraction)
