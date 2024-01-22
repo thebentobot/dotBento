@@ -1,14 +1,18 @@
 using System.Text.RegularExpressions;
+using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
+using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Interfaces;
+using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
 using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
+using Fergun.Interactive;
 using Microsoft.Extensions.Caching.Memory;
 using Prometheus;
 using Serilog;
@@ -24,6 +28,7 @@ public class MessageHandler
     private readonly CommandService _commands;
     private readonly IPrefixService _prefixService;
     private readonly IServiceProvider _provider;
+    private readonly InteractiveService _interactiveService;
 
     public MessageHandler(DiscordSocketClient client,
         IMemoryCache cache,
@@ -31,7 +36,8 @@ public class MessageHandler
         GuildService guildService,
         CommandService commands,
         IPrefixService prefixService, 
-        IServiceProvider provider)
+        IServiceProvider provider,
+        InteractiveService interactiveService)
     {
         _client = client;
         _cache = cache;
@@ -40,6 +46,7 @@ public class MessageHandler
         _commands = commands;
         _prefixService = prefixService;
         _provider = provider;
+        _interactiveService = interactiveService;
         _client.MessageReceived += MessageReceived;
     }
 
@@ -151,10 +158,58 @@ public class MessageHandler
             {
                 Statistics.CommandsExecuted.WithLabels(commandName).Inc();
             }
-            else
+            else switch (result.Error)
             {
-                Log.Error(result.ToString() ?? "Command error (null)", context.Message.Content);
-                Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                case CommandError.ParseFailed:
+                {
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    embed.Embed.WithTitle("Error: Invalid input")
+                        .WithDescription($"{result.ErrorReason}")
+                        .WithColor(Color.Red);
+                    await context.SendResponse(_interactiveService, embed);
+                    break;
+                }
+                case CommandError.BadArgCount:
+                {
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    embed.Embed.WithTitle("Error: Bad argument count")
+                        .WithDescription($"You have provided too many or too few arguments for the command `{commandName}`")
+                        .WithColor(Color.Red);
+                    await context.SendResponse(_interactiveService, embed);
+                    break;
+                }
+                case CommandError.Exception:
+                {
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    embed.Embed.WithTitle("Error: Exception")
+                        .WithDescription($"An exception occurred while executing the command `{commandName}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithColor(Color.Red);
+                    await context.SendResponse(_interactiveService, embed);
+                    break;
+                }
+                case CommandError.Unsuccessful:
+                {
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    embed.Embed.WithTitle("Error: Unsuccessful")
+                        .WithDescription($"The command `{commandName}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithColor(Color.Red);
+                    await context.SendResponse(_interactiveService, embed);
+                    break;
+                }
+                // TODO would be nice to log when one of these errors below gets hit
+                case null:
+                case CommandError.UnknownCommand:
+                case CommandError.ObjectNotFound:
+                case CommandError.MultipleMatches:
+                case CommandError.UnmetPrecondition:
+                default:
+                    Log.Error(result.ToString() ?? "Command error (null)", context.Message.Content);
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    break;
             }
         }
     }
