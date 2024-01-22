@@ -19,7 +19,7 @@
       <PackageReference Include="BotListAPI" Version="5.5.4" />
       <PackageReference Include="CSharpFunctionalExtensions" Version="2.40.3" />
       <PackageReference Include="Discord.Net" Version="3.13.0" />
-      <PackageReference Include="Fergun.Interactive" Version="1.7.3" />
+      <PackageReference Include="Fergun.Interactive" Version="1.7.5" />
       <PackageReference Include="Hangfire.Core" Version="1.8.7" />
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.1" />
