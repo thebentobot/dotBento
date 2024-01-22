@@ -111,12 +111,13 @@ public class Startup
             .AddSingleton(new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Info,
-                DefaultRunMode = RunMode.Async,
+                DefaultRunMode = RunMode.Async
             }))
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
                 new InteractionServiceConfig()
                 {
-                    LogLevel = LogSeverity.Info
+                    LogLevel = LogSeverity.Info,
+                    DefaultRunMode = Discord.Interactions.RunMode.Async
                 }))
             .AddSingleton<UserService>()
             .AddSingleton<InteractiveService>()
