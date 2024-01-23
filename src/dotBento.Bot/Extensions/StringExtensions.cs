@@ -77,4 +77,12 @@ public static class StringExtensions
 
         return str.Substring(0, Math.Min(str.Length, maxLength));
     }
+    
+    public static string TrimToMaxLength(this string source, int maxLength)
+    {
+        if(string.IsNullOrEmpty(source) || source.Length <= maxLength)
+            return source;
+        
+        return source.Substring(0, maxLength - 3) + "...";
+    }
 }
