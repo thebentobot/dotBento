@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -71,7 +70,7 @@ public class MessageHandler
             return;
         }
         
-        await _userService.AddUserAsync(context.User);
+        await _userService.CreateOrAddUserToCache(context.User);
         await _guildService.AddGuildMemberAsync(context.Guild.GetUser(context.User.Id));
         
         var patreonUser = await _userService.GetPatreonUserAsync(context.User.Id);
@@ -148,7 +147,7 @@ public class MessageHandler
 
                 embed.HelpResponse(searchResult.Commands[0].Command, prefix, userName);
                 await context.Channel.SendMessageAsync("", false, embed.Build());
-                context.LogCommandUsed(CommandResponse.Help);
+                // TODO stats for help command
                 return;
             }
 
@@ -200,10 +199,19 @@ public class MessageHandler
                     await context.SendResponse(_interactiveService, embed);
                     break;
                 }
+                case CommandError.ObjectNotFound:
+                {
+                    Statistics.CommandsFailed.WithLabels(commandName).Inc();
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    embed.Embed.WithTitle($"Error: {result.ErrorReason}")
+                        .WithDescription($"The object was not found when attempting to run the command `{commandName}`.\nIf you believe this is an error, please contact the developers.\nYou can find the support server by running the command `about`")
+                        .WithColor(Color.Red);
+                    await context.SendResponse(_interactiveService, embed);
+                    break;
+                }
                 // TODO would be nice to log when one of these errors below gets hit
                 case null:
                 case CommandError.UnknownCommand:
-                case CommandError.ObjectNotFound:
                 case CommandError.MultipleMatches:
                 case CommandError.UnmetPrecondition:
                 default:
@@ -217,7 +225,7 @@ public class MessageHandler
     private bool CheckUserRateLimit(ulong discordUserId)
     {
         var cacheKey = $"{discordUserId}-rateLimit";
-        if (this._cache.TryGetValue(cacheKey, out int requestsInLastMinute))
+        if (_cache.TryGetValue(cacheKey, out int requestsInLastMinute))
         {
             if (requestsInLastMinute > 35)
             {
@@ -225,11 +233,11 @@ public class MessageHandler
             }
 
             requestsInLastMinute++;
-            this._cache.Set(cacheKey, requestsInLastMinute, TimeSpan.FromSeconds(60 - requestsInLastMinute));
+            _cache.Set(cacheKey, requestsInLastMinute, TimeSpan.FromSeconds(60 - requestsInLastMinute));
         }
         else
         {
-            this._cache.Set(cacheKey, 1, TimeSpan.FromMinutes(1));
+            _cache.Set(cacheKey, 1, TimeSpan.FromMinutes(1));
         }
 
         return true;
