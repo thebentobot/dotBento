@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
@@ -135,7 +136,15 @@ public class Startup
             .AddSingleton<BotService>()
             .AddSingleton<StylingUtilities>()
             .AddSingleton<GameService>()
+            .AddSingleton<GameCommand>()
             .AddSingleton<GameCommands>()
+            .AddSingleton<UrbanCommand>()
+            .AddSingleton<AvatarCommand>()
+            .AddSingleton<BannerCommand>()
+            .AddSingleton<ServerCommand>()
+            .AddSingleton<UserCommand>()
+            .AddSingleton<BentoCommand>()
+            .AddSingleton<BentoService>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
