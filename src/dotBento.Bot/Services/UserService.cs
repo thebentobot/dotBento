@@ -112,7 +112,7 @@ public class UserService(IMemoryCache cache,
         }
     }
 
-    public async Task AddUserAsync(SocketUser discordUser)
+    public async Task CreateOrAddUserToCache(SocketUser discordUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
