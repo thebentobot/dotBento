@@ -21,7 +21,7 @@ public class PingSlashCommand(BotDbContext botDbContext, InteractiveService inte
         var messageTimeStart = DateTime.UtcNow;
         var initialResponseEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
         initialResponseEmbed.Embed.WithTitle("\ud83c\udfd3 Pinging...");
-        await Context.SendResponse(interactiveService, initialResponseEmbed, true);
+        await Context.SendResponse(interactiveService, initialResponseEmbed, hide ?? false);
         var messageTimeEnd = DateTime.UtcNow;
         var messageTime = Math.Round((messageTimeEnd - messageTimeStart).TotalMilliseconds);
 
@@ -36,7 +36,7 @@ public class PingSlashCommand(BotDbContext botDbContext, InteractiveService inte
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
                 .WithColor(Color.Gold);
-            await Context.SendFollowUpResponse(interactiveService, embed, true);
+            await Context.SendFollowUpResponse(interactiveService, embed, hide ?? false);
         }
         catch (Exception e)
         {
@@ -44,7 +44,7 @@ public class PingSlashCommand(BotDbContext botDbContext, InteractiveService inte
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
                 .WithColor(Color.Gold);
-            await Context.SendFollowUpResponse(interactiveService, embed, true);
+            await Context.SendFollowUpResponse(interactiveService, embed, hide ?? false);
             Context.LogCommandUsed(CommandResponse.Error);
             Log.Error(e, "Ping Slash Command failed");
         }

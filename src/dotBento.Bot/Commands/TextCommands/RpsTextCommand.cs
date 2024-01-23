@@ -1,29 +1,29 @@
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using dotBento.Bot.Attributes;
+using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
-using dotBento.Domain.Enums;
+using dotBento.Bot.TextCommands;
 using dotBento.Domain.Enums.Games;
 using dotBento.Domain.Extensions.Games;
-using dotBento.Infrastructure.Commands;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 
-namespace dotBento.Bot.TextCommands;
+namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Rps")]
 public class RpsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
-    GameCommands gameCommands) : BaseCommandModule(botSettings)
+    GameCommand gameCommand) : BaseCommandModule(botSettings)
 {
     [Command("rps", RunMode = RunMode.Async)]
     [Summary("Play Rock Paper Scissors")]
-    public async Task RpsCommand([Summary("Choose between rock, paper, scissors")] string userChoice)
+    [Examples("rps rock", "rps paper", "rps scissors")]
+    public async Task RpsCommand(string userChoice)
     {
         _ = Context.Channel.TriggerTypingAsync();
         if (!Enum.TryParse<RpsGameChoice>(userChoice, true, out var rpsChoice))
@@ -35,16 +35,6 @@ public class RpsTextCommand(
             await Context.SendResponse(interactiveService, errorEmbed);
             return;
         }
-        var (aiChoice, result) = await gameCommands.RockPaperScissorsAsync(rpsChoice, (long)Context.User.Id);
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle("Rock Paper Scissors \ud83e\udea8 \ud83e\uddfb \u2702\ufe0f")
-            .WithDescription($"You chose **{rpsChoice.AddEmoji()}** and I chose **{aiChoice.AddEmoji()}** {result.FormatResult()}")
-            .WithColor(result switch
-            {
-                RpsGameResult.Win => Color.Green,
-                RpsGameResult.Loss => Color.Red,
-                _ => Color.Blue
-            });
-        await Context.SendResponse(interactiveService, embed);
+        await Context.SendResponse(interactiveService, await gameCommand.RpsCommand(rpsChoice, (long)Context.User.Id));
     }
 }
