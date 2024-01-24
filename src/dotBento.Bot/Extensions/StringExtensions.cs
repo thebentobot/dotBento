@@ -85,4 +85,12 @@ public static class StringExtensions
         
         return source.Substring(0, maxLength - 3) + "...";
     }
+
+    public static string CapitalizeFirstLetter(this string str)
+    {
+        if (String.IsNullOrEmpty(str))
+            return String.Empty;
+    
+        return Char.ToUpper(str[0]) + str.Substring(1);
+    }
 }
