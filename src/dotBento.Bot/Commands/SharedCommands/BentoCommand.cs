@@ -80,11 +80,12 @@ public class BentoCommand(
             }
         }
         var bentoDataReceiver = await bentoService.UpsertBentoAsync((long)receiver.Id, amount);
+        await bentoService.UpdateBentoDateAsync((long)sender.Id, now);
         
         embed.Embed
             .WithColor(DiscordConstants.BentoYellow)
             .WithDescription(
-                $"{sender.Mention} just gave **{amount} Bento {(amount > 1 ? "Boxes" : "Box")} to {bentoReceiverText}\n{receiver.Mention} has received **{bentoDataReceiver.Bento1} Bento {(bentoDataReceiver.Bento1 > 1 ? "Boxes" : "Box")}** over time \ud83d\ude0b\n{sender.Mention} can serve a Bento Box again <t:{new DateTimeOffset(now.AddHours(12)).ToUnixTimeSeconds()}:R>");
+                $"{sender.Mention} just gave **{amount} Bento {(amount > 1 ? "Boxes" : "Box")} to {bentoReceiverText}**\n{receiver.Mention} has received **{bentoDataReceiver.Bento1} Bento {(bentoDataReceiver.Bento1 > 1 ? "Boxes" : "Box")}** over time \ud83d\ude0b\n{sender.Mention} can serve a Bento Box again <t:{new DateTimeOffset(now.AddHours(12)).ToUnixTimeSeconds()}:R>");
         
         return embed;
     }
