@@ -42,10 +42,5 @@ namespace dotBento.Infrastructure.Utilities
 
             return Color.FromArgb((int)(r / total), (int)(g / total), (int)(b / total));
         }
-
-        public string ColorToHex(Color color)
-        {
-            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-        }
     }
 }
