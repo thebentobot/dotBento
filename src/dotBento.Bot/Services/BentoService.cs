@@ -112,4 +112,26 @@ public class BentoService(
         cache.Set(userId, bento, TimeSpan.FromMinutes(5));
         return bento;
     }
+    
+    public async Task UpdateBentoDateAsync(long userId, DateTime bentoDate)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var bento = await context.Bentos.FirstOrDefaultAsync(x => x.UserId == userId);
+        if (bento == null)
+        {
+            bento = new Bento
+            {
+                UserId = userId,
+                Bento1 = 0,
+                BentoDate = bentoDate,
+            };
+            await context.Bentos.AddAsync(bento);
+        }
+        else
+        {
+            bento.BentoDate = bentoDate;
+        }
+        await context.SaveChangesAsync();
+        cache.Set(userId, bento, TimeSpan.FromMinutes(5));
+    }
 }
