@@ -9,7 +9,6 @@ namespace dotBento.Infrastructure.Utilities
     {
         public async Task<Discord.Color> GetDominantColorAsync(string imageUrl)
         {
-            var httpClient = new HttpClient();
             using (var stream = await httpClient.GetStreamAsync(imageUrl))
             {
                 using (var image = Image.Load<Rgba32>(stream))
