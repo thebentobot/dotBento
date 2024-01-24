@@ -145,6 +145,8 @@ public class Startup
             .AddSingleton<UserCommand>()
             .AddSingleton<BentoCommand>()
             .AddSingleton<BentoService>()
+            .AddSingleton<WeatherService>()
+            .AddSingleton<WeatherCommand>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
@@ -152,6 +154,7 @@ public class Startup
         
         services.AddHttpClient<StylingUtilities>();
         services.AddHttpClient<UrbanDictionaryService>();
+        services.AddHttpClient<WeatherApiService>();
 
         services.AddHealthChecks();
         

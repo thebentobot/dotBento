@@ -13,6 +13,8 @@ public class BotEnvConfig
     public BotConfig Bot { get; set; }
 
     public BotListConfig BotLists { get; set; }
+    
+    public string OpenWeatherApiKey { get; set; }
 }
 
 public class PrometheusConfig
