@@ -9,7 +9,7 @@ using Fergun.Interactive;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace dotBento.Bot.SlashCommands;
+namespace dotBento.Bot.Commands.SlashCommands;
 
 public class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService)
     : InteractionModuleBase<SocketInteractionContext>
