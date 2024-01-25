@@ -20,8 +20,11 @@ public class WeatherSlashCommand(InteractiveService interactiveService, WeatherC
     }
     
     [SlashCommand("set", "Set the city to check the weather for")]
-    public async Task SetCommand([Summary("city", "Set the city to check the weather for")] string city) => await Context.SendResponse(interactiveService, await weatherCommand.SaveWeatherAsync((long)Context.User.Id, city));
+    public async Task SetCommand([Summary("city", "Set the city to check the weather for")] string city) =>
+        await Context.SendResponse(interactiveService,
+            await weatherCommand.SaveWeatherAsync((long)Context.User.Id, city));
     
     [SlashCommand("delete", "Delete the city to check the weather for")]
-    public async Task DeleteCommand() => await Context.SendResponse(interactiveService, await weatherCommand.DeleteWeatherAsync((long)Context.User.Id));
+    public async Task DeleteCommand() => await Context.SendResponse(interactiveService,
+        await weatherCommand.DeleteWeatherAsync((long)Context.User.Id));
 }
