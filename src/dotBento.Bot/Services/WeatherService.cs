@@ -12,7 +12,7 @@ public class WeatherService(IMemoryCache cache,
     public async Task<Maybe<Weather>> GetWeatherAsync(long userId)
     {
         var context = await contextFactory.CreateDbContextAsync();
-        var weather = context.Weathers.Single(x => x.UserId == userId).AsMaybe();
+        var weather = context.Weathers.SingleOrDefault(x => x.UserId == userId).AsMaybe();
 
         return weather;
     }
