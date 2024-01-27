@@ -1,8 +1,6 @@
 using CSharpFunctionalExtensions;
 using Discord;
-using Discord.Interactions;
 using Discord.Rest;
-using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Infrastructure.Utilities;

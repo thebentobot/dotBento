@@ -15,7 +15,7 @@ public static class InteractionContextExtensions
 {
     public static void LogCommandUsed(this IInteractionContext context, CommandResponse commandResponse = CommandResponse.Ok)
     {
-        string commandName = null;
+        string? commandName = null;
         if (context.Interaction is SocketSlashCommand socketSlashCommand)
         {
             commandName = socketSlashCommand.CommandName;
@@ -27,7 +27,7 @@ public static class InteractionContextExtensions
         PublicProperties.UsedCommandsResponses.TryAdd(context.Interaction.Id, commandResponse);
     }
 
-    public static async Task HandleCommandException(this IInteractionContext context, Exception exception, string message = null, bool sendReply = true, bool deferFirst = false)
+    public static async Task HandleCommandException(this IInteractionContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false)
     {
         var referenceId = StringUtilities.GenerateRandomCode();
 
@@ -68,11 +68,13 @@ public static class InteractionContextExtensions
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator,
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
                     (SocketInteraction)context.Interaction,
                     TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
                     ephemeral: ephemeral);
                 break;
+            case ResponseType.ImageWithEmbed:
+            case ResponseType.ImageOnly:
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -90,14 +92,14 @@ public static class InteractionContextExtensions
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator,
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
                     (SocketInteraction)context.Interaction,
                     TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
                     InteractionResponseType.DeferredChannelMessageWithSource,
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageEmbedFilename = StringExtensions.TruncateLongString(StringExtensions.ReplaceInvalidChars(response.FileName), 60);
+                var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Interaction.FollowupWithFileAsync(response.Stream,
                     (response.Spoiler
                         ? "SPOILER_"
@@ -108,10 +110,10 @@ public static class InteractionContextExtensions
                     new[] { response.Embed.Build() },
                     ephemeral: ephemeral,
                     components: response.Components?.Build());
-                await response.Stream.DisposeAsync();
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageName = StringExtensions.TruncateLongString(StringExtensions.ReplaceInvalidChars(response.FileName), 60);
+                var imageName = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Interaction.FollowupWithFileAsync(response.Stream,
                 (response.Spoiler
                     ? "SPOILER_"
@@ -119,14 +121,14 @@ public static class InteractionContextExtensions
                 imageName +
                 ".png",
                 ephemeral: ephemeral);
-                await response.Stream.DisposeAsync();
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    public static async Task UpdateInteractionEmbed(this IInteractionContext context, ResponseModel response, InteractiveService interactiveService = null)
+    public static async Task UpdateInteractionEmbed(this IInteractionContext context, ResponseModel response, InteractiveService? interactiveService = null)
     {
         var message = (context.Interaction as SocketMessageComponent)?.Message;
 
@@ -137,7 +139,7 @@ public static class InteractionContextExtensions
 
         if (response.ResponseType == ResponseType.Paginator)
         {
-            await context.ModifyPaginator(interactiveService, message, response);
+            if (interactiveService != null) await context.ModifyPaginator(interactiveService, message, response);
             return;
         }
 
@@ -157,11 +159,11 @@ public static class InteractionContextExtensions
         await context.ModifyMessage(message, response);
     }
 
-    public static async Task ModifyMessage(this IInteractionContext context, IUserMessage message, ResponseModel response)
+    private static async Task ModifyMessage(this IInteractionContext context, IUserMessage message, ResponseModel response)
     {
         await message.ModifyAsync(m =>
         {
-            m.Components = response.Components?.Build();
+            if (response.Components != null) m.Components = response.Components.Build();
             m.Embed = response.Embed.Build();
         });
 
@@ -170,7 +172,7 @@ public static class InteractionContextExtensions
 
     private static async Task ModifyPaginator(this IInteractionContext context, InteractiveService interactiveService, IUserMessage message, ResponseModel response) =>
         await interactiveService.SendPaginatorAsync(
-            response.StaticPaginator,
+            response.StaticPaginator ?? throw new InvalidOperationException(),
             message,
             TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds));
 }

@@ -5,12 +5,13 @@ using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
-using dotBento.Bot.Interfaces;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
 using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
+using dotBento.Infrastructure.Interfaces;
+using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 using Microsoft.Extensions.Caching.Memory;
 using Prometheus;
@@ -78,7 +79,7 @@ public class MessageHandler
         await _userService.AddExperienceAsync(context, patreonUser);
 
         var messageArgumentPositionByIndex = 0;
-        var prefix = _prefixService.GetPrefix(context.Guild?.Id) ?? Constants.StartPrefix;
+        var prefix = _prefixService.GetPrefix(context.Guild?.Id);
         
         if (msg.HasStringPrefix(prefix, ref messageArgumentPositionByIndex, StringComparison.OrdinalIgnoreCase))
         {
@@ -86,7 +87,7 @@ public class MessageHandler
             return;
         }
 
-        if (_client != null && msg.HasMentionPrefix(_client.CurrentUser, ref messageArgumentPositionByIndex))
+        if (msg.HasMentionPrefix(_client.CurrentUser, ref messageArgumentPositionByIndex))
         {
             if (RegexPatterns.HasEmoteRegex.IsMatch(msg.Content))
             {

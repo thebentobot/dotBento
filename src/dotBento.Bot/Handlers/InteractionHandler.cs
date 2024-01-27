@@ -5,12 +5,9 @@ using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
-using dotBento.Bot.Resources;
-using dotBento.Bot.Services;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
 using Fergun.Interactive;
-using Microsoft.Extensions.Caching.Memory;
 using Prometheus;
 using Serilog;
 
@@ -22,25 +19,15 @@ public class InteractionHandler
     private readonly InteractionService _interactionService;
     private readonly InteractiveService _fergunInteractiveService;
     private readonly IServiceProvider _provider;
-    private readonly UserService _userService;
-    private readonly GuildService _guildService;
-
-    private readonly IMemoryCache _cache;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
         IServiceProvider provider,
-        UserService userService,
-        GuildService guildService,
-        IMemoryCache cache,
         InteractiveService fergunInteractiveService)
     {
         _client = client;
         _interactionService = interactionService;
         _provider = provider;
-        _userService = userService;
-        _guildService = guildService;
-        _cache = cache;
         _fergunInteractiveService = fergunInteractiveService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
@@ -62,7 +49,6 @@ public class InteractionHandler
         using (Statistics.SlashCommandHandlerDuration.NewTimer())
         {
             var context = new SocketInteractionContext(_client, socketInteraction);
-            var contextUser = await _userService.GetUserAsync(context.User.Id);
 
             var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
 
@@ -87,8 +73,7 @@ public class InteractionHandler
             if (result.IsSuccess)
             {
                 Statistics.SlashCommandsExecuted.WithLabels(command.Name).Inc();
-                _ = Task.Run(() => _userService.AddUserSlashCommandInteraction(context, command.Name));
-                return;
+                // TODO _ = Task.Run(() => _userService.AddUserSlashCommandInteraction(context, command.Name));
             } else switch (result.Error)
             {
                 case InteractionCommandError.ParseFailed:
@@ -282,7 +267,7 @@ public class InteractionHandler
         Statistics.ButtonExecuted.Inc();
     }
     
-    private async Task<bool> CheckAttributes(SocketInteractionContext context, IReadOnlyCollection<Attribute> attributes)
+    private async Task<bool> CheckAttributes(SocketInteractionContext context, IReadOnlyCollection<Attribute>? attributes)
     {
         if (attributes == null)
         {

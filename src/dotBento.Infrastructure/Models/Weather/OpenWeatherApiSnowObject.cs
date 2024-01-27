@@ -2,8 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace dotBento.Infrastructure.Models.Weather;
 
-public record OpenWeatherApiSnowObject
-{
-    [property: JsonPropertyName("1h")] public double? OneHour { get; init; }
-    [property: JsonPropertyName("3h")] public double? ThreeHours { get; init; }
-}
+public sealed record OpenWeatherApiSnowObject(
+    [property: JsonPropertyName("1h")] double? OneHour,
+    [property: JsonPropertyName("3h")] double? ThreeHours);

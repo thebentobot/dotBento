@@ -2,7 +2,6 @@ using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
-using dotBento.Bot.TextCommands;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 

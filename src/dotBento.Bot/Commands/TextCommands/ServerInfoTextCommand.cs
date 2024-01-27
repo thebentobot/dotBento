@@ -3,7 +3,6 @@ using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
-using dotBento.Bot.TextCommands;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 

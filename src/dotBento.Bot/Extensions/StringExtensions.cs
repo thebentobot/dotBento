@@ -27,9 +27,9 @@ public static class StringExtensions
             return false;
         }
 
-        const int MaxAnsiCode = 255;
+        const int maxAnsiCode = 255;
 
-        return input.Any(c => c > MaxAnsiCode);
+        return input.Any(c => c > maxAnsiCode);
     }
 
     public static string ReplaceInvalidChars(this string filename)
@@ -58,24 +58,13 @@ public static class StringExtensions
 
     public static string Sanitize(this string text)
     {
-        if (text != null)
-        {
-            foreach (string sensitiveCharacter in SensitiveCharacters)
-            {
-                text = text.Replace(sensitiveCharacter, "\\" + sensitiveCharacter);
-            }
-        }
-        return text;
+        return SensitiveCharacters.Aggregate(text, (current, sensitiveCharacter) => 
+            current.Replace(sensitiveCharacter, "\\" + sensitiveCharacter));
     }
 
     public static string TruncateLongString(this string str, int maxLength)
     {
-        if (string.IsNullOrEmpty(str))
-        {
-            return str;
-        }
-
-        return str.Substring(0, Math.Min(str.Length, maxLength));
+        return string.IsNullOrEmpty(str) ? str : str[..Math.Min(str.Length, maxLength)];
     }
     
     public static string TrimToMaxLength(this string source, int maxLength)
@@ -83,10 +72,10 @@ public static class StringExtensions
         if(string.IsNullOrEmpty(source) || source.Length <= maxLength)
             return source;
         
-        return source.Substring(0, maxLength - 3) + "...";
+        return string.Concat(source.AsSpan(0, maxLength - 3), "...");
     }
 
-    public static string CapitalizeFirstLetter(this string str)
+    public static string CapitalizeFirstLetter(this string? str)
     {
         if (String.IsNullOrEmpty(str))
             return String.Empty;

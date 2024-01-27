@@ -1,5 +1,5 @@
 using Discord.WebSocket;
-using dotBento.Bot.Services;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
 

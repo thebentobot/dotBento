@@ -1,7 +1,7 @@
 using Discord;
 using Discord.WebSocket;
-using dotBento.Bot.Services;
 using dotBento.Domain;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
 

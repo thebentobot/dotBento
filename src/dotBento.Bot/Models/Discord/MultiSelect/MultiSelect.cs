@@ -3,25 +3,21 @@ using Fergun.Interactive.Selection;
 
 namespace dotBento.Bot.Models.Discord.MultiSelect;
 
-public class MultiSelect<T> : BaseSelection<MultiSelectOption<T>>
+public sealed class MultiSelect<T>(MultiSelectBuilder<T> builder) : BaseSelection<MultiSelectOption>(builder)
 {
-    public MultiSelect(MultiSelectBuilder<T> builder)
-        : base(builder)
-    {
-    }
-
-    public override ComponentBuilder GetOrAddComponents(bool disableAll, ComponentBuilder builder = null)
+    public override ComponentBuilder GetOrAddComponents(bool disableAll, ComponentBuilder? builder = null)
     {
         builder ??= new ComponentBuilder();
         var selectMenus = new Dictionary<int, SelectMenuBuilder>();
 
         foreach (var option in Options)
         {
-            if (!selectMenus.ContainsKey(option.Row))
+            if (!selectMenus.TryGetValue(option.Row, out var value))
             {
-                selectMenus[option.Row] = new SelectMenuBuilder()
+                value = new SelectMenuBuilder()
                     .WithCustomId($"selectmenu{option.Row}")
                     .WithDisabled(disableAll);
+                selectMenus[option.Row] = value;
             }
 
             var optionBuilder = new SelectMenuOptionBuilder()
@@ -29,11 +25,10 @@ public class MultiSelect<T> : BaseSelection<MultiSelectOption<T>>
                 .WithValue(option.Value)
                 .WithDescription(option.Description)
                 .WithDefault(option.IsDefault);
-
-            selectMenus[option.Row].AddOption(optionBuilder);
+            value.AddOption(optionBuilder);
         }
 
-        foreach ((int row, var selectMenu) in selectMenus)
+        foreach (var (row, selectMenu) in selectMenus)
         {
             builder.WithSelectMenu(selectMenu, row);
         }

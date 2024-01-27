@@ -8,7 +8,6 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
-using dotBento.Bot.TextCommands;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 

@@ -1,7 +1,6 @@
 using Discord;
 using Discord.Commands;
 using dotBento.Bot.Enums;
-using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
@@ -22,7 +21,7 @@ public static class CommandContextExtensions
         PublicProperties.UsedCommandsResponses.TryAdd(context.Message.Id, commandResponse);
     }
     
-    public static async Task HandleCommandException(this ICommandContext context, Exception exception, string message = null, bool sendReply = true)
+    public static async Task HandleCommandException(this ICommandContext context, Exception exception, string? message = null, bool sendReply = true)
     {
         var referenceId = StringUtilities.GenerateRandomCode();
 
@@ -31,7 +30,7 @@ public static class CommandContextExtensions
 
         if (sendReply)
         {
-            if (exception?.Message != null && exception.Message.Contains("error 50013"))
+            if (exception.Message.Contains("error 50013"))
             {
                 await context.Channel.SendMessageAsync("Sorry, something went wrong because the bot is missing permissions. Make sure the bot has `Embed links` and `Attach Files`.\n" +
                                                        $"*Reference id: `{referenceId}`*", allowedMentions: AllowedMentions.None);
@@ -58,12 +57,12 @@ public static class CommandContextExtensions
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator,
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
                     context.Channel,
                     TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds));
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageEmbedFilename = StringExtensions.TruncateLongString(StringExtensions.ReplaceInvalidChars(response.FileName), 60);
+                var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Channel.SendFileAsync(
                     response.Stream,
                     imageEmbedFilename + ".png",
@@ -72,17 +71,15 @@ public static class CommandContextExtensions
                     response.Embed.Build(),
                     isSpoiler: response.Spoiler,
                     components: response.Components?.Build());
-                await response.Stream.DisposeAsync();
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageFilename = StringExtensions.TruncateLongString(StringExtensions.ReplaceInvalidChars(response.FileName), 60);
+                var imageFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Channel.SendFileAsync(
                     response.Stream,
                     imageFilename + ".png",
-                    null,
-                    false,
                     isSpoiler: response.Spoiler);
-                await response.Stream.DisposeAsync();
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

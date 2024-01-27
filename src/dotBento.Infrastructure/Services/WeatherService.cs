@@ -2,12 +2,10 @@ using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
-namespace dotBento.Bot.Services;
+namespace dotBento.Infrastructure.Services;
 
-public class WeatherService(IMemoryCache cache,
-    IDbContextFactory<BotDbContext> contextFactory)
+public class WeatherService(IDbContextFactory<BotDbContext> contextFactory)
 {
     public async Task<Maybe<Weather>> GetWeatherAsync(long userId)
     {

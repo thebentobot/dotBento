@@ -1,11 +1,9 @@
 using System.Text.RegularExpressions;
-using CSharpFunctionalExtensions;
 using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
-using dotBento.Bot.Services;
-using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Services.Api;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 

@@ -11,7 +11,7 @@ namespace dotBento.Bot.Configurations
         {
             Data = new BotEnvConfig
             {
-                PostgreSQL = new DatabaseConfig
+                PostgreSql = new DatabaseConfig
                 {
                     ConnectionString = "Host=localhost;Port=5432;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True"
                 },

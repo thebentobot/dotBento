@@ -4,9 +4,9 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
-using dotBento.Bot.Services;
 using dotBento.Infrastructure.Models.Weather;
 using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Services.Api;
 using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.SharedCommands;
@@ -74,7 +74,7 @@ public class WeatherCommand(
             .WithColor(openWeatherColour)
             .WithTitle(title)
             .WithUrl($"https://openweathermap.org/city/{weatherData.Id}")
-            .WithThumbnailUrl($"http://openweathermap.org/img/w/{currentWeather.Icon}.png")
+            .WithThumbnailUrl($"https://openweathermap.org/img/w/{currentWeather.Icon}.png")
             .WithDescription(rainOrSnow + description)
             .WithTimestamp(DateTimeOffset.FromUnixTimeSeconds(weatherData.Dt));
         
@@ -144,8 +144,8 @@ public class WeatherCommand(
         const int regionalIndicatorSymbolA = 0x1F1E6;
         var flag = string.Concat(countryCode
             .ToUpper()
-            .Select(c => (int) c - 'A' + regionalIndicatorSymbolA)
-            .Select(i => char.ConvertFromUtf32(i)));
+            .Select(c => c - 'A' + regionalIndicatorSymbolA)
+            .Select(char.ConvertFromUtf32));
         return flag;
     }
     
@@ -172,8 +172,8 @@ public class WeatherCommand(
     private static string GetCountryFromEnglishName(CultureInfo culture)
     {
         var englishName = culture.EnglishName; 
-        var firstParenthesis = englishName.IndexOf("(");
-        var lastParenthesis = englishName.IndexOf(")");
+        var firstParenthesis = englishName.IndexOf('(');
+        var lastParenthesis = englishName.IndexOf(')');
 
         if(firstParenthesis >= 0 && lastParenthesis > firstParenthesis)
         {
@@ -230,7 +230,7 @@ public class WeatherCommand(
         {
             var rainString = "🌧️ ";
             if (rain.OneHour != null) rainString += $"{rain.OneHour} mm the last hour";
-            if (rain.OneHour != null && rain.ThreeHours != null) rainString += ", ";
+            if (rain is { OneHour: not null, ThreeHours: not null }) rainString += ", ";
             if (rain.ThreeHours != null) rainString += $"{rain.ThreeHours} mm last 3 hours";
             rainString += ".\n";
             results.Add(rainString);
@@ -240,7 +240,7 @@ public class WeatherCommand(
         {
             var snowString = "🌨️ ";
             if (snow.OneHour != null) snowString += $"{snow.OneHour} mm the last hour";
-            if (snow.OneHour != null && snow.ThreeHours != null) snowString += ", ";
+            if (snow is { OneHour: not null, ThreeHours: not null }) snowString += ", ";
             if (snow.ThreeHours != null) snowString += $"{snow.ThreeHours} mm last 3 hours";
             snowString += ".\n";
             results.Add(snowString);

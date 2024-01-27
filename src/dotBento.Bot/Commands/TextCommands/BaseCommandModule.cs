@@ -4,7 +4,7 @@ using dotBento.Bot.Models;
 using dotBento.Bot.Resources;
 using Microsoft.Extensions.Options;
 
-namespace dotBento.Bot.TextCommands;
+namespace dotBento.Bot.Commands.TextCommands;
 
 public class BaseCommandModule(IOptions<BotEnvConfig> botSettings) : ModuleBase<SocketCommandContext>
 {

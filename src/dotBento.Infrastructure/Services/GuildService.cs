@@ -7,65 +7,43 @@ using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace dotBento.Bot.Services;
+namespace dotBento.Infrastructure.Services;
 
 public class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
 {
-    public async Task<Maybe<Guild>> GetGuildAsync(ulong? discordGuildId)
+    public async Task<Maybe<Guild>> GetGuildAsync(ulong discordGuildId)
     {
-        if (discordGuildId == null)
-        {
-            return null;
-        }
-
         await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.Guilds
+        var guild = await db.Guilds
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
+        
+        return guild.AsMaybe();
     }
 
-    public async Task<IDictionary<long, GuildMember>> GetGuildUsers(
-        ulong? discordGuildId = null)
+    public async Task<Maybe<Dictionary<long, GuildMember>>> GetGuildUsers(
+        ulong discordGuildId)
     {
-        if (discordGuildId == null)
-        {
-            return null;
-        }
-
         await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.GuildMembers
+        var guildMembers = await db.GuildMembers
             .AsQueryable()
             .Where(f => f.GuildId == (long)discordGuildId)
             .ToDictionaryAsync(f => f.UserId);
+
+        return guildMembers.AsMaybe();
     }
     
-    public async Task<Maybe<GuildMember>> GetGuildMemberAsync(ulong? discordGuildId,
-        ulong? discordUserId)
+    public async Task<Maybe<GuildMember>> GetGuildMemberAsync(ulong discordGuildId,
+        ulong discordUserId)
     {
-        if (discordGuildId == null || discordUserId == null)
-        {
-            return null;
-        }
-
         await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.GuildMembers
+        var guildMember = await db.GuildMembers
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId && f.UserId == (long)discordUserId);
-    }
-    
-    public async Task<Maybe<User>> GetUserFromGuildMemberAsync(ulong? discordUserId)
-    {
-        if (discordUserId == null)
-        {
-            return null;
-        }
 
-        await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.Users
-            .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
+        return guildMember.AsMaybe();
     }
-    
+
     public async Task RemoveGuildAsync(ulong discordGuildId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -154,14 +132,12 @@ public class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemor
         await using var db = await contextFactory.CreateDbContextAsync();
         var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
 
-        if (guild != null)
-        {
-            guild.Prefix = prefix;
-            await db.SaveChangesAsync();
-            await AddGuildToCache(guild);
-        }
+        if (guild == null) return Maybe<Guild>.None;
+        guild.Prefix = prefix;
+        await db.SaveChangesAsync();
+        await AddGuildToCache(guild);
 
-        return guild;
+        return guild.AsMaybe();
     }
     
     private Task RemoveGuildFromCache(ulong discordGuildId)

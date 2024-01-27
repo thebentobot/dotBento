@@ -14,7 +14,7 @@ public class ClientLogHandler
         _client.Log += LogEvent;
     }
 
-    private Task LogEvent(LogMessage logMessage)
+    private static Task LogEvent(LogMessage logMessage)
     {
         Task.Run(() =>
         {
@@ -38,6 +38,8 @@ public class ClientLogHandler
                 case LogSeverity.Debug:
                     Log.Debug(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
         });

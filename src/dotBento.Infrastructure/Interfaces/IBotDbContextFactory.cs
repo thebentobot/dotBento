@@ -1,7 +1,7 @@
 using dotBento.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore;
 
-namespace dotBento.Domain.Interfaces;
+namespace dotBento.Infrastructure.Interfaces;
 
 public interface IBotDbContextFactory
 {

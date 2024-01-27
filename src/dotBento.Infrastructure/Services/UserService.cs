@@ -1,17 +1,13 @@
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
-using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Domain;
-using dotBento.Domain.Enums;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
 
-namespace dotBento.Bot.Services;
+namespace dotBento.Infrastructure.Services;
 
 public class UserService(IMemoryCache cache,
     IDbContextFactory<BotDbContext> contextFactory)
@@ -30,7 +26,7 @@ public class UserService(IMemoryCache cache,
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey((long)discordUserId);
 
-        cache.TryGetValue(discordUserIdCacheKey, out User user);
+        cache.TryGetValue(discordUserIdCacheKey, out User? user);
 
         return Task.FromResult(user.AsMaybe());
     }
@@ -69,7 +65,7 @@ public class UserService(IMemoryCache cache,
             .ToListAsync();
     }
     
-    public static async Task<string> GetNameAsync(IGuild guild, IUser user)
+    public static async Task<string> GetNameAsync(IGuild? guild, IUser user)
     {
         if (guild == null)
         {
@@ -89,12 +85,14 @@ public class UserService(IMemoryCache cache,
             .CountAsync();
     }
 
-    public async Task<int> GetTotalDiscordUserCountAsync()
+    public async Task<Maybe<int>> GetTotalDiscordUserCountAsync()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.Guilds
+        var memberCount = db.Guilds
             .AsQueryable()
-            .SumAsync(s => (int)s.MemberCount);
+            .SumAsync(s => s.MemberCount).Result;
+        
+        return memberCount.AsMaybe();
     }
 
     public async Task DeleteUserAsync(ulong discordUserId)
@@ -193,7 +191,7 @@ public class UserService(IMemoryCache cache,
             await AddUserToCache(maybeUser.Value);
         }
 
-        return user;
+        return maybeUser;
     }
 
     public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
@@ -260,7 +258,8 @@ public class UserService(IMemoryCache cache,
 
         return 115;
     }
-
+    /*
+     TODO: Add this to the command handler
     public async Task AddUserSlashCommandInteraction(SocketInteractionContext context, string commandName)
     {
         var user = await GetUserAsync(context.User.Id);
@@ -291,7 +290,6 @@ public class UserService(IMemoryCache cache,
                         options.Add(option.Name, option.Value?.ToString());
                     }
                 }
-                /* TODO
                 var interaction = new UserInteraction
                 {
                     Timestamp = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
@@ -309,7 +307,7 @@ public class UserService(IMemoryCache cache,
                 await using var db = await this._contextFactory.CreateDbContextAsync();
                 await db.UserInteractions.AddAsync(interaction);
                 await db.SaveChangesAsync();
-                */
+                
             }
         }
         catch (Exception e)
@@ -317,4 +315,5 @@ public class UserService(IMemoryCache cache,
             Log.Error(e, "AddUserSlashCommandInteraction: Error while adding user interaction");
         }
     }
+    */
 }

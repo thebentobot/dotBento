@@ -6,9 +6,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
-using dotBento.Bot.TextCommands;
 using dotBento.Domain.Enums.Games;
-using dotBento.Domain.Extensions.Games;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 

@@ -1,6 +1,3 @@
 namespace dotBento.Infrastructure.Models.Weather;
 
-public record OpenWeatherApiCloudsObject
-{
-    public int All { get; init; }
-}
+public sealed record OpenWeatherApiCloudsObject(int All);

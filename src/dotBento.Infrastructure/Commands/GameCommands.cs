@@ -37,9 +37,9 @@ public class GameCommands(GameService gameService)
         return (aiChoice, result);
     }
     
-    public string MagicEightBallResponse() => MagicEightBall.RandomResponse();
+    public static string MagicEightBallResponse() => MagicEightBall.RandomResponse();
     
-    public int Roll(int min, int max)
+    public static int Roll(int min, int max)
     {
         var random = new Random();
         return random.Next(min, max);

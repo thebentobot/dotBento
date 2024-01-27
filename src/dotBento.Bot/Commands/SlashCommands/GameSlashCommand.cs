@@ -1,10 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
-using dotBento.Bot.Models.Discord;
-using dotBento.Bot.Resources;
 using dotBento.Domain.Enums.Games;
 using Fergun.Interactive;
 
@@ -27,7 +24,7 @@ public class GameSlashCommand(
         [Summary("question", "Ask the magic 8 ball a question")] string question,
         [Summary("hide", "Only show the result for you")] bool? hide = false
     ) =>
-        await Context.SendResponse(interactiveService, await gameCommand.MagicEightBallCommand(question), hide ?? false);
+        await Context.SendResponse(interactiveService, await GameCommand.MagicEightBallCommand(question), hide ?? false);
 
     [SlashCommand("roll", "Roll a random number")]
     public async Task RollCommand(
@@ -36,7 +33,7 @@ public class GameSlashCommand(
         [Summary("hide", "Only show the result for you")] bool? hide = false
     )
     {
-        var embed = await gameCommand.RollCommand(min, max);
+        var embed = await GameCommand.RollCommand(min, max);
         var ephemeral = embed.Embed.Color == Color.Red || (hide ?? false);
         await Context.SendResponse(interactiveService, embed, ephemeral); 
     }

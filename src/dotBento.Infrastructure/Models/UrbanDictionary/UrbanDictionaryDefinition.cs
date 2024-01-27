@@ -1,16 +1,15 @@
 using System.Text.Json.Serialization;
 
-namespace dotBento.Bot.Models;
+namespace dotBento.Infrastructure.Models.UrbanDictionary;
 
-public sealed class UrbanDictionaryDefinition
-{
-    public string Definition { get; set; }
-    public string Permalink { get; set; }
-    [JsonPropertyName("thumbs_up")] public int ThumbsUp { get; set; }
-    [JsonPropertyName("thumbs_down")] public int ThumbsDown { get; set; }
-    public string Author { get; set; }
-    public string Word { get; set; }
-    [JsonPropertyName("written_on")] public DateTimeOffset WrittenOn { get; set; }
-    public int Defid { get; set; }
-    public string Example { get; set; }
-}
+public sealed record UrbanDictionaryDefinition(
+    string Definition,
+    string Permalink,
+    [property: JsonPropertyName("thumbs_up")] int ThumbsUp,
+    [property: JsonPropertyName("thumbs_down")] int ThumbsDown,
+    string Author,
+    string Word,
+    [property: JsonPropertyName("written_on")] DateTimeOffset WrittenOn,
+    int Defid,
+    string Example
+);

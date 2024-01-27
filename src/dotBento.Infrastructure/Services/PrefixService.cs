@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
-using dotBento.Bot.Interfaces;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
+using dotBento.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace dotBento.Bot.Services;
+namespace dotBento.Infrastructure.Services;
 
 public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPrefixService
 {
@@ -60,7 +60,7 @@ public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPr
     public async Task LoadAllPrefixes()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-        var servers = await db.Guilds.Where(w => w.Prefix != null).ToListAsync();
+        var servers = await db.Guilds.Where(w => true).ToListAsync();
         foreach (var server in servers)
         {
             StorePrefix(server.Prefix, (ulong)server.GuildId);

@@ -1,4 +1,4 @@
-namespace dotBento.Bot.Interfaces;
+namespace dotBento.Infrastructure.Interfaces;
 
 public interface IPrefixService
 {

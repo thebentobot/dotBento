@@ -25,7 +25,7 @@ public class GameCommand(GameCommands gameCommands)
         return embed;
     }
 
-    public Task<ResponseModel> MagicEightBallCommand(string question)
+    public static Task<ResponseModel> MagicEightBallCommand(string question)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         var embedAuthor = new EmbedAuthorBuilder()
@@ -33,16 +33,16 @@ public class GameCommand(GameCommands gameCommands)
             .WithIconUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/8_ball_icon.svg/1200px-8_ball_icon.svg.png");
         embed.Embed.WithTitle($"\"{question}\"")
             .WithAuthor(embedAuthor)
-            .WithDescription($"{gameCommands.MagicEightBallResponse()}")
+            .WithDescription($"{GameCommands.MagicEightBallResponse()}")
             .WithColor(0, 0, 0);
         return Task.FromResult(embed);
     }
     
-    public Task<ResponseModel> RollCommand(int? userMin, int? userMax)
+    public static Task<ResponseModel> RollCommand(int? userMin, int? userMax)
     {
         var (min, max, failedValidation, error) = ValidateUserInput(userMin, userMax).Result;
         if (failedValidation) return Task.FromResult(error);
-        var result = gameCommands.Roll(min, max);
+        var result = GameCommands.Roll(min, max);
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         var embedAuthor = new EmbedAuthorBuilder()
             .WithName($"Rolled between {min} and {max}")
@@ -56,7 +56,7 @@ public class GameCommand(GameCommands gameCommands)
         return Task.FromResult(embed);
     }
     
-    private static Task<(int min, int max, bool failedValidation, ResponseModel? error)> ValidateUserInput(int? userMin, int? userMax)
+    private static Task<(int min, int max, bool failedValidation, ResponseModel error)> ValidateUserInput(int? userMin, int? userMax)
     {
         var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
         if (int.TryParse(userMin.ToString(), out var min).Equals(false))
@@ -78,7 +78,7 @@ public class GameCommand(GameCommands gameCommands)
             return Task.FromResult((0, 0, true, errorEmbed));
         }
 
-        if (min <= 1000 && max <= 1000) return Task.FromResult<(int min, int max, bool failedValidation, ResponseModel error)>((min, max, false, null));
+        if (min <= 1000 && max <= 1000) return Task.FromResult<(int min, int max, bool failedValidation, ResponseModel error)>((min, max, false, errorEmbed));
         errorEmbed.Embed.WithTitle("The minimum or maximum number cannot be greater than 1000")
             .WithColor(Color.Red);
         return Task.FromResult((0, 0, true, errorEmbed));

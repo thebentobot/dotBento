@@ -4,7 +4,7 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
-using dotBento.Bot.Services;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 

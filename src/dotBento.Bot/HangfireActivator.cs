@@ -2,17 +2,10 @@ using Hangfire;
 
 namespace dotBento.Bot;
 
-public class HangfireActivator : JobActivator
+public class HangfireActivator(IServiceProvider serviceProvider) : JobActivator
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public HangfireActivator(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
     public override object ActivateJob(Type type)
     {
-        return _serviceProvider.GetService(type);
+        return serviceProvider.GetService(type) ?? throw new InvalidOperationException();
     }
 }

@@ -1,4 +1,3 @@
-using Discord;
 using Discord.Commands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
@@ -11,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 
-namespace dotBento.Bot.TextCommands;
+namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Ping")]
 public class PingTextCommand(

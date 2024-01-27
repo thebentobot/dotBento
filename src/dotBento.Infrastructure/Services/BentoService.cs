@@ -4,7 +4,7 @@ using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace dotBento.Bot.Services;
+namespace dotBento.Infrastructure.Services;
 
 public class BentoService(
     IMemoryCache cache,
@@ -12,7 +12,7 @@ public class BentoService(
 {
     public async Task<Bento> FindOrCreateBentoAsync(long userId, int? amount)
     {
-        if (cache.TryGetValue<Bento>(userId, out var bento))
+        if (cache.TryGetValue<Bento>(userId, out var bento) && bento != null)
         {
             return bento;
         }
@@ -37,13 +37,14 @@ public class BentoService(
     
     public async Task<Maybe<Bento>> FindBentoAsync(long userId)
     {
-        if (cache.TryGetValue<Bento>(userId, out var bento))
+        if (cache.TryGetValue<Bento>(userId, out var bento) && bento != null)
         {
-            return bento;
+            return bento.AsMaybe();
         }
 
         await using var context = await contextFactory.CreateDbContextAsync();
         bento = await context.Bentos.FirstOrDefaultAsync(x => x.UserId == userId);
+    
         if (bento == null)
         {
             return Maybe<Bento>.None;

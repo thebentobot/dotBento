@@ -6,13 +6,13 @@ using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Configurations;
 using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
-using dotBento.Bot.Interfaces;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
-using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Interfaces;
 using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Services.Api;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Hangfire;
@@ -32,7 +32,7 @@ public class Startup
 {
     private IConfiguration Configuration { get; }
     
-    public Startup(string[] args)
+    public Startup()
     {
         var configBuilder = new ConfigurationBuilder()
             .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "configs", "config.json"), true)
@@ -44,7 +44,7 @@ public class Startup
     
     public static async Task RunAsync(string[] args)
     {
-        var startup = new Startup(args);
+        var startup = new Startup();
 
         await startup.RunAsync();
     }

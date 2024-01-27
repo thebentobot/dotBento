@@ -1,5 +1,5 @@
-using dotBento.Domain.Interfaces;
 using dotBento.EntityFramework.Context;
+using dotBento.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 

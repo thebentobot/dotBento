@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Discord.WebSocket;
 using dotBento.Domain;
+using dotBento.Infrastructure.Services;
 using Hangfire;
-using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -10,11 +10,8 @@ namespace dotBento.Bot.Services;
 public class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
-    IMemoryCache cache,
     SupporterService supporterService)
 {
-    private readonly IMemoryCache _cache = cache;
-
     public void QueueJobs()
     {
         Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
@@ -29,13 +26,14 @@ public class BackgroundService(UserService userService,
         Log.Information($"Running {nameof(UpdateMetrics)}");
 
         Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
-        Statistics.RegisteredDiscordUserCount.Set(await userService.GetTotalDiscordUserCountAsync());
+        var discordUserCount = await userService.GetTotalDiscordUserCountAsync();
+        Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
         Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
         Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
 
         try
         {
-            if (client?.Guilds?.Count == null)
+            if (client.Guilds?.Count == null)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateMetrics)}");
                 return;

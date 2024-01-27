@@ -1,5 +1,4 @@
 using Discord.Interactions;
-using Discord.WebSocket;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
 using Fergun.Interactive;

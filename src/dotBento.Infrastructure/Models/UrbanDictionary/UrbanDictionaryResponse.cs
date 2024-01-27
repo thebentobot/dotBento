@@ -1,3 +1,3 @@
-namespace dotBento.Bot.Models;
+namespace dotBento.Infrastructure.Models.UrbanDictionary;
 
-public record UrbanDictionaryResponse(List<UrbanDictionaryDefinition> List);
+public sealed record UrbanDictionaryResponse(List<UrbanDictionaryDefinition> List);
