@@ -5,6 +5,7 @@ public sealed record OpenWeatherApiObject(
     string? Name,
     int Id,
     int Cod,
+    string? Message,
     List<OpenWeatherApiWeatherObject> Weather,
     OpenWeatherApiSysObject Sys,
     OpenWeatherApiMainObject Main,
