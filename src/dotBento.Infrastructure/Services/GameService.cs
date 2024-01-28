@@ -58,6 +58,4 @@ public class GameService(IDbContextFactory<BotDbContext> contextFactory)
 
         await context.SaveChangesAsync();
     }
-    
-    
 }
