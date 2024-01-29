@@ -32,7 +32,7 @@ public class LastFmSlashCommand(InteractiveService interactiveService, LastFmCom
         user ??= Context.User;
         var username = Context.Guild is null ? user.GlobalName : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
         var userAvatar = Context.Guild is null ? user.GetAvatarUrl() : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOption(timePeriodDisplay ?? "Overall");
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
         await Context.SendResponse(interactiveService, await lastFmCommand.GetTopArtists((long)user.Id, username, userAvatar, period), hide ?? false);
     }
     
@@ -45,7 +45,7 @@ public class LastFmSlashCommand(InteractiveService interactiveService, LastFmCom
         user ??= Context.User;
         var username = Context.Guild is null ? user.GlobalName : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
         var userAvatar = Context.Guild is null ? user.GetAvatarUrl() : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOption(timePeriodDisplay ?? "Overall");
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
         await Context.SendResponse(interactiveService, await lastFmCommand.GetTopAlbums((long)user.Id, username, userAvatar, period), hide ?? false);
     }
     
@@ -58,7 +58,7 @@ public class LastFmSlashCommand(InteractiveService interactiveService, LastFmCom
         user ??= Context.User;
         var username = Context.Guild is null ? user.GlobalName : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
         var userAvatar = Context.Guild is null ? user.GetAvatarUrl() : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOption(timePeriodDisplay ?? "Overall");
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
         await Context.SendResponse(interactiveService, await lastFmCommand.GetTopTracks((long)user.Id, username, userAvatar, period), hide ?? false);
     }
     

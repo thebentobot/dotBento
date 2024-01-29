@@ -4,7 +4,7 @@ namespace dotBento.Infrastructure.Utilities;
 
 public static class LastFmTimePeriodUtilities
 {
-    public static Dictionary<string, string?> UserOptionsLastFmTimeSpan = new()
+    public static Dictionary<string, string?> UserOptionsLastFmTimeSpanSlashCommand = new()
     {
         {"Overall", LastFmTimeSpan.Overall},
         {"7 Days", LastFmTimeSpan.Week},
@@ -14,9 +14,25 @@ public static class LastFmTimePeriodUtilities
         {"1 Year", LastFmTimeSpan.Year}
     };
     
-    public static string LastFmTimeSpanFromUserOption(string userOption)
+    public static Dictionary<string, string?> UserOptionsLastFmTimeSpanTextCommand = new()
     {
-        UserOptionsLastFmTimeSpan.TryGetValue(userOption, out var lastFmTimeSpan);
+        {"all", LastFmTimeSpan.Overall},
+        {"week", LastFmTimeSpan.Week},
+        {"month", LastFmTimeSpan.Month},
+        {"quarter", LastFmTimeSpan.Quarter},
+        {"half", LastFmTimeSpan.HalfYear},
+        {"year", LastFmTimeSpan.Year}
+    };
+    
+    public static string LastFmTimeSpanFromUserOptionSlashCommand(string userOption)
+    {
+        UserOptionsLastFmTimeSpanSlashCommand.TryGetValue(userOption, out var lastFmTimeSpan);
         return lastFmTimeSpan ?? LastFmTimeSpan.Overall;
+    }
+    
+    public static string? LastFmTimeSpanFromUserOptionTextCommand(string userOption)
+    {
+        UserOptionsLastFmTimeSpanTextCommand.TryGetValue(userOption, out var lastFmTimeSpan);
+        return lastFmTimeSpan;
     }
 }

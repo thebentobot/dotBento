@@ -17,17 +17,17 @@ public class DateTimeAutoComplete(IEnumerable<string> allPossibleCombinations) :
             string.IsNullOrWhiteSpace(autocompleteInteraction?.Data?.Current?.Value.ToString()))
         {
             results
-                .ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpan.Keys.ToList());
+                .ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpanSlashCommand.Keys.ToList());
         }
         else
         {
             var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
 
-            results.ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpan.Keys
+            results.ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpanSlashCommand.Keys
                 .Where(w => w.StartsWith(searchValue ?? throw new InvalidOperationException(), StringComparison.OrdinalIgnoreCase))
                 .Take(6));
 
-            results.ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpan.Keys
+            results.ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpanSlashCommand.Keys
                 .Where(w => w.Contains(searchValue ?? throw new InvalidOperationException(), StringComparison.OrdinalIgnoreCase))
                 .Take(4));
         }
