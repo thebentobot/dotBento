@@ -55,7 +55,7 @@ public class ResponseModel
     /// If this property is set to <see cref="ResponseType.Text"/>, ensure to set the <see cref="Text"/> property.
     /// If this property is set to <see cref="ResponseType.ImageWithEmbed"/> or <see cref="ResponseType.ImageOnly"/>, ensure to set the <see cref="Stream"/> and <see cref="FileName"/> properties.
     /// </remarks>
-    public ResponseType ResponseType { get; init; }
+    public ResponseType ResponseType { get; set; }
     
     /// <summary>
     /// Gets or sets the Stream property.
