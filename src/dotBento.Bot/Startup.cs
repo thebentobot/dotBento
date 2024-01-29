@@ -147,6 +147,10 @@ public class Startup
             .AddSingleton<BentoService>()
             .AddSingleton<WeatherService>()
             .AddSingleton<WeatherCommand>()
+            .AddSingleton<LastFmCommands>()
+            .AddSingleton<LastFmService>()
+            .AddSingleton<LastFmCommand>()
+            .AddSingleton<SpotifyApiService>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
@@ -155,6 +159,12 @@ public class Startup
         services.AddHttpClient<StylingUtilities>();
         services.AddHttpClient<UrbanDictionaryService>();
         services.AddHttpClient<WeatherApiService>();
+        services.AddHttpClient<LastFmApiService>();
+        
+        services.AddHttpClient<SpotifyApiService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
 
         services.AddHealthChecks();
         

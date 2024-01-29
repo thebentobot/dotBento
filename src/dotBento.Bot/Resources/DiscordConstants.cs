@@ -1,5 +1,6 @@
 using Discord;
 using Fergun.Interactive.Pagination;
+using SpotifyAPI.Web;
 
 namespace dotBento.Bot.Resources;
 
@@ -34,4 +35,6 @@ public class DiscordConstants
     public const string OneToFiveDown = "<:1_to_5_down:912085138245029888>";
     public const string FiveOrMoreDown = "<:5_or_more_down:912380324753838140>";
     public const string New = "<:new:912087988001980446>";
+    
+    public static SpotifyClientConfig? SpotifyConfig = null;
 }

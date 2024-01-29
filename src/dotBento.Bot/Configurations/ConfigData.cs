@@ -37,6 +37,13 @@ namespace dotBento.Bot.Configurations
                 BotLists = new BotListConfig
                 {
                     TopGgApiToken = "CHANGE-ME-TOPGG-API-TOKEN"
+                },
+                OpenWeatherApiKey = "CHANGE-ME-OPENWEATHER-API-KEY",
+                LastFmApiKey = "CHANGE-ME-LASTFM-API-KEY",
+                Spotify = new SpotifyConfig
+                {
+                    Key = "CHANGE-ME-SPOTIFY-KEY",
+                    Secret = "CHANGE-ME-SPOTIFY-SECRET"
                 }
             };
 

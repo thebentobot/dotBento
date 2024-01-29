@@ -15,6 +15,15 @@ public class BotEnvConfig
     public BotListConfig BotLists { get; set; } = new BotListConfig();
     
     public string OpenWeatherApiKey { get; set; } = string.Empty;
+    public string LastFmApiKey { get; set; } = string.Empty;
+    
+    public SpotifyConfig Spotify { get; set; } = new SpotifyConfig();
+}
+
+public class SpotifyConfig
+{
+    public string Key { get; set; } = string.Empty;
+    public string Secret { get; set; } = string.Empty;
 }
 
 public class PrometheusConfig
