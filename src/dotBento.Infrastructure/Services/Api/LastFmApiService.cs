@@ -6,7 +6,6 @@ using dotBento.Infrastructure.Models.LastFm.TopAlbums;
 using dotBento.Infrastructure.Models.LastFm.TopArtists;
 using dotBento.Infrastructure.Models.LastFm.TopTracks;
 using dotBento.Infrastructure.Models.LastFm.UserInfo;
-using dotBento.Infrastructure.Utilities;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace dotBento.Infrastructure.Services.Api;

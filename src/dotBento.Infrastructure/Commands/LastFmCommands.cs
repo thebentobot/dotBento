@@ -1,9 +1,7 @@
 using CSharpFunctionalExtensions;
 using dotBento.Domain.Entities.LastFm;
 using dotBento.Infrastructure.Extensions;
-using dotBento.Infrastructure.Models.LastFm;
 using dotBento.Infrastructure.Services.Api;
-using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Infrastructure.Commands;
 

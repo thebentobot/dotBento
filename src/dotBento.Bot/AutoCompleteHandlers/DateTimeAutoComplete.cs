@@ -5,16 +5,15 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public class DateTimeAutoComplete(IEnumerable<string> allPossibleCombinations) : AutocompleteHandler
+public class DateTimeAutoComplete : AutocompleteHandler
 {
-    
     public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
         IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
         var results = new List<string>();
 
-        if (autocompleteInteraction?.Data?.Current?.Value == null ||
-            string.IsNullOrWhiteSpace(autocompleteInteraction?.Data?.Current?.Value.ToString()))
+        if (autocompleteInteraction.Data?.Current?.Value == null ||
+            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
         {
             results
                 .ReplaceOrAddToList(LastFmTimePeriodUtilities.UserOptionsLastFmTimeSpanSlashCommand.Keys.ToList());

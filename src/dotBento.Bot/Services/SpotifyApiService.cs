@@ -1,7 +1,6 @@
 using CSharpFunctionalExtensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Resources;
-using dotBento.Domain;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
