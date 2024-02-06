@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": ".NET rewrite of Bento bot",
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
