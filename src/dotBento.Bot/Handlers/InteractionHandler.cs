@@ -54,7 +54,7 @@ public class InteractionHandler
 
             if (!commandSearch.IsSuccess)
             {
-                Log.Error("Someone tried to execute a non-existent slash command! {slashCommand}",
+                Log.Error("Someone tried to execute a non-existent slash command! {SlashCommand}",
                     socketSlashCommand.CommandName);
                 return;
             }
@@ -117,12 +117,16 @@ public class InteractionHandler
                     break;
                 }
                 // TODO would be nice to log when one of these errors below gets hit
+                // ReSharper disable once RedundantCaseLabel
                 case null:
+                // ReSharper disable once RedundantCaseLabel
                 case InteractionCommandError.UnknownCommand:
+                // ReSharper disable once RedundantCaseLabel
                 case InteractionCommandError.ConvertFailed:
+                // ReSharper disable once RedundantCaseLabel
                 case InteractionCommandError.UnmetPrecondition:
                 default:
-                    Log.Error(result.ToString() ?? "Command error (null)", context.Interaction);
+                    Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction);
                     Statistics.CommandsFailed.WithLabels(command.Name).Inc();
                     break;
             }
@@ -201,12 +205,16 @@ public class InteractionHandler
                 break;
             }
             // TODO would be nice to log when one of these errors below gets hit
+            // ReSharper disable once RedundantCaseLabel
             case null:
+            // ReSharper disable once RedundantCaseLabel
             case InteractionCommandError.UnknownCommand:
+            // ReSharper disable once RedundantCaseLabel
             case InteractionCommandError.ConvertFailed:
+            // ReSharper disable once RedundantCaseLabel
             case InteractionCommandError.UnmetPrecondition:
             default:
-                Log.Error(result.ToString() ?? "Command error (null)", context.Interaction);
+                Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction); 
                 Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 break;
         }

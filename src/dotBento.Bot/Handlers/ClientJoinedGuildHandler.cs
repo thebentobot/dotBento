@@ -29,27 +29,27 @@ public class ClientJoinedGuildHandler
     private async Task ClientJoinedGuild(SocketGuild guild)
     {
         Log.Information(
-            "JoinedGuild: {guildName} / {guildId} | {memberCount} members", guild.Name, guild.Id, guild.MemberCount);
+            "JoinedGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
         
         await _guildService.AddGuildAsync(guild);
         try
         {
             await guild.Owner.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Log.Information($"Could not send message to guild owner for JoinedGuild {guild.Name} / {guild.Id}",
-                e.Message);
+            Log.Information("Could not send message to guild owner for JoinedGuild {GuildName} / {GuildId}\n",
+                guild.Name, guild.Id);
         }
 
         try
         {
             await guild.SystemChannel.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Log.Information($"Could not send message to guild system channel for JoinedGuild {guild.Name} / {guild.Id}",
-                e.Message);
+            Log.Information("Could not send message to guild system channel for JoinedGuild {GuildName} / {GuildId}",
+                guild.Name, guild.Id);
         }
     }
 

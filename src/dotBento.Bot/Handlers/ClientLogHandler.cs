@@ -21,22 +21,22 @@ public class ClientLogHandler
             switch (logMessage.Severity)
             {
                 case LogSeverity.Critical:
-                    Log.Fatal(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Fatal(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 case LogSeverity.Error:
-                    Log.Error(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Error(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 case LogSeverity.Warning:
-                    Log.Warning(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Warning(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 case LogSeverity.Info:
-                    Log.Information(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Information(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 case LogSeverity.Verbose:
-                    Log.Verbose(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Verbose(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 case LogSeverity.Debug:
-                    Log.Debug(logMessage.Exception, "{logMessageSource} | {logMessage}", logMessage.Source, logMessage.Message);
+                    Log.Debug(logMessage.Exception, "{LogMessageSource} | {LogMessage}", logMessage.Source, logMessage.Message);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

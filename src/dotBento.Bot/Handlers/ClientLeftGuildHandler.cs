@@ -43,13 +43,13 @@ public class ClientLeftGuildHandler
         if (!keepData)
         {
             Log.Information(
-                "LeftGuild: {guildName} / {guildId} | {memberCount} members", guild.Name, guild.Id, guild.MemberCount);
+                "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
             await _guildService.RemoveGuildAsync(guild.Id);
         }
         else
         {
             Log.Information(
-                "LeftGuild: {guildName} / {guildId} | {memberCount} members (skipped delete)", guild.Name, guild.Id, guild.MemberCount);
+                "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members (skipped delete)", guild.Name, guild.Id, guild.MemberCount);
         }
     }
 }

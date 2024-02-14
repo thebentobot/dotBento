@@ -211,12 +211,16 @@ public class MessageHandler
                     break;
                 }
                 // TODO would be nice to log when one of these errors below gets hit
+                // ReSharper disable once RedundantCaseLabel
                 case null:
+                // ReSharper disable once RedundantCaseLabel
                 case CommandError.UnknownCommand:
+                // ReSharper disable once RedundantCaseLabel
                 case CommandError.MultipleMatches:
+                // ReSharper disable once RedundantCaseLabel
                 case CommandError.UnmetPrecondition:
                 default:
-                    Log.Error(result.ToString() ?? "Command error (null)", context.Message.Content);
+                    Log.Error("Command error: {Result}. Message content: {MessageContent}", result.ToString(), context.Message.Content);
                     Statistics.CommandsFailed.WithLabels(commandName).Inc();
                     break;
             }
