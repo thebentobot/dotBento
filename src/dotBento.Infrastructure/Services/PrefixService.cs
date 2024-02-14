@@ -18,7 +18,7 @@ public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPr
             var oldPrefix = GetPrefix(key);
             if (!ServerPrefixes.TryUpdate(key, prefix, oldPrefix))
             {
-                Log.Warning($"Failed to update custom prefix {prefix} with the key: {key} from the dictionary");
+                Log.Warning("Failed to update custom prefix {Prefix} with the key: {Key} from the dictionary", prefix, key);
             }
 
             return;
@@ -26,7 +26,7 @@ public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPr
 
         if (!ServerPrefixes.TryAdd(key, prefix))
         {
-            Log.Warning($"Failed to add custom prefix {prefix} with the key: {key} from the dictionary");
+            Log.Warning("Failed to add custom prefix {Prefix} with the key: {Key} from the dictionary", prefix, key);
         }
     }
 
@@ -52,7 +52,7 @@ public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPr
 
         if (!ServerPrefixes.TryRemove(key, out var removedPrefix))
         {
-            Log.Warning($"Failed to remove custom prefix {removedPrefix} with the key: {key} from the dictionary");
+            Log.Warning("Failed to remove custom prefix {RemovedPrefix} with the key: {Key} from the dictionary", removedPrefix, key);
         }
     }
 
