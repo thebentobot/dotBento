@@ -21,7 +21,7 @@ public static class InteractionContextExtensions
             commandName = socketSlashCommand.CommandName;
         }
 
-        Log.Information("SlashCommandUsed: {discordUserName} / {discordUserId} | {guildName} / {guildId} | {commandResponse} | {messageContent}",
+        Log.Information("SlashCommandUsed: {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} | {MessageContent}",
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, commandName);
 
         PublicProperties.UsedCommandsResponses.TryAdd(context.Interaction.Id, commandResponse);
@@ -35,11 +35,12 @@ public static class InteractionContextExtensions
         {
             SocketSlashCommand socketSlashCommand => socketSlashCommand.CommandName,
             SocketUserCommand socketUserCommand => socketUserCommand.CommandName,
+            // TODO: Add support for ButtonInteraction and SelectMenuInteraction
             SocketInteraction socketInteraction => "ButtonInteraction",
             _ => null
         };
 
-        Log.Error(exception, "SlashCommandUsed: Error {referenceId} | {discordUserName} / {discordUserId} | {guildName} / {guildId} | {commandResponse} ({message}) | {messageContent}",
+        Log.Error(exception, "SlashCommandUsed: Error {ReferenceId} | {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} ({Message}) | {MessageContent}",
             referenceId, context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, CommandResponse.Error, message, commandName);
 
         if (sendReply)
@@ -139,7 +140,7 @@ public static class InteractionContextExtensions
 
         if (response.ResponseType == ResponseType.Paginator)
         {
-            if (interactiveService != null) await context.ModifyPaginator(interactiveService, message, response);
+            if (interactiveService != null) await ModifyPaginator(interactiveService, message, response);
             return;
         }
 
@@ -170,7 +171,7 @@ public static class InteractionContextExtensions
         await context.Interaction.DeferAsync();
     }
 
-    private static async Task ModifyPaginator(this IInteractionContext context, InteractiveService interactiveService, IUserMessage message, ResponseModel response) =>
+    private static async Task ModifyPaginator(InteractiveService interactiveService, IUserMessage message, ResponseModel response) =>
         await interactiveService.SendPaginatorAsync(
             response.StaticPaginator ?? throw new InvalidOperationException(),
             message,
