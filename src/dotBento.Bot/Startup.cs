@@ -51,7 +51,9 @@ public class Startup
     
     private async Task RunAsync()
     {
+        // ReSharper disable once RedundantAssignment
         var consoleLevel = LogEventLevel.Warning;
+        // ReSharper disable once RedundantAssignment
         var logLevel = LogEventLevel.Information;
 #if DEBUG
         consoleLevel = LogEventLevel.Verbose;
