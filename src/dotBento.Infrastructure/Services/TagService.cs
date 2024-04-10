@@ -30,7 +30,8 @@ public class TagService(
     public async Task DeleteTagAsync(long userId, long guildId, string name)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tag = await context.Tags.FirstOrDefaultAsync(x => x.UserId == userId && x.GuildId == guildId && x.Command == name);
+        var tag = await context.Tags.FirstOrDefaultAsync(x =>
+            x.UserId == userId && x.GuildId == guildId && x.Command == name);
         if (tag == null)
         {
             return;
@@ -42,7 +43,8 @@ public class TagService(
     public async Task UpdateTagAsync(long userId, long guildId, string name, string content)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tag = await context.Tags.FirstOrDefaultAsync(x => x.UserId == userId && x.GuildId == guildId && x.Command == name);
+        var tag = await context.Tags.FirstOrDefaultAsync(x =>
+            x.UserId == userId && x.GuildId == guildId && x.Command == name);
         if (tag == null)
         {
             return;
@@ -54,7 +56,8 @@ public class TagService(
     public async Task<Maybe<Tag>> FindTagAsync(long userId, long guildId, string name)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tag = await context.Tags.FirstOrDefaultAsync(x => x.UserId == userId && x.GuildId == guildId && x.Command == name);
+        var tag = await context.Tags.FirstOrDefaultAsync(x =>
+            x.UserId == userId && x.GuildId == guildId && x.Command == name);
         return tag?.AsMaybe() ?? Maybe<Tag>.None;
     }
     
@@ -74,7 +77,8 @@ public class TagService(
     public async Task RenameTagAsync(long userId, long guildId, string oldName, string newName)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tag = await context.Tags.FirstOrDefaultAsync(x => x.UserId == userId && x.GuildId == guildId && x.Command == oldName);
+        var tag = await context.Tags.FirstOrDefaultAsync(x =>
+            x.UserId == userId && x.GuildId == guildId && x.Command == oldName);
         if (tag == null)
         {
             return;
@@ -83,10 +87,10 @@ public class TagService(
         await context.SaveChangesAsync();
     }
     
-    public async Task IncrementTagCountAsync(long userId, long guildId, string name)
+    public async Task IncrementTagCountAsync(long tagId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tag = await context.Tags.FirstOrDefaultAsync(x => x.UserId == userId && x.GuildId == guildId && x.Command == name);
+        var tag = await context.Tags.FirstOrDefaultAsync(x => x.TagId == tagId);
         if (tag == null)
         {
             return;
@@ -95,11 +99,21 @@ public class TagService(
         await context.SaveChangesAsync();
     }
     
-    public async Task<IReadOnlyList<Tag>> SearchTagsAsync(long userId, long guildId, string query)
+    public async Task<IReadOnlyList<Tag>> SearchTagsAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Tags
-            .Where(x => x.UserId == userId && x.GuildId == guildId && EF.Functions.ILike(x.Command, $"%{query}%"))
+            .Where(x => x.GuildId == guildId && EF.Functions.ILike(x.Command, $"%{query}%"))
+            .ToListAsync();
+    }
+    
+    public async Task<IReadOnlyList<Tag>> GetTopTagsAsync(long guildId, int count)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Tags
+            .Where(x => x.GuildId == guildId)
+            .OrderByDescending(x => x.Count)
+            .Take(count)
             .ToListAsync();
     }
 }
