@@ -17,7 +17,7 @@
   "homepage": "https://github.com/thebentobot/dotBento#readme",
   "devDependencies": {
     "@commitlint/cli": "^19.2.2",
-    "@commitlint/config-conventional": "^19.1.0",
+    "@commitlint/config-conventional": "^19.2.2",
     "husky": "^9.0.11"
   }
 }
