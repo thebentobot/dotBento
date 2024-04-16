@@ -6,6 +6,7 @@ using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
+using dotBento.Domain.Extensions;
 using Fergun.Interactive;
 using Serilog;
 

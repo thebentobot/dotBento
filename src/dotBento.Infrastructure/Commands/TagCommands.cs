@@ -1,4 +1,6 @@
 using CSharpFunctionalExtensions;
+using dotBento.Domain;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Services;
 
 namespace dotBento.Infrastructure.Commands;

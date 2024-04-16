@@ -1,6 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using dotBento.Bot.Extensions;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.AutoCompleteHandlers;

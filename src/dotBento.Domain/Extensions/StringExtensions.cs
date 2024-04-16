@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace dotBento.Bot.Extensions;
+namespace dotBento.Domain.Extensions;
 
 public static class StringExtensions
 {
@@ -16,7 +16,7 @@ public static class StringExtensions
 
     public static string FilterOutMentions(this string str)
     {
-        var pattern = new Regex("(@everyone|@here|<@|`|http://|https://)");
+        var pattern = new Regex("(@everyone|@here|<@|`|)");
         return pattern.Replace(str, "");
     }
 
