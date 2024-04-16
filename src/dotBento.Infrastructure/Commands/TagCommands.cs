@@ -9,10 +9,15 @@ public class TagCommands(TagService tagService)
 {
     public async Task<Result> CreateTagAsync(long userId, long guildId, string name, string content)
     {
-        var tagExistsCheck = await tagService.FindTagAsync(userId, guildId, name);
-        if (Constants.CommandNames.Contains(name) || Constants.AliasNames.Contains(name) || tagExistsCheck.HasValue)
+        // TODO we want a better sensitive character check before launching
+        if (Constants.CommandNames.Contains(name) || Constants.AliasNames.Contains(name) || name.ContainsSensitiveCharacters())
         {
-            return Result.Failure("Tag name cannot be an existing tag, Bento command name or Bento command alias.");
+            return Result.Failure("Tag name cannot include any characters, Bento command name or Bento command alias.");
+        }
+        var tagExistsCheck = await tagService.FindTagAsync(userId, guildId, name);
+        if (tagExistsCheck.HasValue)
+        {
+            return Result.Failure("Tag name already exists.");
         }
         if (string.IsNullOrWhiteSpace(SanitizeTagContent(content)))
         {
