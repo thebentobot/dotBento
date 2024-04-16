@@ -19,6 +19,11 @@ public static class StringExtensions
         var pattern = new Regex("(@everyone|@here|<@|`|)");
         return pattern.Replace(str, "");
     }
+    
+    public static bool ContainsSensitiveCharacters(this string str)
+    {
+        return SensitiveCharacters.Any(str.Contains);
+    }
 
     public static bool ContainsUnicodeCharacter(this string input)
     {
@@ -43,7 +48,8 @@ public static class StringExtensions
         return string.Join("_", filename.Split(invalidChars));
     }
 
-    private static readonly string[] SensitiveCharacters = {
+    private static readonly string[] SensitiveCharacters =
+    [
         "\\",
         "*",
         "_",
@@ -54,7 +60,8 @@ public static class StringExtensions
         ">",
         "|",
         "#",
-    };
+        "@"
+    ];
 
     public static string Sanitize(this string text)
     {
