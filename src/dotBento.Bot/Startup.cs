@@ -152,6 +152,7 @@ public class Startup
             .AddSingleton<LastFmCommands>()
             .AddSingleton<LastFmService>()
             .AddSingleton<LastFmCommand>()
+            .AddSingleton<TagCommands>()
             .AddSingleton<SpotifyApiService>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
