@@ -9,8 +9,16 @@ public class TagCommands(TagService tagService)
 {
     public async Task<Result> CreateTagAsync(long userId, long guildId, string name, string content)
     {
-        // TODO: Validate content before making the tag, like checking for mentions, etc.
-        var tag = await tagService.CreateTagAsync(userId, guildId, name, content);
+        var tagExistsCheck = await tagService.FindTagAsync(userId, guildId, name);
+        if (Constants.CommandNames.Contains(name) || Constants.AliasNames.Contains(name) || tagExistsCheck.HasValue)
+        {
+            return Result.Failure("Tag name cannot be an existing tag, Bento command name or Bento command alias.");
+        }
+        if (string.IsNullOrWhiteSpace(SanitizeTagContent(content)))
+        {
+            return Result.Failure("Tag content cannot be empty.");
+        }
+        var tag = await tagService.CreateTagAsync(userId, guildId, name, SanitizeTagContent(content));
         return Result.Success(tag);
     }
     
@@ -22,7 +30,22 @@ public class TagCommands(TagService tagService)
     
     public async Task<Result> UpdateTagAsync(long userId, long guildId, string name, string content)
     {
+        if (string.IsNullOrWhiteSpace(SanitizeTagContent(content)))
+        {
+            return Result.Failure("Tag content cannot be empty.");
+        }
         await tagService.UpdateTagAsync(userId, guildId, name, content);
+        return Result.Success();
+    }
+    
+    public async Task<Result> RenameTagAsync(long userId, long guildId, string oldName, string newName)
+    {
+        var tagExistsCheck = await tagService.FindTagAsync(userId, guildId, newName);
+        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || tagExistsCheck.HasValue)
+        {
+            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
+        }
+        await tagService.RenameTagAsync(userId, guildId, oldName, newName);
         return Result.Success();
     }
     
@@ -38,8 +61,6 @@ public class TagCommands(TagService tagService)
         return Result.Success(tags);
     }
 
-    private static bool IsValidContent(string content)
-    {
-        
-    }
+    private static string SanitizeTagContent(string content) =>
+        content.FilterOutMentions().TrimToMaxLength(2000);
 }
