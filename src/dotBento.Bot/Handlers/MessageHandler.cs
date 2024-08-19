@@ -3,6 +3,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
+using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -29,6 +30,7 @@ public class MessageHandler
     private readonly IPrefixService _prefixService;
     private readonly IServiceProvider _provider;
     private readonly InteractiveService _interactiveService;
+    private readonly TagsCommand _tagsCommand;
 
     public MessageHandler(DiscordSocketClient client,
         IMemoryCache cache,
@@ -37,7 +39,8 @@ public class MessageHandler
         CommandService commands,
         IPrefixService prefixService, 
         IServiceProvider provider,
-        InteractiveService interactiveService)
+        InteractiveService interactiveService,
+        TagsCommand tagsCommand)
     {
         _client = client;
         _cache = cache;
@@ -48,6 +51,7 @@ public class MessageHandler
         _provider = provider;
         _interactiveService = interactiveService;
         _client.MessageReceived += MessageReceived;
+        _tagsCommand = tagsCommand;
     }
 
     private async Task MessageReceived(SocketMessage message)
@@ -126,6 +130,8 @@ public class MessageHandler
         {
             if (searchResult.Commands == null || !searchResult.Commands.Any())
             {
+                var tags = await _tagsCommand.FindTagAsync((long)context.Guild.Id, msg.Content[prefix.Length..]);
+                await context.SendResponse(_interactiveService, tags);
                 return;
             }
 
