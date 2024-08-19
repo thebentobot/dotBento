@@ -84,17 +84,17 @@ public static class StringExtensions
 
     public static string CapitalizeFirstLetter(this string? str)
     {
-        if (String.IsNullOrEmpty(str))
-            return String.Empty;
+        if (string.IsNullOrEmpty(str))
+            return string.Empty;
     
-        return Char.ToUpper(str[0]) + str.Substring(1);
+        return char.ToUpper(str[0]) + str[1..];
     }
     
     public static void ReplaceOrAddToList(this List<string> currentList, IEnumerable<string> optionsToAdd)
     {
         foreach (var optionToAdd in optionsToAdd)
         {
-            var existingOption = currentList.FirstOrDefault(f => f.ToLower() == optionToAdd.ToLower());
+            var existingOption = currentList.FirstOrDefault(f => string.Equals(f, optionToAdd, StringComparison.CurrentCultureIgnoreCase));
 
             if (existingOption != null && existingOption != optionToAdd)
             {
