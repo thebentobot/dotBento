@@ -44,7 +44,7 @@ public class LastFmTextCommand(
     {
         _ = Context.Channel.TriggerTypingAsync();
     
-        var args = input?.Split(' ') ?? Array.Empty<string>();
+        var args = input?.Split(' ') ?? [];
         var mentions = Context.Message.MentionedUsers;
             
         if (args.Length == 0)
