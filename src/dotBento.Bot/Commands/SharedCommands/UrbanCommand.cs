@@ -3,6 +3,7 @@ using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Services.Api;
 
 namespace dotBento.Bot.Commands.SharedCommands;

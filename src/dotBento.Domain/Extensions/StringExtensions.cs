@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace dotBento.Bot.Extensions;
+namespace dotBento.Domain.Extensions;
 
 public static class StringExtensions
 {
@@ -16,8 +16,13 @@ public static class StringExtensions
 
     public static string FilterOutMentions(this string str)
     {
-        var pattern = new Regex("(@everyone|@here|<@|`|http://|https://)");
+        var pattern = new Regex("(@everyone|@here|<@|`|)");
         return pattern.Replace(str, "");
+    }
+    
+    public static bool ContainsSensitiveCharacters(this string str)
+    {
+        return SensitiveCharacters.Any(str.Contains);
     }
 
     public static bool ContainsUnicodeCharacter(this string input)
@@ -43,7 +48,8 @@ public static class StringExtensions
         return string.Join("_", filename.Split(invalidChars));
     }
 
-    private static readonly string[] SensitiveCharacters = {
+    private static readonly string[] SensitiveCharacters =
+    [
         "\\",
         "*",
         "_",
@@ -54,7 +60,8 @@ public static class StringExtensions
         ">",
         "|",
         "#",
-    };
+        "@"
+    ];
 
     public static string Sanitize(this string text)
     {
@@ -77,17 +84,17 @@ public static class StringExtensions
 
     public static string CapitalizeFirstLetter(this string? str)
     {
-        if (String.IsNullOrEmpty(str))
-            return String.Empty;
+        if (string.IsNullOrEmpty(str))
+            return string.Empty;
     
-        return Char.ToUpper(str[0]) + str.Substring(1);
+        return char.ToUpper(str[0]) + str[1..];
     }
     
     public static void ReplaceOrAddToList(this List<string> currentList, IEnumerable<string> optionsToAdd)
     {
         foreach (var optionToAdd in optionsToAdd)
         {
-            var existingOption = currentList.FirstOrDefault(f => f.ToLower() == optionToAdd.ToLower());
+            var existingOption = currentList.FirstOrDefault(f => string.Equals(f, optionToAdd, StringComparison.CurrentCultureIgnoreCase));
 
             if (existingOption != null && existingOption != optionToAdd)
             {

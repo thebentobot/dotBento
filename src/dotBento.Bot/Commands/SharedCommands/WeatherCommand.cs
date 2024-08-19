@@ -4,6 +4,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Models.Weather;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;

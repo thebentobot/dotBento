@@ -1,5 +1,8 @@
 name: Docker - Release
 
+env:
+  HUSKY: 0
+
 on:
   push:
     tags:
