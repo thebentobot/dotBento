@@ -12,6 +12,7 @@ public static class GenericEmbedService
     {
         embed.WithColor(DiscordConstants.InformationColorBlue);
         embed.WithTitle($"Information about '{prefix}{commandInfo.Name}' for {username}");
+        embed.WithFooter("<> = required, [] = optional");
 
         if (!string.IsNullOrWhiteSpace(commandInfo.Summary))
         {

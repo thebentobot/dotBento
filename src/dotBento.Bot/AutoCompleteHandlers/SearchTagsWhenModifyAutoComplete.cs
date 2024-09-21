@@ -31,6 +31,6 @@ public class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : Autocom
         }
 
         return await Task.FromResult(
-            AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
+            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
     }
 }

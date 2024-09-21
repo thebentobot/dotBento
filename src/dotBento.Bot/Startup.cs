@@ -155,6 +155,9 @@ public class Startup
             .AddSingleton<TagCommands>()
             .AddSingleton<TagsCommand>()
             .AddSingleton<TagService>()
+            .AddSingleton<ReminderCommands>()
+            .AddSingleton<ReminderService>()
+            .AddSingleton<ReminderCommand>()
             .AddSingleton<SpotifyApiService>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
