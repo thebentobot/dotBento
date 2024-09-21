@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using Discord;
 using Discord.WebSocket;
+using dotBento.Bot.Resources;
 using dotBento.Domain;
+using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
 using Serilog;
@@ -10,7 +13,8 @@ namespace dotBento.Bot.Services;
 public class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
-    SupporterService supporterService)
+    SupporterService supporterService,
+    ReminderCommands reminderCommands)
 {
     public void QueueJobs()
     {
@@ -19,6 +23,39 @@ public class BackgroundService(UserService userService,
         
         Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
         RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
+        RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
+    }
+
+    public async Task SendRemindersToUsers()
+    {
+        Log.Information($"Running {nameof(SendRemindersToUsers)}");
+        var reminders = await reminderCommands.GetAllRecentRemindersAsync();
+        if (reminders.IsFailure)
+        {
+            return;
+        }
+        
+        foreach (var reminder in reminders.Value)
+        {
+            var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
+            if (checkIfBentoUser.HasNoValue)
+            {
+                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                continue;
+            }
+            
+            var user = await client.GetUserAsync((ulong)reminder.UserId);
+
+            var dmChannel = await user.CreateDMChannelAsync();
+            await dmChannel.SendMessageAsync(embed: new EmbedBuilder()
+                .WithColor(DiscordConstants.BentoYellow)
+                .WithTitle("Reminder")
+                .WithDescription(reminder.Content)
+                .Build());
+            await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+        }
     }
     
     public async Task UpdateMetrics()
