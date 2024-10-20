@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using dotBento.Infrastructure.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,6 +16,18 @@ public class StylingUtilities(HttpClient httpClient)
             {
                 return CalculateDominantColor(image).ColorToDiscordColor();
             }
+        }
+    }
+    
+    public async Task<Result<Discord.Color>> TryGetDominantColorAsync(string imageUrl)
+    {
+        try
+        {
+            return await GetDominantColorAsync(imageUrl);
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<Discord.Color>(e.Message);
         }
     }
 

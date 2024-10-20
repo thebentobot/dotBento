@@ -44,6 +44,10 @@ namespace dotBento.Bot.Configurations
                 {
                     Key = "CHANGE-ME-SPOTIFY-KEY",
                     Secret = "CHANGE-ME-SPOTIFY-SECRET"
+                },
+                ImageServer = new ImageServerConfig
+                {
+                    ImageServerHost = "localhost"
                 }
             };
 

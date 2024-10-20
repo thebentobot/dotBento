@@ -18,6 +18,8 @@ public class BotEnvConfig
     public string LastFmApiKey { get; set; } = string.Empty;
     
     public SpotifyConfig Spotify { get; set; } = new SpotifyConfig();
+    
+    public ImageServerConfig ImageServer { get; set; } = new ImageServerConfig();
 }
 
 public class SpotifyConfig
@@ -60,4 +62,9 @@ public class BotConfig
 public class BotListConfig
 {
     public string TopGgApiToken { get; set; } = string.Empty;
+}
+
+public class ImageServerConfig
+{
+    public string ImageServerHost { get; set; } = string.Empty;
 }
