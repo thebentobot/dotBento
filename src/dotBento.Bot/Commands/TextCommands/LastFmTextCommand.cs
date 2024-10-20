@@ -26,7 +26,7 @@ public class LastFmTextCommand(
     [Examples("lastfm",
         "lastfm nowplaying",
         "fm np",
-        "lastfm topartists week ",
+        "lastfm topartists week",
         "fm ta half 223908083825377281",
         "lastfm topalbums month @Adam",
         "fm tal year",
@@ -35,6 +35,7 @@ public class LastFmTextCommand(
         "lastfm recenttracks",
         "lastfm rt",
         "fm recent",
+        "lastfm collage all @Lewis 2x2 topartists",
         "fm save charlixcxfan01",
         "fm delete",
         "fm user @Adam"
@@ -194,7 +195,8 @@ public class LastFmTextCommand(
                 }
                 else
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                    // TODO: insert env var for name or something
+                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not recognised by Bento"));
                     return;
                 }
             }
@@ -227,11 +229,56 @@ public class LastFmTextCommand(
             case "toptracks":
                 await Context.SendResponse(interactiveService, await lastFmCommand.GetTopTracks((long)guildMember.Id, username, userAvatar, period ?? "Overall"));
                 break;
+            case "collage":
+            case "image":
+            {
+                string size;
+
+                switch (args[3])
+                {
+                    case "1x1":
+                        size = "1x1";
+                        break;
+                    case "2x2":
+                        size = "2x2";
+                        break;
+                    case "3x3":
+                        size = "3x3";
+                        break;
+                    case "4x4":
+                        size = "4x4";
+                        break;
+                    case "5x5":
+                        size = "5x5";
+                        break;
+                    case "6x6":
+                        size = "6x6";
+                        break;
+                    default:
+                        await Context.SendResponse(interactiveService, ErrorEmbed("Invalid size for collage. Please use `lastfm help` for a list of commands."));
+                        return;
+                }
+                
+                switch (args[4])
+                {
+                    case "topartists":
+                        await Context.SendResponse(interactiveService, await lastFmCommand.GetTopArtistsCollage((long)guildMember.Id, userAvatar, period ?? "Overall", size));
+                        break;
+                    case "topalbums":
+                        await Context.SendResponse(interactiveService, await lastFmCommand.GetTopAlbumsCollage((long)guildMember.Id, userAvatar, period ?? "Overall", size));
+                        break;
+                    case "toptracks":
+                        await Context.SendResponse(interactiveService, await lastFmCommand.GetTopTracksCollage((long)guildMember.Id, userAvatar, period ?? "Overall", size));
+                        break;
+                    default:
+                        await Context.SendResponse(interactiveService, ErrorEmbed("Invalid type. Please use `lastfm help` for a list of commands."));
+                        break;
+                }
+                break;
+            }
             default: 
                 await Context.SendResponse(interactiveService,
-                    await lastFmCommand.GetNowPlaying((long)Context.User.Id,
-                        username,
-                        userAvatar));
+                    ErrorEmbed("Invalid command. Please use `lastfm help` for a list of commands."));
                 break;
         }
     }

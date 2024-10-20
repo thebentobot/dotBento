@@ -28,6 +28,24 @@ public class SpotifyApiService(HttpClient httpClient, IMemoryCache cache, IOptio
         return Result.Success(result.Artists.Items.First());
     }
     
+    public async Task<Result<FullTrack>> GetTrack(string trackName, string artistName)
+    {
+        var spotify = GetSpotifyWebApi();
+
+        var result = await cache.GetOrCreateAsync($"{trackName} artist:{artistName}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+            return await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, $"{trackName} artist:{artistName}"));
+        });
+        
+        if (result == null || result.Tracks.Items?.Any() != true)
+        {
+            return Result.Failure<FullTrack>("No track found");
+        }
+        
+        return Result.Success(result.Tracks.Items.First());
+    }
+    
     private SpotifyClient GetSpotifyWebApi()
     {
         InitApiClientConfig();
