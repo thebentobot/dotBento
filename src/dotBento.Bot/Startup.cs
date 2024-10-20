@@ -168,6 +168,7 @@ public class Startup
         services.AddHttpClient<UrbanDictionaryService>();
         services.AddHttpClient<WeatherApiService>();
         services.AddHttpClient<LastFmApiService>();
+        services.AddHttpClient<SushiiImageServerService>();
         
         services.AddHttpClient<SpotifyApiService>(client =>
         {
