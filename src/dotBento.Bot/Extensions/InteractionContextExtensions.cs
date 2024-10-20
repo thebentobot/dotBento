@@ -76,6 +76,18 @@ public static class InteractionContextExtensions
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
+                var imageEmbedFilename =
+                    response.FileName;
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageEmbedFilename,
+                    null,
+                    [response.Embed?.Build()],
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                break;
             case ResponseType.ImageOnly:
             default:
                 throw new ArgumentOutOfRangeException();
