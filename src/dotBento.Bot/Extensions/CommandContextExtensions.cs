@@ -75,7 +75,7 @@ public static class CommandContextExtensions
                 if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
+                var imageFilename = response.FileName;
                 await context.Channel.SendFileAsync(
                     response.Stream,
                     imageFilename + ".png",

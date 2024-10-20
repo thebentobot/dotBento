@@ -89,6 +89,15 @@ public static class InteractionContextExtensions
                     components: response.Components?.Build());
                 break;
             case ResponseType.ImageOnly:
+                var imageName = response.FileName;
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageName,
+                    ephemeral: ephemeral);
+                await response.Stream.DisposeAsync();
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -127,15 +136,14 @@ public static class InteractionContextExtensions
                 if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageName = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
+                var imageName = response.FileName;
                 await context.Interaction.FollowupWithFileAsync(response.Stream,
                 (response.Spoiler
                     ? "SPOILER_"
                     : "") +
-                imageName +
-                ".png",
+                imageName,
                 ephemeral: ephemeral);
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
