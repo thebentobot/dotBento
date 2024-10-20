@@ -41,7 +41,7 @@ public class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<RecentTracksResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<RecentTracksResponse>("Could not deserialize the response from OpenWeather. It might be down.");
+        return responseModel != null ? Result.Success(responseModel) : Result.Failure<RecentTracksResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
     
     public async Task<Result<TopTracksResponse>> GetTopTracks(string lastFmUsername, string apiKey, string period, int? limit = 50)
@@ -72,7 +72,7 @@ public class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopTracksResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopTracksResponse>("Could not deserialize the response from OpenWeather. It might be down.");
+        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopTracksResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
     
     public async Task<Result<TopAlbumsResponse>> GetTopAlbums(string lastFmUsername, string apiKey, string period, int? limit = 50)
@@ -103,7 +103,7 @@ public class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopAlbumsResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopAlbumsResponse>("Could not deserialize the response from OpenWeather. It might be down.");
+        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopAlbumsResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
     
     public async Task<Result<TopArtistsResponse>> GetTopArtists(string lastFmUsername, string apiKey, string period, int? limit = 50)
@@ -134,7 +134,7 @@ public class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopArtistsResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopArtistsResponse>("Could not deserialize the response from OpenWeather. It might be down.");
+        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopArtistsResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
     
     public async Task<Result<UserInfoResponse>> GetUserInfo(string lastFmUsername, string apiKey)
@@ -163,7 +163,7 @@ public class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<UserInfoResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<UserInfoResponse>("Could not deserialize the response from OpenWeather. It might be down.");
+        return responseModel != null ? Result.Success(responseModel) : Result.Failure<UserInfoResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
 
     private static string LastFmApiError(int responseStatusCode, string lastFmUsername) =>
