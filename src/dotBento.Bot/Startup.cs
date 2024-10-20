@@ -15,6 +15,7 @@ using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
+using Ganss.Xss;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -159,6 +160,9 @@ public class Startup
             .AddSingleton<ReminderService>()
             .AddSingleton<ReminderCommand>()
             .AddSingleton<SpotifyApiService>()
+            .AddSingleton<ImageCommands>()
+            .AddSingleton<ToolsCommand>()
+            .AddSingleton<HtmlSanitizer>()
             .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
