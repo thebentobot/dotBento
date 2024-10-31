@@ -159,6 +159,8 @@ public class Startup
             .AddSingleton<ReminderCommands>()
             .AddSingleton<ReminderService>()
             .AddSingleton<ReminderCommand>()
+            .AddSingleton<ProfileCommands>()
+            .AddSingleton<ProfileService>()
             .AddSingleton<SpotifyApiService>()
             .AddSingleton<ImageCommands>()
             .AddSingleton<ToolsCommand>()
