@@ -42,49 +42,45 @@ public class BotService(DiscordSocketClient client,
             Log.Error(e, "Something went wrong while creating/updating the database!");
             throw;
         }
-        
+    
         Log.Information("Loading all prefixes");
         await prefixService.LoadAllPrefixes();
-        
+    
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
-                              throw new InvalidOperationException(
-                                  "Discord:Token environment variable are not set.");
-        
+                           throw new InvalidOperationException("Discord:Token environment variable not set.");
+    
         Log.Information("Loading command modules");
-        await commands
-            .AddModulesAsync(
-                Assembly.GetEntryAssembly(),
-                provider);
+        await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Loading interaction modules");
-        
-        await interactions
-            .AddModulesAsync(
-                Assembly.GetEntryAssembly(),
-                provider);
-        
+        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+    
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
-        
+    
         Log.Information("Logging into Discord");
         await client.LoginAsync(TokenType.Bot, discordToken);
-
+    
         await client.StartAsync();
-        
+    
         await backgroundService.UpdateMetrics();
-
         InitializeHangfireConfig();
         backgroundService.QueueJobs();
-        
+    
         StartMetricsPusher();
-        
-        BackgroundJob.Schedule(() => RegisterSlashCommands(), TimeSpan.FromSeconds(10));
-        BackgroundJob.Schedule(() => CacheSlashCommandIds(), TimeSpan.FromSeconds(10));
-        BackgroundJob.Schedule(() => StartBotSiteUpdater(), TimeSpan.FromSeconds(10));
-        
+
         await CacheDiscordUserIds();
+
+        client.Ready += async () =>
+        {
+            Log.Information("Client Ready - Registering slash commands and initializing bot site updater.");
+            await RegisterSlashCommands();
+            await CacheSlashCommandIds();
+            StartBotSiteUpdater();
+        };
     }
+
 
     // public instead of private because of Hangfire BackgroundJob
     // ReSharper disable once MemberCanBePrivate.Global
@@ -170,12 +166,31 @@ public class BotService(DiscordSocketClient client,
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task CacheSlashCommandIds()
     {
-        var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommands();
-        Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
-
-        foreach (var cmd in globalApplicationCommands)
+        try
         {
-            PublicProperties.SlashCommands.TryAdd(cmd.Name, cmd.Id);
+            var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommands();
+            Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
+
+            foreach (var cmd in globalApplicationCommands)
+            {
+                // Ensure each command ID is valid before adding it
+                if (ulong.TryParse(cmd.Id.ToString(), out var commandId))
+                {
+                    PublicProperties.SlashCommands.TryAdd(cmd.Name, commandId);
+                }
+                else
+                {
+                    Log.Warning("Command ID {CommandId} for {CommandName} is not a valid snowflake", cmd.Id, cmd.Name);
+                }
+            }
+        }
+        catch (Discord.Net.HttpException ex) when (ex.HttpCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            Log.Error("Invalid Form Body: Check command ID formatting or other parameters. Details: {Exception}", ex);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Exception occurred while caching slash command IDs");
         }
     }
     
