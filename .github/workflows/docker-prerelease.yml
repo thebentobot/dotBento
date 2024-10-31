@@ -87,9 +87,12 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
+            # Set the user directory using the secret
+            USER_DIR="/home/${{ secrets.SERVER_USERNAME }}"
+            
             # Update the docker-compose.yml file with the new pre-release image tag
-            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' /home/banner/bentobot/docker-compose.yml
+            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
             
             # Pull the new image and redeploy the service
-            docker-compose -f /home/banner/bentobot/docker-compose.yml pull bot-sta
-            docker-compose -f /home/banner/bentobot/docker-compose.yml up -d bot-sta
+            docker-compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta
+            docker-compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta
