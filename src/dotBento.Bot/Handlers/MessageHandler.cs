@@ -74,7 +74,7 @@ public class MessageHandler
         {
             return;
         }
-        
+        await _guildService.AddGuildAsync(context.Guild);
         await _userService.CreateOrAddUserToCache(context.User);
         await _guildService.AddGuildMemberAsync(context.Guild.GetUser(context.User.Id));
         
