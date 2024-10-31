@@ -4,13 +4,13 @@ env:
   HUSKY: 0
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+  release:
+    types: [published]  # This will trigger on both releases and pre-releases
 
 jobs:
   docker-release:
     runs-on: ubuntu-latest
+    if: ${{ github.event.release.prerelease == false }}  # Run only if it's an actual release, not a pre-release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
 
       - name: Set Release Tag
         run: |
-          NEW_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/-.*//')
+          NEW_TAG="${{ github.event.release.tag_name }}"  # Use the tag name from the release
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
       - name: Docker meta
