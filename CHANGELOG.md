@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/thebentobot/dotBento/compare/v1.0.1...v1.0.2) (2024-10-31)
+
+
+### Bug Fixes
+
+* **BotService:** move async events around and error handle cache slash command ids ([450bb59](https://github.com/thebentobot/dotBento/commit/450bb598745ff621744bdb85b09870622969f94c))
+* **Startup:** remove message content intent ([5beea41](https://github.com/thebentobot/dotBento/commit/5beea41dc07adfd2d7d0cb737ec9bfb72564278f))
+
 ## [1.0.1](https://github.com/thebentobot/dotBento/compare/v1.0.0...v1.0.1) (2024-10-31)
 
 
