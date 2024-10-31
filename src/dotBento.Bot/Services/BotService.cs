@@ -128,7 +128,8 @@ public class BotService(DiscordSocketClient client,
 
 #if DEBUG
         Log.Information("Registering slash commands to guild");
-        await interactions.RegisterCommandsToGuildAsync(Constants.BotDevelopmentId);
+        // TODO: Make this an env var for development discord server
+        await interactions.RegisterCommandsToGuildAsync(790353119795871744);
 #else
         Log.Information("Registering slash commands globally");
         await interactions.RegisterCommandsGloballyAsync();
