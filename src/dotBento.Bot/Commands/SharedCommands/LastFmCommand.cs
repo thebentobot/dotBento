@@ -579,7 +579,7 @@ public class LastFmCommand(
         }
 
         result.Stream = image.Value;
-        result.FileName = "topartists.png";
+        result.FileName = $"{userId}_topartists_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
 
         return result;
     }
@@ -641,7 +641,7 @@ public class LastFmCommand(
         }
 
         result.Stream = image.Value;
-        result.FileName = "topalbums.png";
+        result.FileName = $"{userId}_topalbums_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
 
         return result;
     }
@@ -718,7 +718,7 @@ public class LastFmCommand(
         }
 
         result.Stream = image.Value;
-        result.FileName = "toptracks.png";
+        result.FileName = $"{userId}_toptracks_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
 
         return result;
     }

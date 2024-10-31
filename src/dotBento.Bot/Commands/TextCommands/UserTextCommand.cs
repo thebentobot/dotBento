@@ -25,4 +25,21 @@ public class UserTextCommand(
         await user.ReturnIfBot(Context, interactiveService);
         await Context.SendResponse(interactiveService, await userCommand.Command(user));
     }
+    
+    [Command("profile", RunMode = RunMode.Async)]
+    [Alias("rank")]
+    [Summary("Show profile for a user. Customisable profile coming back very soon.")]
+    [Examples("profile", "user @Adam", "user 223908083825377281")]
+    [GuildOnly]
+    public async Task ProfileCommand(SocketUser? user = null)
+    {
+        _ = Context.Channel.TriggerTypingAsync();
+        user ??= Context.User;
+        await user.ReturnIfBot(Context, interactiveService);
+        var guildMember = Context.Guild.Users.FirstOrDefault(x => x.Id == user.Id);
+        var botPfp = Context.Client.CurrentUser.GetDisplayAvatarUrl();
+        await Context.SendResponse(interactiveService,
+            await userCommand.GetProfileAsync((long)user.Id, (long)Context.Guild.Id, guildMember,
+                Context.Guild.MemberCount, botPfp));
+    }
 }

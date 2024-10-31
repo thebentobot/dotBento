@@ -21,7 +21,7 @@ public class ReminderTextCommand(
     [Command("remind", RunMode = RunMode.Async)]
     [Summary(
         "Create, delete, or update reminders for yourself by content and date. Bento will remind you at the specified date and time. Date and time should be in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00).")]
-    [Alias("reminder", "notify")]
+    [Alias("reminder")]
     [Examples(
         "remind create <YYYY-MM-DDThh:mm{+|-}hh:mm> <content>",
         "remind delete <reminderId>",
