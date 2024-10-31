@@ -88,7 +88,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             # Set the user directory using the secret
-            USER_DIR="/home/${{ secrets.SERVER_USERNAME }}"
+            USER_DIR="/${{ secrets.SERVER_USERNAME }}"
             
             # Update the docker-compose.yml file with the new pre-release image tag
             sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
