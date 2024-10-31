@@ -29,7 +29,7 @@ public class ToolsTextCommand(
     
     [Command("dominantColour", RunMode = RunMode.Async)]
     [Summary("Get the dominant colour of an image, either by URL or by attachment")]
-    [Alias("dominantColor", "dominantColors", "dominantColours")]
+    [Alias("dominantColor")]
     [Examples(
         "dominantColour",
         "dominantColor https://example.com/image.jpg"

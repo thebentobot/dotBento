@@ -2,6 +2,7 @@ using Prometheus;
 
 namespace dotBento.Domain;
 
+// TODO: Make use of metrics
 public static class Statistics
 {
     public static readonly Gauge DiscordServerCount = Metrics

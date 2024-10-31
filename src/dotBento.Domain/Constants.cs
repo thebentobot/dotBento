@@ -1,12 +1,13 @@
 namespace dotBento.Domain;
 
+// TODO Standardise colours here
 public static class Constants
 {
     public const ulong BotProductionId = 714496317522444352;
 
     public const ulong BotDevelopmentId = 790353119795871744;
 
-    public const string StartPrefix = "_";
+    public const string StartPrefix = "?";
 
     public static readonly IReadOnlyCollection<string> CommandNames = new List<string>
     {
@@ -29,8 +30,13 @@ public static class Constants
         "Roll",
         "Rps",
         "ServerInfo",
+        "Profile",
+        "Tags",
+        "Reminder",
+        "Colour",
+        "DominantColour",
     };
-    
+
     public static readonly IReadOnlyCollection<string> AliasNames = new List<string>
     {
         "Pick",
@@ -39,5 +45,14 @@ public static class Constants
         "FM",
         "guildMember",
         "guildInfo",
+        "Rank",
+        "Tag",
+        "Remind",
+        "color",
+        "colors",
+        "colours",
+        "hex",
+        "rgb",
+        "dominantColor",
     };
 }
