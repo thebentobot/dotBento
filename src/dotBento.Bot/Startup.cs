@@ -101,7 +101,8 @@ public class Startup
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent |
+            // Add GatewayIntents.MessageContent when we have permission from Discord
+            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
             FormatUsersInBidirectionalUnicode = false,
