@@ -199,4 +199,27 @@ public class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemor
             .AsQueryable()
             .CountAsync();
     }
+    
+    public async Task<Maybe<int>> GetGuildMemberRankAsync(long discordUserId, long discordGuildId)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        var guildMember = await db.GuildMembers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.GuildId == discordGuildId && u.UserId == discordUserId);
+
+        if (guildMember == null)
+        {
+            return Maybe<int>.None;
+        }
+
+        var rank = await db.GuildMembers
+            .AsNoTracking()
+            .Where(u => u.GuildId == discordGuildId && 
+                        (u.Level > guildMember.Level || 
+                         (u.Level == guildMember.Level && u.Xp > guildMember.Xp)))
+            .CountAsync();
+
+        return rank + 1;
+    }
 }

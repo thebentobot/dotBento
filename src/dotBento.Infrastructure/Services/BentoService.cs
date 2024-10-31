@@ -135,4 +135,23 @@ public class BentoService(
         await context.SaveChangesAsync();
         cache.Set(userId, bento, TimeSpan.FromMinutes(5));
     }
+    
+    public async Task<int> GetTotalCountOfBentoUsersAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var count = await context.Bentos.CountAsync();
+        return count;
+    }
+    
+    public async Task<Maybe<int>> GetBentoRankAsync(long userId)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var bento = await context.Bentos.FirstOrDefaultAsync(x => x.UserId == userId);
+        if (bento == null)
+        {
+            return Maybe<int>.None;
+        }
+        var rank = await context.Bentos.CountAsync(x => x.Bento1 > bento.Bento1);
+        return rank + 1;
+    }
 }

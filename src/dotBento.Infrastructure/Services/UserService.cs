@@ -135,6 +135,32 @@ public class UserService(IMemoryCache cache,
         
         await AddUserToCache(databaseUser);
     }
+    
+    public async Task CreateOrAddUserToCache(SocketGuildUser discordUser)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var databaseUser = await db.Users
+            .AsQueryable()
+            .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
+
+        if (databaseUser == null)
+        {
+            databaseUser = new User
+            {
+                UserId = (long)discordUser.Id,
+                Username = discordUser.Username,
+                Discriminator = discordUser.Discriminator,
+                AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
+                Level = 1,
+                Xp = 0
+            };
+
+            db.Users.Add(databaseUser);
+            await db.SaveChangesAsync();
+        }
+        
+        await AddUserToCache(databaseUser);
+    }
 
     public async Task UpdateUserAvatarAsync(SocketUser newUser)
     {
@@ -178,6 +204,7 @@ public class UserService(IMemoryCache cache,
         return patreon.AsMaybe();
     }
     
+    // TODO change to long instead of casting it at this level as we usually cast at an upper level
     public async Task<Maybe<User>> GetUserAsync(ulong userId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -232,6 +259,27 @@ public class UserService(IMemoryCache cache,
         }
         
         await db.SaveChangesAsync();
+    }
+    
+    public async Task<Maybe<int>> GetUserRankAsync(long userId)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+    
+        var user = await db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+    
+        if (user == null)
+        {
+            return Maybe<int>.None;
+        }
+
+        var rank = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Level > user.Level || (u.Level == user.Level && u.Xp > user.Xp))
+            .CountAsync();
+
+        return rank + 1;
     }
     
     private int GetNeededExperienceByLevel(int level)
