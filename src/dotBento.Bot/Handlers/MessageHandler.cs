@@ -70,7 +70,7 @@ public class MessageHandler
         
         var context = new SocketCommandContext(_client, msg);
         
-        if (context.User.IsBot)
+        if (context.Guild == null || context.User.IsBot)
         {
             return;
         }
