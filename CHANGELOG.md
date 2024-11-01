@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/thebentobot/dotBento/compare/v1.0.2...v1.0.3) (2024-11-01)
+
+
+### Bug Fixes
+
+* **MessageHandler:** return if the message is not on a server ([bac9526](https://github.com/thebentobot/dotBento/commit/bac9526219dbb210c15a12f5869451ff286e7afc))
+
 ## [1.0.2](https://github.com/thebentobot/dotBento/compare/v1.0.1...v1.0.2) (2024-10-31)
 
 
