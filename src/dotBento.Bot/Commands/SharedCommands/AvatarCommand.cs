@@ -6,7 +6,7 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class AvatarCommand(StylingUtilities stylingUtilities)
+public sealed class AvatarCommand(StylingUtilities stylingUtilities)
 {
     public async Task<ResponseModel> UserAvatarCommand(SocketUser user)
     {

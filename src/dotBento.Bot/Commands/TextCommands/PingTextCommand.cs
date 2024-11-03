@@ -13,7 +13,7 @@ using Serilog;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Ping")]
-public class PingTextCommand(
+public sealed class PingTextCommand(
     IOptions<BotEnvConfig> botSettings,
     BotDbContext botDbContext) : BaseCommandModule(botSettings)
 {

@@ -6,7 +6,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("choose", "Get help choosing something")]
-public class ChooseSlashCommand(InteractiveService interactiveService) : InteractionModuleBase<SocketInteractionContext>
+public sealed class ChooseSlashCommand(InteractiveService interactiveService) : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("list", "Get Bento to choose from a list of options")]
     public async Task ChooseCommand(

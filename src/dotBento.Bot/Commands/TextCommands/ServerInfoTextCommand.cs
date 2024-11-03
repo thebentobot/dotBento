@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("ServerInfo")]
-public class ServerInfoTextCommand(
+public sealed class ServerInfoTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ServerCommand serverCommand) : BaseCommandModule(botSettings)

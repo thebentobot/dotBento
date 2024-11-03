@@ -9,7 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public class UserService(IMemoryCache cache,
+public sealed class UserService(IMemoryCache cache,
     IDbContextFactory<BotDbContext> contextFactory)
 {
     public async Task<Maybe<User>> GetUserFromDatabaseAsync(ulong discordUserId)

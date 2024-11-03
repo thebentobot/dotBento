@@ -9,7 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
+public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
 {
     public async Task<Maybe<Guild>> GetGuildAsync(ulong discordGuildId)
     {

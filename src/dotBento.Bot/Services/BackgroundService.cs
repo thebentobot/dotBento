@@ -10,7 +10,7 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BackgroundService(UserService userService,
+public sealed class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
     SupporterService supporterService,

@@ -12,7 +12,7 @@ using Serilog;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService)
+public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("ping", "Test Bento's latency")]

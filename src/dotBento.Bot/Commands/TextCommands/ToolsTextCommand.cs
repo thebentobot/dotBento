@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Tools")]
-public class ToolsTextCommand(
+public sealed class ToolsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ToolsCommand toolsCommand) : BaseCommandModule(botSettings)

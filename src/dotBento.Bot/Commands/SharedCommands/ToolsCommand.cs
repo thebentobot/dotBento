@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities)
+public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities)
 {
     public async Task<ResponseModel> GetColour(string colour)
     {

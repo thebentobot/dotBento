@@ -6,7 +6,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public class BentoSlashCommand(InteractiveService interactiveService, BentoCommand bentoCommand)
+public sealed class BentoSlashCommand(InteractiveService interactiveService, BentoCommand bentoCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("bento", "Give a friend a Bento Box")]

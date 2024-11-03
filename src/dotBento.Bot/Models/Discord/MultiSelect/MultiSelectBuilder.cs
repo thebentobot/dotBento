@@ -3,7 +3,7 @@ using Fergun.Interactive.Selection;
 
 namespace dotBento.Bot.Models.Discord.MultiSelect;
 
-public class MultiSelectBuilder<T> : BaseSelectionBuilder<MultiSelect<T>, MultiSelectOption, MultiSelectBuilder<T>>
+public sealed class MultiSelectBuilder<T> : BaseSelectionBuilder<MultiSelect<T>, MultiSelectOption, MultiSelectBuilder<T>>
 {
     public override InputType InputType => InputType.SelectMenus;
 

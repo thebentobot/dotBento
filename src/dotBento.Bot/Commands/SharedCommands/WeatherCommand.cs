@@ -1,7 +1,6 @@
 using System.Globalization;
 using Discord;
 using dotBento.Bot.Enums;
-using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
 using dotBento.Domain.Extensions;
@@ -12,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class WeatherCommand(
+public sealed class WeatherCommand(
     WeatherService weatherService,
     WeatherApiService weatherApiService,
     IOptions<BotEnvConfig> config)

@@ -4,7 +4,7 @@ using SpotifyAPI.Web;
 
 namespace dotBento.Bot.Resources;
 
-public class DiscordConstants
+public sealed class DiscordConstants
 {
     public static Color BentoYellow = new(253, 224, 71);
     

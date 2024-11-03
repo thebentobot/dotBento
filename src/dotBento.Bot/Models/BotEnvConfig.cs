@@ -1,6 +1,6 @@
 namespace dotBento.Bot.Models;
 
-public class BotEnvConfig
+public sealed class BotEnvConfig
 {
     public string Environment { get; set; } = string.Empty;
 
@@ -22,19 +22,19 @@ public class BotEnvConfig
     public ImageServerConfig ImageServer { get; set; } = new ImageServerConfig();
 }
 
-public class SpotifyConfig
+public sealed class SpotifyConfig
 {
     public string Key { get; set; } = string.Empty;
     public string Secret { get; set; } = string.Empty;
 }
 
-public class PrometheusConfig
+public sealed class PrometheusConfig
 {
     public string MetricsPusherEndpoint { get; set; } = string.Empty;
     public string MetricsPusherName { get; set; } = string.Empty;
 }
 
-public class DiscordConfig
+public sealed class DiscordConfig
 {
     public string Token { get; set; } = string.Empty;
     
@@ -43,12 +43,12 @@ public class DiscordConfig
     public string LogWebhookToken { get; set; } = string.Empty;
 }
 
-public class DatabaseConfig
+public sealed class DatabaseConfig
 {
     public string ConnectionString { get; set; } = string.Empty;
 }
 
-public class BotConfig
+public sealed class BotConfig
 {
     public string Prefix { get; set; } = string.Empty;
 
@@ -59,12 +59,12 @@ public class BotConfig
     public string Status { get; set; } = string.Empty;
 }
 
-public class BotListConfig
+public sealed class BotListConfig
 {
     public string TopGgApiToken { get; set; } = string.Empty;
 }
 
-public class ImageServerConfig
+public sealed class ImageServerConfig
 {
     public string ImageServerHost { get; set; } = string.Empty;
 }

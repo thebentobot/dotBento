@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Avatar")]
-public class AvatarTextCommand(
+public sealed class AvatarTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     AvatarCommand avatarCommand) : BaseCommandModule(botSettings)

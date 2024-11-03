@@ -6,7 +6,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public class UrbanSlashCommand(InteractiveService interactiveService, UrbanCommand urbanCommand)
+public sealed class UrbanSlashCommand(InteractiveService interactiveService, UrbanCommand urbanCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("urban", "Search Urban Dictionary for a term")]

@@ -11,7 +11,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class TagsCommand(TagCommands tagCommands)
+public sealed class TagsCommand(TagCommands tagCommands)
 {
     public async Task<ResponseModel> CreateTagAsync(long userId, long guildId, string name, TagContentDto content)
     {

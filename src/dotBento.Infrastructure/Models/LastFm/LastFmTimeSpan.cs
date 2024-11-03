@@ -1,6 +1,6 @@
 namespace dotBento.Infrastructure.Models.LastFm;
 
-public class LastFmTimeSpan
+public sealed class LastFmTimeSpan
 {
     public static readonly string
         Overall = "overall",

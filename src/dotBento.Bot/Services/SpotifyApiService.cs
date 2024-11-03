@@ -8,7 +8,7 @@ using SpotifyAPI.Web.Http;
 
 namespace dotBento.Bot.Services;
 
-public class SpotifyApiService(HttpClient httpClient, IMemoryCache cache, IOptions<BotEnvConfig> options)
+public sealed class SpotifyApiService(HttpClient httpClient, IMemoryCache cache, IOptions<BotEnvConfig> options)
 {
     public async Task<Result<FullArtist>> GetArtist(string artistName)
     {

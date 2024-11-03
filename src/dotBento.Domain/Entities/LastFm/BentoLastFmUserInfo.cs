@@ -1,6 +1,6 @@
 namespace dotBento.Domain.Entities.LastFm;
 
-public record BentoLastFmUserInfo(
+public sealed record BentoLastFmUserInfo(
     string Name,
     string? ImageUrl,
     string Url,

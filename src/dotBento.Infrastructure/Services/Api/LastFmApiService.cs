@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace dotBento.Infrastructure.Services.Api;
 
-public class LastFmApiService(HttpClient httpClient)
+public sealed class LastFmApiService(HttpClient httpClient)
 {
     private const string ApiUrl = "https://ws.audioscrobbler.com/2.0/";
     

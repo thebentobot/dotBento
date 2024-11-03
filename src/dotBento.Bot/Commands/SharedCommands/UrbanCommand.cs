@@ -1,14 +1,13 @@
 using System.Text.RegularExpressions;
 using Discord;
 using dotBento.Bot.Enums;
-using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Services.Api;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class UrbanCommand(UrbanDictionaryService urbanDictionaryService)
+public sealed class UrbanCommand(UrbanDictionaryService urbanDictionaryService)
 {
     public async Task<ResponseModel> Command(string query)
     {

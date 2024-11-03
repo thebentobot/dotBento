@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class LastFmCommand(
+public sealed class LastFmCommand(
     LastFmService lastFmService,
     LastFmCommands lastFmCommands,
     IOptions<BotEnvConfig> config,

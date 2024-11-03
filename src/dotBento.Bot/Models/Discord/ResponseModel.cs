@@ -14,7 +14,7 @@ namespace dotBento.Bot.Models.Discord;
 /// - For a <see cref="ResponseType.Text"/>, the <see cref="Text"/> property must not be null or empty.
 /// - For <see cref="ResponseType.ImageWithEmbed"/> or <see cref="ResponseType.ImageOnly"/>, the <see cref="Stream"/> and <see cref="FileName"/> properties must have a value.
 /// </remarks>
-public class ResponseModel
+public sealed class ResponseModel
 {
     public ResponseModel(ResponseType responseType, string? text = null, StaticPaginator? staticPaginator = null, Stream? stream = null, string? fileName = null)
     {

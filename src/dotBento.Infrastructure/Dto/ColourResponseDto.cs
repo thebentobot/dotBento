@@ -1,3 +1,3 @@
 namespace dotBento.Infrastructure.Dto;
 
-public record ColourResponseDto(Stream Image, bool IsHex);
+public sealed record ColourResponseDto(Stream Image, bool IsHex);

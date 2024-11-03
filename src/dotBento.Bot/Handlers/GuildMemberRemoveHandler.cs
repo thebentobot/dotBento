@@ -3,7 +3,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
 
-public class GuildMemberRemoveHandler
+public sealed class GuildMemberRemoveHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;

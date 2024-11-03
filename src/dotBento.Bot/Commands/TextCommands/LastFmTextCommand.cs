@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("LastFm")]
-public class LastFmTextCommand(
+public sealed class LastFmTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     LastFmCommand lastFmCommand) : BaseCommandModule(botSettings)

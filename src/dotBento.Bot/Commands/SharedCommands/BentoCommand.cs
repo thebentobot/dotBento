@@ -8,7 +8,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class BentoCommand(
+public sealed class BentoCommand(
     BentoService bentoService,
     SupporterService supporterService,
     UserService userService

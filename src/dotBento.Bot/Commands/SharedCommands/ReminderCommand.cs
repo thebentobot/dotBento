@@ -8,7 +8,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class ReminderCommand(ReminderCommands reminderCommands)
+public sealed class ReminderCommand(ReminderCommands reminderCommands)
 {
     public async Task<ResponseModel> CreateReminderAsync(long userId, string content, DateTimeOffset date)
     {

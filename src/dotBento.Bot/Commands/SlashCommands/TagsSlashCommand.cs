@@ -12,7 +12,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("tag", "Tags for the server")]
-public class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand)
+public sealed class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("get", "Get a tag")]

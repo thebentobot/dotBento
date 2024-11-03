@@ -9,7 +9,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("lastfm", "Commands for Discord Users")]
-public class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand)
+public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("nowplaying", "Show what you're currently listening to")]

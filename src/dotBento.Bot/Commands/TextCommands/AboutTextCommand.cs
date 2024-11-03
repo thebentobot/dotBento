@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("About")]
-public class AboutTextCommand(
+public sealed class AboutTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService) : BaseCommandModule(botSettings)
 {

@@ -7,7 +7,7 @@ using Serilog;
 
 namespace dotBento.Infrastructure.Services;
 
-public class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPrefixService
+public sealed class PrefixService(IDbContextFactory<BotDbContext> contextFactory) : IPrefixService
 {
     private static readonly ConcurrentDictionary<ulong, string> ServerPrefixes = new();
 

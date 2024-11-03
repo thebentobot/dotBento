@@ -6,7 +6,7 @@ using Ganss.Xss;
 
 namespace dotBento.Infrastructure.Commands;
 
-public class ImageCommands(SushiiImageServerService sushiiImageServerService, HtmlSanitizer htmlSanitizer)
+public sealed class ImageCommands(SushiiImageServerService sushiiImageServerService, HtmlSanitizer htmlSanitizer)
 {
     public async Task<Result<ColourResponseDto>> GetColour(string imageServerHost, string colour)
     {

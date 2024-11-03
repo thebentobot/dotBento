@@ -29,7 +29,7 @@ using RunMode = Discord.Commands.RunMode;
 
 namespace dotBento.Bot;
 
-public class Startup
+public sealed class Startup
 {
     private IConfiguration Configuration { get; }
     
@@ -52,9 +52,8 @@ public class Startup
     
     private async Task RunAsync()
     {
-        // verbose until the project is more solid in terms of early bugs.
         // ReSharper disable once RedundantAssignment
-        var consoleLevel = LogEventLevel.Verbose;
+        var consoleLevel = LogEventLevel.Warning;
         // ReSharper disable once RedundantAssignment
         var logLevel = LogEventLevel.Information;
 #if DEBUG

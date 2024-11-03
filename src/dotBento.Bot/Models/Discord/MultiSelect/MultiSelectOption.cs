@@ -1,6 +1,6 @@
 namespace dotBento.Bot.Models.Discord.MultiSelect;
 
-public record MultiSelectOption(
+public sealed record MultiSelectOption(
     string Option,
     string Value,
     int Row,

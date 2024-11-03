@@ -8,7 +8,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public class BannerSlashCommand(
+public sealed class BannerSlashCommand(
     InteractiveService interactiveService,
     BannerCommand bannerCommand) : InteractionModuleBase<SocketInteractionContext>
 {

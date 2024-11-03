@@ -1,4 +1,3 @@
-using System.Globalization;
 using Discord;
 using Discord.Commands;
 using dotBento.Bot.Attributes;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Remind")]
-public class ReminderTextCommand(
+public sealed class ReminderTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ReminderCommand reminderCommand) : BaseCommandModule(botSettings)

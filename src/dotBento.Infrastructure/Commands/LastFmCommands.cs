@@ -7,9 +7,9 @@ using Ganss.Xss;
 
 namespace dotBento.Infrastructure.Commands;
 
-public class LastFmCommands(
+public sealed class LastFmCommands(
     LastFmApiService lastFmApiService,
-    HtmlSanitizer htmlSanitizer,
+    //HtmlSanitizer htmlSanitizer,
     SushiiImageServerService sushiiImageServerService)
 {
     public async Task<Result<List<BentoLastFmTopArtist>>> GetTopArtists(

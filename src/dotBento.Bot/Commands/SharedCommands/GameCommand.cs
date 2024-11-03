@@ -8,7 +8,7 @@ using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class GameCommand(GameCommands gameCommands)
+public sealed class GameCommand(GameCommands gameCommands)
 {
     public async Task<ResponseModel> RpsCommand(RpsGameChoice choice, long userId)
     {

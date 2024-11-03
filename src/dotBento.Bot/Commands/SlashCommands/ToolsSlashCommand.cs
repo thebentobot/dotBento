@@ -9,7 +9,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("tools", "Small tools for convenience")]
-public class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand) : InteractionModuleBase<SocketInteractionContext>
+public sealed class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand) : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("colour", "Get the colour of a hex code or RGB")]
     public async Task GetColourCommand(

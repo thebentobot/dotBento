@@ -5,7 +5,7 @@ using dotBento.EntityFramework.Entities;
 
 namespace dotBento.Infrastructure.Services;
 
-public class GameService(IDbContextFactory<BotDbContext> contextFactory)
+public sealed class GameService(IDbContextFactory<BotDbContext> contextFactory)
 {
     public async Task UpdateRpsStatsAsync(long userId, RpsGameChoice choice, RpsGameResult result)
     {

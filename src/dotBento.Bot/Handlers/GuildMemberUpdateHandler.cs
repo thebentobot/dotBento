@@ -5,7 +5,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
 
-public class GuildMemberUpdateHandler
+public sealed class GuildMemberUpdateHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
