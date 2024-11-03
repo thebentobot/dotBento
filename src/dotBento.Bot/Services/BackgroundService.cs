@@ -20,12 +20,50 @@ public class BackgroundService(UserService userService,
     {
         Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
         RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
+        RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
         
         Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
         RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
+    }
+    
+    public async Task UpdateStatus()
+    {
+        Log.Information($"Running {nameof(UpdateStatus)}");
+        var activity = GetRandomActivityStatus(client);
+        await client.SetActivityAsync(activity);
+    }
+
+    private static Game GetRandomActivityStatus(DiscordSocketClient client)
+    {
+        var random = new Random();
+        var guildCount = client.Guilds.Count;
+        var userCount = client.Guilds.Sum(x => x.MemberCount);
+
+        var formattedUserCount = FormatUserCount(userCount);
+    
+        var activities = new List<Game>
+        {
+            new($"{formattedUserCount} users", ActivityType.Listening),
+            new($"users in {guildCount} servers", ActivityType.Listening),
+            new($"Serving Bentos to {formattedUserCount} users", ActivityType.CustomStatus),
+            new($"Serving Bentos to {guildCount} servers", ActivityType.CustomStatus),
+        };
+
+        return activities[random.Next(activities.Count)];
+    }
+
+    private static string FormatUserCount(int count)
+    {
+        if (count >= 1_000_000)
+            return $"{count / 1_000_000.0:0.0}M";
+        if (count >= 1_000)
+            return $"{count / 1_000.0:0.0}k";
+        return count.ToString();
     }
 
     public async Task SendRemindersToUsers()
