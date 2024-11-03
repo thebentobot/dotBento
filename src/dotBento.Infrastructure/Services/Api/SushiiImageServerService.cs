@@ -4,7 +4,7 @@ using CSharpFunctionalExtensions;
 
 namespace dotBento.Infrastructure.Services.Api;
 
-public class SushiiImageServerService(HttpClient httpClient)
+public sealed class SushiiImageServerService(HttpClient httpClient)
 {
     public async Task<Result<Stream>> GetSushiiImage(string imageServerHost, string htmlContent, int width, int height, string type = "png")
     {

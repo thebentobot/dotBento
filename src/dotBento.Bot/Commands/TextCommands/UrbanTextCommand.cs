@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Urban")]
-public class UrbanTextCommand(
+public sealed class UrbanTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     UrbanCommand urbanCommand) : BaseCommandModule(botSettings)

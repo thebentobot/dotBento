@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class UserCommand(
+public sealed class UserCommand(
     StylingUtilities stylingUtilities,
     ProfileCommands profileCommands,
     IOptions<BotEnvConfig> config,

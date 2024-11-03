@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("8ball")]
-public class EightBallTextCommand(
+public sealed class EightBallTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService) : BaseCommandModule(botSettings)
 {

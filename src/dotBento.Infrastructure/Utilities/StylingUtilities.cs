@@ -6,7 +6,7 @@ using Color = System.Drawing.Color;
 
 namespace dotBento.Infrastructure.Utilities;
 
-public class StylingUtilities(HttpClient httpClient)
+public sealed class StylingUtilities(HttpClient httpClient)
 {
     public async Task<Discord.Color> GetDominantColorAsync(string imageUrl)
     {

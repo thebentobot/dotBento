@@ -8,7 +8,7 @@ namespace dotBento.Infrastructure.Services;
 
 // TODO: If we want to use the cache, we need to make sure that the cache is invalidated when the database is updated
 // which could be the case if a user updates their profile on the website
-public class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbContext> contextFactory)
+public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbContext> contextFactory)
 {
     public Task<Profile> CreateOrUpdateProfileAsync(long userId, Action<Profile>? applyChanges = null)
     {

@@ -11,7 +11,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("remind", "Manage reminders for yourself")]
-public class ReminderSlashCommand(InteractiveService interactiveService, ReminderCommand reminderCommand)
+public sealed class ReminderSlashCommand(InteractiveService interactiveService, ReminderCommand reminderCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("create", "Create a reminder")]

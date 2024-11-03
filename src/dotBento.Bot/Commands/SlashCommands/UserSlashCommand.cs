@@ -8,7 +8,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("user", "Commands for Discord Users")]
-public class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand)
+public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("info", "Show info for a user")]

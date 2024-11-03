@@ -4,7 +4,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class ClientLogHandler
+public sealed class ClientLogHandler
 {
     private readonly DiscordSocketClient _client;
 

@@ -4,7 +4,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
 
-public class UserUpdateHandler
+public sealed class UserUpdateHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly UserService _userService;

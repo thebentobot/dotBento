@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Member")]
-public class MemberTextCommand(
+public sealed class MemberTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService, ServerCommand serverCommand) : BaseCommandModule(botSettings)
 {

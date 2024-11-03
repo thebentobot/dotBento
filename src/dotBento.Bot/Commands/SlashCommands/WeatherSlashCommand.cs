@@ -6,7 +6,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("weather", "Check the weather!")]
-public class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand)
+public sealed class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("check", "Check the weather for a user")]

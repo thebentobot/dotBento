@@ -7,7 +7,7 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class BannerCommand(StylingUtilities stylingUtilities)
+public sealed class BannerCommand(StylingUtilities stylingUtilities)
 {
     public async Task<ResponseModel> Command(Maybe<RestUser> user)
     {

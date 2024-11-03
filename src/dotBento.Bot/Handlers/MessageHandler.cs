@@ -20,7 +20,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class MessageHandler
+public sealed class MessageHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly IMemoryCache _cache;

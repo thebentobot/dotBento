@@ -8,7 +8,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("avatar", "Get the avatar of a user")]
-public class AvatarSlashCommand(InteractiveService interactiveService, AvatarCommand avatarCommand) : InteractionModuleBase<SocketInteractionContext>
+public sealed class AvatarSlashCommand(InteractiveService interactiveService, AvatarCommand avatarCommand) : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("user", "Get the avatar of a User Profile")]
     public async Task UserAvatarCommand(

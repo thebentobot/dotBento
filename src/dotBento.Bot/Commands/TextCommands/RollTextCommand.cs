@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Roll")]
-public class RollTextCommand(
+public sealed class RollTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService) : BaseCommandModule(botSettings)
 {

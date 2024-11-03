@@ -13,7 +13,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class InteractionHandler
+public sealed class InteractionHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;

@@ -1,6 +1,6 @@
 namespace dotBento.Domain.Entities;
 
-public class MagicEightBall
+public sealed class MagicEightBall
 {
     private static readonly List<string> Responses = new List<string>
     {

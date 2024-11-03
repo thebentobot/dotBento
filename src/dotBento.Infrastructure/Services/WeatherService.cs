@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace dotBento.Infrastructure.Services;
 
-public class WeatherService(IDbContextFactory<BotDbContext> contextFactory)
+public sealed class WeatherService(IDbContextFactory<BotDbContext> contextFactory)
 {
     public async Task<Maybe<Weather>> GetWeatherAsync(long userId)
     {

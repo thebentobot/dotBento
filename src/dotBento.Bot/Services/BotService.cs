@@ -18,7 +18,7 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BotService(DiscordSocketClient client,
+public sealed class BotService(DiscordSocketClient client,
     InteractionService interactions,
     IDbContextFactory<BotDbContext> contextFactory,
     UserService userService,
@@ -74,7 +74,7 @@ public class BotService(DiscordSocketClient client,
 
         client.Ready += async () =>
         {
-            Log.Information("Client Ready - Registering slash commands and initializing bot site updater.");
+            Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
             await RegisterSlashCommands();
             await CacheSlashCommandIds();
             StartBotSiteUpdater();

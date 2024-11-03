@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Rps")]
-public class RpsTextCommand(
+public sealed class RpsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     GameCommand gameCommand) : BaseCommandModule(botSettings)

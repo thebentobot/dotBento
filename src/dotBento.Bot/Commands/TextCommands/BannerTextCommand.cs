@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Banner")]
-public class BannerTextCommand(
+public sealed class BannerTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     BannerCommand bannerCommand) : BaseCommandModule(botSettings)

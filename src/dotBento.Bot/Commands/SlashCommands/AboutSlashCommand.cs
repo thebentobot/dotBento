@@ -5,7 +5,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("about", "Information about stuff related to Bento")]
-public class AboutSlashCommand(InteractiveService interactiveService)
+public sealed class AboutSlashCommand(InteractiveService interactiveService)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("bento", "Show info about Bento")]

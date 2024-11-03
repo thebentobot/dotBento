@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("Tags")]
-public class TagsTextCommand(
+public sealed class TagsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     TagsCommand tagsCommand) : BaseCommandModule(botSettings)

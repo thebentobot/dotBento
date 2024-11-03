@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-public class WeatherTextCommand(
+public sealed class WeatherTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService, WeatherCommand weatherCommand) : BaseCommandModule(botSettings)
 {

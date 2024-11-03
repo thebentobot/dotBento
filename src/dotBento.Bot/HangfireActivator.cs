@@ -2,7 +2,7 @@ using Hangfire;
 
 namespace dotBento.Bot;
 
-public class HangfireActivator(IServiceProvider serviceProvider) : JobActivator
+public sealed class HangfireActivator(IServiceProvider serviceProvider) : JobActivator
 {
     public override object ActivateJob(Type type)
     {

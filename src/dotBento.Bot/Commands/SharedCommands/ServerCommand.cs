@@ -6,7 +6,7 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public class ServerCommand(StylingUtilities stylingUtilities)
+public sealed class ServerCommand(StylingUtilities stylingUtilities)
 {
     public async Task<ResponseModel> UserServerCommand(SocketGuildUser guildMember)
     {

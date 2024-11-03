@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-public class DeleteWeatherTextCommand(
+public sealed class DeleteWeatherTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService, WeatherCommand weatherCommand) : BaseCommandModule(botSettings)
 {

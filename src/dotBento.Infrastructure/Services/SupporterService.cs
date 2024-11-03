@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public class SupporterService(IDbContextFactory<BotDbContext> contextFactory,
+public sealed class SupporterService(IDbContextFactory<BotDbContext> contextFactory,
     IMemoryCache cache)
 {
     public async Task<int> GetActiveSupporterCountAsync()

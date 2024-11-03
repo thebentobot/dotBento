@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public class BentoService(
+public sealed class BentoService(
     IMemoryCache cache,
     IDbContextFactory<BotDbContext> contextFactory)
 {

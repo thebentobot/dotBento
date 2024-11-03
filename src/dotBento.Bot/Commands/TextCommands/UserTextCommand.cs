@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace dotBento.Bot.Commands.TextCommands;
 
 [Name("User")]
-public class UserTextCommand(
+public sealed class UserTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService, UserCommand userCommand) : BaseCommandModule(botSettings)
 {

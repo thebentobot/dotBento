@@ -7,7 +7,7 @@ using dotBento.Infrastructure.Extensions;
 
 namespace dotBento.Infrastructure.Commands;
 
-public class TagCommands(TagService tagService)
+public sealed class TagCommands(TagService tagService)
 {
     public async Task<Result> CreateTagAsync(long userId, long guildId, string name, string content)
     {

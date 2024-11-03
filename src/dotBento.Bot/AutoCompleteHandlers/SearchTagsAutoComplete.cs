@@ -6,7 +6,7 @@ using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public class SearchTagsAutoComplete(TagCommands tagCommands) : AutocompleteHandler
+public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : AutocompleteHandler
 {
     public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
         IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)

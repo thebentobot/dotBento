@@ -7,7 +7,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class ClientJoinedGuildHandler
+public sealed class ClientJoinedGuildHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;

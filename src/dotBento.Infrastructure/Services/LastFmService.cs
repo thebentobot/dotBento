@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace dotBento.Infrastructure.Services;
 
-public class LastFmService(IDbContextFactory<BotDbContext> contextFactory)
+public sealed class LastFmService(IDbContextFactory<BotDbContext> contextFactory)
 {
     public async Task SaveLastFmAsync(long userId, string lastFmUsername)
     {

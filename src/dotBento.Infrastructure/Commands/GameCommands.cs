@@ -4,7 +4,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Infrastructure.Commands;
 
-public class GameCommands(GameService gameService)
+public sealed class GameCommands(GameService gameService)
 {
     public async Task<(RpsGameChoice, RpsGameResult)> RockPaperScissorsAsync(RpsGameChoice playerChoice, long userId)
     {

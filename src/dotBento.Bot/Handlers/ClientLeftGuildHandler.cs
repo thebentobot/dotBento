@@ -6,7 +6,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public class ClientLeftGuildHandler
+public sealed class ClientLeftGuildHandler
 {
     private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;

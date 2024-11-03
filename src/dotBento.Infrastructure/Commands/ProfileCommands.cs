@@ -8,7 +8,7 @@ using dotBento.Infrastructure.Services.Api;
 
 namespace dotBento.Infrastructure.Commands;
 
-public class ProfileCommands(
+public sealed class ProfileCommands(
     ProfileService profileService,
     SushiiImageServerService sushiiImageServerService,
     LastFmCommands lastFmCommands,
@@ -968,4 +968,4 @@ public class ProfileCommands(
     }
 }
 
-public record LastFmHtmlBoardResult(string LastFmHtml, int LastFmTrackLength, int LastFmArtistLength);
+public sealed record LastFmHtmlBoardResult(string LastFmHtml, int LastFmTrackLength, int LastFmArtistLength);

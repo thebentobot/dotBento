@@ -8,7 +8,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("game", "Play a game")]
-public class GameSlashCommand(
+public sealed class GameSlashCommand(
     InteractiveService interactiveService,
     GameCommand gameCommand) : InteractionModuleBase<SocketInteractionContext>
 {

@@ -3,7 +3,7 @@ using dotBento.Infrastructure.Models.UrbanDictionary;
 
 namespace dotBento.Infrastructure.Services.Api;
 
-public class UrbanDictionaryService(HttpClient httpClient)
+public sealed class UrbanDictionaryService(HttpClient httpClient)
 {
     public async Task<UrbanDictionaryResponse?> GetDefinition(string term)
     {

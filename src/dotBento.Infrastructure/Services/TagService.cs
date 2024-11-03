@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public class TagService(
+public sealed class TagService(
     IMemoryCache cache,
     IDbContextFactory<BotDbContext> contextFactory)
 {

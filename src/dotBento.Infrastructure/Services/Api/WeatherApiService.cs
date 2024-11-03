@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace dotBento.Infrastructure.Services.Api;
 
-public class WeatherApiService(HttpClient httpClient)
+public sealed class WeatherApiService(HttpClient httpClient)
 {
     public async Task<Result<OpenWeatherApiObject>> GetWeatherForCity(string city, string weatherKey)
     {
