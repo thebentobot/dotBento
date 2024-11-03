@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/thebentobot/dotBento/compare/v1.0.3...v1.1.0) (2024-11-03)
+
+
+### Features
+
+* **BackgroundService:** add status to bot ([1467b8a](https://github.com/thebentobot/dotBento/commit/1467b8ac46024e7f6cbc6cae697fc87678ad9d04))
+
+
+### Bug Fixes
+
+* add sealed to all appropriate classes and records ([9d76310](https://github.com/thebentobot/dotBento/commit/9d76310c632cfaa1f056ff19e3a2b7881c22af26))
+
 ## [1.0.3](https://github.com/thebentobot/dotBento/compare/v1.0.2...v1.0.3) (2024-11-01)
 
 
