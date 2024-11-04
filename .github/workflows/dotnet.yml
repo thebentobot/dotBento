@@ -21,6 +21,6 @@ jobs:
           dotnet-version: 8.0.x
           cache: true
       - name: Restore dependencies
-        run: dotnet restore src/dotBento.sln
+        run: dotnet restore src/dotBento.sln --locked-mode
       - name: Build
         run: dotnet build src/dotBento.sln --configuration Release --no-restore
