@@ -49,9 +49,7 @@ public sealed class BackgroundService(UserService userService,
         var activities = new List<Game>
         {
             new($"{formattedUserCount} users", ActivityType.Listening),
-            new($"users in {guildCount} servers", ActivityType.Listening),
-            new($"Serving Bentos to {formattedUserCount} users", ActivityType.CustomStatus),
-            new($"Serving Bentos to {guildCount} servers", ActivityType.CustomStatus),
+            new($"{guildCount} servers", ActivityType.Listening),
         };
 
         return activities[random.Next(activities.Count)];
