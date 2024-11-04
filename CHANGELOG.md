@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/thebentobot/dotBento/compare/v1.1.0...v1.2.0) (2024-11-04)
+
+
+### Features
+
+* Create LICENSE ([462c394](https://github.com/thebentobot/dotBento/commit/462c3947a441cc2fb911240e8ec316efa74d0773))
+
+
+### Bug Fixes
+
+* **pipeline/dotnet.yml:** add cache ([6c306c9](https://github.com/thebentobot/dotBento/commit/6c306c9d19e6229fc9e7350772e5a3db2e333fde))
+* remove cache ([de6f537](https://github.com/thebentobot/dotBento/commit/de6f53796c5899ba67d3c70615f6508f8c97b64e))
+* remove locked mode ([954d4b3](https://github.com/thebentobot/dotBento/commit/954d4b3dae84795049b31372e2de43064f80f3c5))
+* **UpdateBotStatus:** remove custom status as it isn't supported ([f45a88d](https://github.com/thebentobot/dotBento/commit/f45a88d610f9ac4c4c9974727defe83e92a5c5d2))
+
 ## [1.1.0](https://github.com/thebentobot/dotBento/compare/v1.0.3...v1.1.0) (2024-11-03)
 
 
