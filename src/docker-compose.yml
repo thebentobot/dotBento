@@ -1,0 +1,47 @@
+# This is an example of a docker-compose file that can be used to run the bot locally. 
+services:
+  bot-local:
+    ports:
+      - "5000:80"
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          target: /app
+    networks:
+      - web
+      - bento_net
+    env_file:
+      - .env
+
+  sushii-image-server:
+    image: ghcr.io/sushiibot/sushii-image-server:latest
+    container_name: sushii-image-server
+    restart: unless-stopped
+    init: true
+    cap_add:
+      - SYS_ADMIN
+    expose:
+      - '3000'
+    networks:
+      - bento_net
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bento
+    networks:
+      - bento_net
+
+networks:
+  web:
+    internal: false
+  bento_net:
+    external: false
