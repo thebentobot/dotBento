@@ -4,7 +4,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Configurations;
-using dotBento.Bot.Factories;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
@@ -166,7 +165,6 @@ public sealed class Startup
             .AddSingleton<ImageCommands>()
             .AddSingleton<ToolsCommand>()
             .AddSingleton<HtmlSanitizer>()
-            .AddSingleton<IBotDbContextFactory, BotDbContextFactory>()
             .AddSingleton(Configuration);
 
         services.AddSingleton<InteractionHandler>();
