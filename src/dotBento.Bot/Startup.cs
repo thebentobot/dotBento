@@ -17,6 +17,7 @@ using Fergun.Interactive;
 using Ganss.Xss;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -183,7 +184,8 @@ public sealed class Startup
         services.AddHealthChecks();
         
         services.AddDbContextFactory<BotDbContext>(b => 
-            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]));
+            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
+                builder.Log(RelationalEventId.PendingModelChangesWarning)));
         
         services.AddMemoryCache();
     }
