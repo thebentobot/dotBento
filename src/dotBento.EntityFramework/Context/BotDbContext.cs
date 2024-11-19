@@ -81,9 +81,8 @@ public partial class BotDbContext : DbContext
     
     private readonly IConfiguration _configuration;
 
-    [ActivatorUtilitiesConstructor]
-    public BotDbContext(IConfiguration configuration, DbContextOptions<BotDbContext> options)
-        : base(options)
+    // Comment out below constructor when creating migrations locally
+    public BotDbContext(IConfiguration configuration)
     {
         _configuration = configuration;
     }
@@ -92,7 +91,8 @@ public partial class BotDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            string connectionString = _configuration.GetConnectionString("PostgreSQL:ConnectionString") ?? throw new InvalidOperationException("PostgreSQL:ConnectionString environment variable are not set.");
+            // Comment out below connection string when creating migrations locally
+            var connectionString = _configuration.GetConnectionString("PostgreSQL:ConnectionString") ?? throw new InvalidOperationException("PostgreSQL:ConnectionString environment variable are not set.");
             optionsBuilder.UseNpgsql(connectionString);
             
             // Uncomment below connection string when creating migrations, and also comment out the above iconfiguration stuff
