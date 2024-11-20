@@ -82,7 +82,8 @@ public partial class BotDbContext : DbContext
     private readonly IConfiguration _configuration;
 
     // Comment out below constructor when creating migrations locally
-    public BotDbContext(IConfiguration configuration)
+    public BotDbContext(IConfiguration configuration, DbContextOptions<BotDbContext> options)
+        : base(options)
     {
         _configuration = configuration;
     }
