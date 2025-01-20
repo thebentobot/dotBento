@@ -11,9 +11,7 @@ on:
 jobs:
   github-docker-pre-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    permissions: write-all
     steps:
       - name: Checkout
         uses: actions/checkout@v4
