@@ -18,7 +18,7 @@
     <ItemGroup>
       <PackageReference Include="BotListAPI" Version="5.5.5" />
       <PackageReference Include="CSharpFunctionalExtensions" Version="3.4.3" />
-      <PackageReference Include="Discord.Net" Version="3.17.0" />
+      <PackageReference Include="Discord.Net" Version="3.17.1" />
       <PackageReference Include="Fergun.Interactive" Version="1.8.1" />
       <PackageReference Include="Hangfire.Core" Version="1.8.17" />
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.1" />
