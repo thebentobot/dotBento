@@ -1,4 +1,4 @@
-# Bento
+# dotBento
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![Docker Image CI](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml)
 [![Discord Status](https://top.gg/api/widget/status/787041583580184609.svg?noavatar=true)](https://top.gg/bot/787041583580184609)
