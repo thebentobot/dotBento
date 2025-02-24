@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CSharpFunctionalExtensions" Version="3.4.3" />
+      <PackageReference Include="CSharpFunctionalExtensions" Version="3.5.1" />
       <PackageReference Include="Discord.Net.Core" Version="3.17.1" />
       <PackageReference Include="Discord.Net.WebSocket" Version="3.17.1" />
       <PackageReference Include="HtmlSanitizer" Version="9.0.876" />
