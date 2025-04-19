@@ -36,7 +36,7 @@ public sealed class UserTextCommand(
         _ = Context.Channel.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
-        var guildMember = Context.Guild.Users.FirstOrDefault(x => x.Id == user.Id);
+        var guildMember = Context.Guild.Users.First(x => x.Id == user.Id);
         var botPfp = Context.Client.CurrentUser.GetDisplayAvatarUrl();
         await Context.SendResponse(interactiveService,
             await userCommand.GetProfileAsync((long)user.Id, (long)Context.Guild.Id, guildMember,
