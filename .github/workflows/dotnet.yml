@@ -20,6 +20,8 @@ jobs:
         with:
           dotnet-version: 9.0.x
       - name: Restore dependencies
-        run: dotnet restore src/dotBento.sln
+        run: dotnet restore dotBento.sln
       - name: Build
-        run: dotnet build src/dotBento.sln --configuration Release --no-restore
+        run: dotnet build dotBento.sln --configuration Release --no-restore
+      - name: Run tests
+        run: dotnet test dotBento.sln --configuration Release --no-build --verbosity normal

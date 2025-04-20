@@ -3,6 +3,7 @@ using Discord;
 using Discord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Utilities;
 using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.SharedCommands;
@@ -23,7 +24,7 @@ public sealed class BannerCommand(StylingUtilities stylingUtilities)
             return embed;
         }
         var bannerColour = await stylingUtilities.GetDominantColorAsync(user.Value.GetBannerUrl(ImageFormat.WebP, 128));
-        embed.Embed.WithTitle($"{user.Value.GlobalName}'s User Profile Banner")
+        embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(user.Value.GlobalName)} User Profile Banner")
             .WithColor(bannerColour)
             .WithImageUrl(user.Value.GetBannerUrl(size: 2048, format: ImageFormat.Auto));
         return embed;

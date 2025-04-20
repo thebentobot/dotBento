@@ -22,4 +22,8 @@
       <ProjectReference Include="..\dotBento.Domain\dotBento.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="dotBento.Infrastructure.Tests" />
+    </ItemGroup>
+
 </Project>

@@ -26,4 +26,12 @@ public static class StringUtilities
 
         return result.ToString();
     }
+    
+    public static string AddPossessiveS(string text) 
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        return text.EndsWith("s", StringComparison.OrdinalIgnoreCase) ? $"{text}'" : $"{text}'s";
+    }
 }
