@@ -31,7 +31,7 @@ public sealed class StylingUtilities(HttpClient httpClient)
         }
     }
 
-    private static Color CalculateDominantColor(Image<Rgba32> image)
+    internal static Color CalculateDominantColor(Image<Rgba32> image)
     {
         double r = 0;
         double g = 0;
