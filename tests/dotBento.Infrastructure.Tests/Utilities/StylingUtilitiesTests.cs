@@ -1,12 +1,10 @@
 using System.Net;
-using System.Runtime.CompilerServices;
 using dotBento.Infrastructure.Utilities;
 using Moq;
 using Moq.Protected;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-[assembly: InternalsVisibleTo("dotBento.Infrastructure.Utilities")]
 namespace dotBento.Infrastructure.Tests.Utilities;
 
 public class StylingUtilitiesTests
