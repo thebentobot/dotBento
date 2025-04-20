@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.3.0](https://github.com/thebentobot/dotBento/compare/v1.2.0...v1.3.0) (2025-04-19)
+
+
+### Features
+
+* **dependabot:** add docker ([4ac8202](https://github.com/thebentobot/dotBento/commit/4ac8202cfbd03ea84e7bc85f20a31d10f213b565))
+* **docker:** add local example for docker-compose ([c44a6e7](https://github.com/thebentobot/dotBento/commit/c44a6e7681900557252e9e9fd66c8b5b0a936378))
+
+
+### Bug Fixes
+
+* **Bot/Commands:** fix nullable ([c49b3d3](https://github.com/thebentobot/dotBento/commit/c49b3d32d1180f4c885c6d9b53193bd09b21b3fc))
+* **BotDbContext:** add options back as it can't read the env var ([127619b](https://github.com/thebentobot/dotBento/commit/127619b8e60e9fe842b10368e3c7f3ee4b988825))
+* **BotDbContextFactory:** remove unnecessary class ([264e972](https://github.com/thebentobot/dotBento/commit/264e972ea87ec7cf1b0f7734a3752f094b8c6d73))
+* **BotDbContextFactory:** remove unused ([cdc6abb](https://github.com/thebentobot/dotBento/commit/cdc6abbd9f3060310cec53c48c8ee822c3832092))
+* **csproj:** update language settings to sync with dotBento.Bot ([47e75d9](https://github.com/thebentobot/dotBento/commit/47e75d9f602f3a6615f94867d30b7a0e426b2c6b))
+* **dotBento.EntityFramework:** adjust for .net 9 ([cfeb0a9](https://github.com/thebentobot/dotBento/commit/cfeb0a9e8fab5668edc36d03ca7b34cba29c88f5))
+* **Microsoft.EntityFrameworkCore:** downgrade as npgsql hasn't updated yet ([6e615a2](https://github.com/thebentobot/dotBento/commit/6e615a2befa715d4230fcb72c79fb93f2b98feeb))
+* **Startup/db:** add warning log ([de98f8e](https://github.com/thebentobot/dotBento/commit/de98f8ec3dc4f93c189156ad0b53e6168aa8b02b))
+* Update docker-prerelease.yml ([7dbe8e7](https://github.com/thebentobot/dotBento/commit/7dbe8e7f13e87d5a7c57cb571c7e446079eb0558))
+* Update README.md ([0e38fbf](https://github.com/thebentobot/dotBento/commit/0e38fbf6be3f0b8432743eec746a8844d2863f97))
+* Update README.md ([13e3acc](https://github.com/thebentobot/dotBento/commit/13e3acc28d18ed805b52a68a1ace9446a4e49e9d))
+* **workflows/dotnet:** update .net ([9e243fd](https://github.com/thebentobot/dotBento/commit/9e243fd69a314220695ea23b075dbeab8c105739))
+* **workflows/prerelease:** add perms ([3c1f7d9](https://github.com/thebentobot/dotBento/commit/3c1f7d9a03fada2f8745a1d90d43e5890b3394e8))
+
 ## [1.2.0](https://github.com/thebentobot/dotBento/compare/v1.1.0...v1.2.0) (2024-11-04)
 
 
