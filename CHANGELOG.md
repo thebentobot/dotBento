@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/thebentobot/dotBento/compare/v1.3.0...v1.4.0) (2025-04-20)
+
+
+### Features
+
+* **dotBento.Tests:** add initial tests ([bb49360](https://github.com/thebentobot/dotBento/commit/bb493604f0dcecb192160a5bfa7937c82c582451))
+* **workflows/dotnet:** make pipeline run tests ([771e7f3](https://github.com/thebentobot/dotBento/commit/771e7f36460563416c9fa7081b00bab849cb71cf))
+
+
+### Bug Fixes
+
+* **dotBento.Infra:** allow internal visible for tests ([3a2e5e9](https://github.com/thebentobot/dotBento/commit/3a2e5e9a5893fd707b2b715780398e77db7f9f84))
+* **EntityFramework:** remove unused db tables ([b52fadb](https://github.com/thebentobot/dotBento/commit/b52fadbc1f3b6d32a9f5278a1b1f0201e7d8a796))
+* **EntityFramework:** remove unused now redundant tempcheck migration ([9cd531e](https://github.com/thebentobot/dotBento/commit/9cd531ed0e02d3119fdb7056961be0bde82a184f))
+* **Infra.Tests/StylingUtilitiesTests:** remove redundant assembly thing ([e01ab63](https://github.com/thebentobot/dotBento/commit/e01ab63f080d23c1acde55120286fcbe1920f795))
+* **Infra/csproj:** fix path ([e007a01](https://github.com/thebentobot/dotBento/commit/e007a01dc3397eb313b51bc8201b5488a525fb45))
+* **Infra/csproj:** remove unused/bad path ([7d83620](https://github.com/thebentobot/dotBento/commit/7d836201b3165eb14f96aae95dd7cf12efe94d45))
+* **solution:** move solution file to root, to allow for tests folder ([8e35720](https://github.com/thebentobot/dotBento/commit/8e3572002715d70cc763101b2d7727a745f3ad02))
+* **workflows/dotnet:** update solution path ([e3fb746](https://github.com/thebentobot/dotBento/commit/e3fb746791919cb8ada0f2df832bdc624546a95c))
+
 ## [1.3.0](https://github.com/thebentobot/dotBento/compare/v1.2.0...v1.3.0) (2025-04-19)
 
 
