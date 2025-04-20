@@ -7,51 +7,13 @@ namespace dotBento.EntityFramework.Context;
 
 public partial class BotDbContext : DbContext
 {
-    public virtual DbSet<AnnouncementSchedule> AnnouncementSchedules { get; set; }
-
-    public virtual DbSet<AnnouncementTime> AnnouncementTimes { get; set; }
-
-    public virtual DbSet<AutoRole> AutoRoles { get; set; }
-
-    public virtual DbSet<AvailableRolesGuild> AvailableRolesGuilds { get; set; }
-
-    public virtual DbSet<Ban> Bans { get; set; }
-
     public virtual DbSet<Bento> Bentos { get; set; }
-
-    public virtual DbSet<Bye> Byes { get; set; }
-
-    public virtual DbSet<CaseGlobal> CaseGlobals { get; set; }
-
-    public virtual DbSet<ChannelDisable> ChannelDisables { get; set; }
-
-    public virtual DbSet<GfycatBlacklist> GfycatBlacklists { get; set; }
-
-    public virtual DbSet<GfycatPost> GfycatPosts { get; set; }
-
-    public virtual DbSet<GfycatWordList> GfycatWordLists { get; set; }
 
     public virtual DbSet<Guild> Guilds { get; set; }
 
     public virtual DbSet<GuildMember> GuildMembers { get; set; }
 
-    public virtual DbSet<Horoscope> Horoscopes { get; set; }
-
-    public virtual DbSet<Kick> Kicks { get; set; }
-
     public virtual DbSet<Lastfm> Lastfms { get; set; }
-
-    public virtual DbSet<MemberLog> MemberLogs { get; set; }
-
-    public virtual DbSet<MessageLog> MessageLogs { get; set; }
-
-    public virtual DbSet<ModLog> ModLogs { get; set; }
-
-    public virtual DbSet<Mute> Mutes { get; set; }
-
-    public virtual DbSet<MuteRole> MuteRoles { get; set; }
-
-    public virtual DbSet<NotificationMessage> NotificationMessages { get; set; }
 
     public virtual DbSet<Patreon> Patreons { get; set; }
 
@@ -61,23 +23,13 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<Reminder> Reminders { get; set; }
 
-    public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<RoleChannel> RoleChannels { get; set; }
-
-    public virtual DbSet<RoleMessage> RoleMessages { get; set; }
-
     public virtual DbSet<RpsGame> RpsGames { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-
-    public virtual DbSet<Warning> Warnings { get; set; }
-
+    
     public virtual DbSet<Weather> Weathers { get; set; }
-
-    public virtual DbSet<Welcome> Welcomes { get; set; }
     
     private readonly IConfiguration _configuration;
 
@@ -103,128 +55,6 @@ public partial class BotDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Horoscope>(entity =>
-        {
-            entity.Property(e => e.HoroscopeSign)
-                .HasColumnName("horoscope")
-                .HasConversion<string>();
-        });
-        modelBuilder.Entity<AvailableRolesGuild>(entity =>
-        {
-            entity.Property(e => e.Type)
-                .HasColumnName("type")
-                .HasConversion<string>();
-        });
-
-        modelBuilder.Entity<AnnouncementSchedule>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("announcementschedule_pk");
-
-            entity.ToTable("announcementSchedule");
-
-            entity.HasIndex(e => e.Id, "announcementschedule_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ChannelId).HasColumnName("channelID");
-            entity.Property(e => e.Date).HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Message)
-                .HasColumnType("character varying")
-                .HasColumnName("message");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.AnnouncementSchedules)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("announcementschedule_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<AnnouncementTime>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("announcementtime_pk");
-
-            entity.ToTable("announcementTime");
-
-            entity.HasIndex(e => e.Id, "announcementtime_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AmountOfTime).HasColumnName("amountOfTime");
-            entity.Property(e => e.ChannelId).HasColumnName("channelID");
-            entity.Property(e => e.Date).HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Message)
-                .HasColumnType("character varying")
-                .HasColumnName("message");
-            entity.Property(e => e.Timeframe)
-                .HasColumnType("character varying")
-                .HasColumnName("timeframe");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.AnnouncementTimes)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("announcementtime_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<AutoRole>(entity =>
-        {
-            entity.HasKey(e => e.AutoRoleId).HasName("autorole_pk");
-
-            entity.ToTable("autoRole");
-
-            entity.HasIndex(e => e.AutoRoleId, "autorole_autoroleid_uindex").IsUnique();
-
-            entity.Property(e => e.AutoRoleId).HasColumnName("autoRoleID");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.RoleId).HasColumnName("roleID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.AutoRoles)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("autorole_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<AvailableRolesGuild>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("availablerolesguild_pk");
-
-            entity.ToTable("availableRolesGuild");
-
-            entity.HasIndex(e => e.Id, "availablerolesguild_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Role)
-                .HasColumnType("character varying")
-                .HasColumnName("role");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.AvailableRolesGuilds)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("availablerolesguild_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<Ban>(entity =>
-        {
-            entity.HasKey(e => e.BanCase).HasName("ban_pk");
-
-            entity.ToTable("ban");
-
-            entity.HasIndex(e => e.BanCase, "ban_mutecase_uindex").IsUnique();
-
-            entity.Property(e => e.BanCase).HasColumnName("banCase");
-            entity.Property(e => e.Actor).HasColumnName("actor");
-            entity.Property(e => e.Date)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Note)
-                .HasColumnType("character varying")
-                .HasColumnName("note");
-            entity.Property(e => e.Reason)
-                .HasColumnType("character varying")
-                .HasColumnName("reason");
-            entity.Property(e => e.UserId).HasColumnName("userID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.Bans)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("ban_guild_guildid_fk");
-        });
-
         modelBuilder.Entity<Bento>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("bento_pk");
@@ -244,113 +74,6 @@ public partial class BotDbContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Bento)
                 .HasForeignKey<Bento>(d => d.UserId)
                 .HasConstraintName("bento_user_userid_fk");
-        });
-
-        modelBuilder.Entity<Bye>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("bye_pk");
-
-            entity.ToTable("bye");
-
-            entity.HasIndex(e => e.GuildId, "bye_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Channel).HasColumnName("channel");
-            entity.Property(e => e.Message)
-                .HasColumnType("character varying")
-                .HasColumnName("message");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.Bye)
-                .HasForeignKey<Bye>(d => d.GuildId)
-                .HasConstraintName("bye_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<CaseGlobal>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("caseglobal_pk");
-
-            entity.ToTable("caseGlobal");
-
-            entity.HasIndex(e => e.GuildId, "caseglobal_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Reason).HasColumnName("reason");
-            entity.Property(e => e.ServerName).HasColumnName("serverName");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.CaseGlobal)
-                .HasForeignKey<CaseGlobal>(d => d.GuildId)
-                .HasConstraintName("caseglobal_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<ChannelDisable>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("channeldisable_pk");
-
-            entity.ToTable("channelDisable");
-
-            entity.HasIndex(e => e.ChannelId, "channeldisable_channelid_uindex").IsUnique();
-
-            entity.HasIndex(e => e.Id, "channeldisable_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ChannelId).HasColumnName("channelID");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.ChannelDisables)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("channeldisable_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<GfycatBlacklist>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("gfycatblacklist_pk");
-
-            entity.ToTable("gfycatBlacklist");
-
-            entity.HasIndex(e => e.Id, "gfycatblacklist_id_uindex").IsUnique();
-
-            entity.HasIndex(e => e.Username, "gfycatblacklist_username_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Username)
-                .HasColumnType("character varying")
-                .HasColumnName("username");
-        });
-
-        modelBuilder.Entity<GfycatPost>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("gfycatposts_pk");
-
-            entity.ToTable("gfycatPosts");
-
-            entity.HasIndex(e => e.Id, "gfycatposts_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content).HasColumnName("content");
-            entity.Property(e => e.Date)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("date");
-            entity.Property(e => e.MessageId).HasColumnName("messageId");
-        });
-
-        modelBuilder.Entity<GfycatWordList>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("gfycatwordlist_pk");
-
-            entity.ToTable("gfycatWordList");
-
-            entity.HasIndex(e => e.Id, "gfycatwordlist_id_uindex").IsUnique();
-
-            entity.HasIndex(e => e.Word, "gfycatwordlist_word_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Word)
-                .HasColumnType("character varying")
-                .HasColumnName("word");
         });
 
         modelBuilder.Entity<Guild>(entity =>
@@ -405,50 +128,6 @@ public partial class BotDbContext : DbContext
                 .HasConstraintName("guildmember_user_userid_fk");
         });
 
-        modelBuilder.Entity<Horoscope>(entity =>
-        {
-            entity.HasKey(e => e.UserId).HasName("horoscope_pk");
-
-            entity.ToTable("horoscope");
-
-            entity.HasIndex(e => e.UserId, "horoscope_userid_uindex").IsUnique();
-
-            entity.Property(e => e.UserId)
-                .ValueGeneratedNever()
-                .HasColumnName("userID");
-
-            entity.HasOne(d => d.User).WithOne(p => p.Horoscope)
-                .HasForeignKey<Horoscope>(d => d.UserId)
-                .HasConstraintName("horoscope_user_userid_fk");
-        });
-
-        modelBuilder.Entity<Kick>(entity =>
-        {
-            entity.HasKey(e => e.KickCase).HasName("kick_pk");
-
-            entity.ToTable("kick");
-
-            entity.HasIndex(e => e.KickCase, "kick_mutecase_uindex").IsUnique();
-
-            entity.Property(e => e.KickCase).HasColumnName("kickCase");
-            entity.Property(e => e.Actor).HasColumnName("actor");
-            entity.Property(e => e.Date)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Note)
-                .HasColumnType("character varying")
-                .HasColumnName("note");
-            entity.Property(e => e.Reason)
-                .HasColumnType("character varying")
-                .HasColumnName("reason");
-            entity.Property(e => e.UserId).HasColumnName("userID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.Kicks)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("kick_guild_guildid_fk");
-        });
-
         modelBuilder.Entity<Lastfm>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("lastfm_pk");
@@ -467,131 +146,6 @@ public partial class BotDbContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Lastfm)
                 .HasForeignKey<Lastfm>(d => d.UserId)
                 .HasConstraintName("lastfm_user_userid_fk");
-        });
-
-        modelBuilder.Entity<MemberLog>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("memberlog_pk");
-
-            entity.ToTable("memberLog");
-
-            entity.HasIndex(e => e.Channel, "memberlog_channel_uindex").IsUnique();
-
-            entity.HasIndex(e => e.GuildId, "memberlog_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Channel).HasColumnName("channel");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.MemberLog)
-                .HasForeignKey<MemberLog>(d => d.GuildId)
-                .HasConstraintName("memberlog_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<MessageLog>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("messagelog_pk");
-
-            entity.ToTable("messageLog");
-
-            entity.HasIndex(e => e.GuildId, "messagelog_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Channel).HasColumnName("channel");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.MessageLog)
-                .HasForeignKey<MessageLog>(d => d.GuildId)
-                .HasConstraintName("messagelog_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<ModLog>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("modlog_pk");
-
-            entity.ToTable("modLog");
-
-            entity.HasIndex(e => e.GuildId, "modlog_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Channel).HasColumnName("channel");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.ModLog)
-                .HasForeignKey<ModLog>(d => d.GuildId)
-                .HasConstraintName("modlog_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<Mute>(entity =>
-        {
-            entity.HasKey(e => e.MuteCase).HasName("mute_pk");
-
-            entity.ToTable("mute");
-
-            entity.HasIndex(e => e.MuteCase, "mute_mutecase_uindex").IsUnique();
-
-            entity.Property(e => e.MuteCase).HasColumnName("muteCase");
-            entity.Property(e => e.Actor).HasColumnName("actor");
-            entity.Property(e => e.Date)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.MuteEnd).HasColumnName("muteEnd");
-            entity.Property(e => e.Note)
-                .HasColumnType("character varying")
-                .HasColumnName("note");
-            entity.Property(e => e.Reason)
-                .HasColumnType("character varying")
-                .HasColumnName("reason");
-            entity.Property(e => e.UserId).HasColumnName("userID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.Mutes)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("mute_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<MuteRole>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("muterole_pk");
-
-            entity.ToTable("muteRole");
-
-            entity.HasIndex(e => e.GuildId, "muterole_guildid_uindex").IsUnique();
-
-            entity.HasIndex(e => e.RoleId, "muterole_role_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.RoleId).HasColumnName("roleID");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.MuteRole)
-                .HasForeignKey<MuteRole>(d => d.GuildId)
-                .HasConstraintName("muterole_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<NotificationMessage>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("notificationmessage_pk");
-
-            entity.ToTable("notificationMessage");
-
-            entity.HasIndex(e => e.Id, "notificationmessage_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasColumnType("character varying")
-                .HasColumnName("content");
-            entity.Property(e => e.Global).HasColumnName("global");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.UserId).HasColumnName("userID");
-
-            entity.HasOne(d => d.User).WithMany(p => p.NotificationMessages)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("notificationmessage_user_userid_fk");
         });
 
         modelBuilder.Entity<Patreon>(entity =>
@@ -811,68 +365,6 @@ public partial class BotDbContext : DbContext
                 .HasConstraintName("reminder_user_userid_fk");
         });
 
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("role_pk");
-
-            entity.ToTable("role");
-
-            entity.HasIndex(e => e.Id, "role_id_uindex").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.RoleCommand)
-                .HasColumnType("character varying")
-                .HasColumnName("roleCommand");
-            entity.Property(e => e.RoleId).HasColumnName("roleID");
-            entity.Property(e => e.RoleName)
-                .HasColumnType("character varying")
-                .HasColumnName("roleName");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.Roles)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("role_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<RoleChannel>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("rolechannel_pk");
-
-            entity.ToTable("roleChannel");
-
-            entity.HasIndex(e => e.ChannelId, "rolechannel_channelid_uindex").IsUnique();
-
-            entity.HasIndex(e => e.GuildId, "rolechannel_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.ChannelId).HasColumnName("channelID");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.RoleChannel)
-                .HasForeignKey<RoleChannel>(d => d.GuildId)
-                .HasConstraintName("rolechannel_guild_guildid_fk");
-        });
-
-        modelBuilder.Entity<RoleMessage>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("rolemessages_pk");
-
-            entity.ToTable("roleMessages");
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Message)
-                .HasColumnType("character varying")
-                .HasColumnName("message");
-            entity.Property(e => e.MessageId).HasColumnName("messageID");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.RoleMessage)
-                .HasForeignKey<RoleMessage>(d => d.GuildId)
-                .HasConstraintName("rolemessages_guild_guildid_fk");
-        });
-
         modelBuilder.Entity<RpsGame>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("rpsgame_pk");
@@ -955,33 +447,6 @@ public partial class BotDbContext : DbContext
             entity.Property(e => e.Xp).HasColumnName("xp");
         });
 
-        modelBuilder.Entity<Warning>(entity =>
-        {
-            entity.HasKey(e => e.WarningCase).HasName("warning_pk");
-
-            entity.ToTable("warning");
-
-            entity.HasIndex(e => e.WarningCase, "warning_mutecase_uindex").IsUnique();
-
-            entity.Property(e => e.WarningCase).HasColumnName("warningCase");
-            entity.Property(e => e.Actor).HasColumnName("actor");
-            entity.Property(e => e.Date)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("date");
-            entity.Property(e => e.GuildId).HasColumnName("guildID");
-            entity.Property(e => e.Note)
-                .HasColumnType("character varying")
-                .HasColumnName("note");
-            entity.Property(e => e.Reason)
-                .HasColumnType("character varying")
-                .HasColumnName("reason");
-            entity.Property(e => e.UserId).HasColumnName("userID");
-
-            entity.HasOne(d => d.Guild).WithMany(p => p.Warnings)
-                .HasForeignKey(d => d.GuildId)
-                .HasConstraintName("warning_guild_guildid_fk");
-        });
-
         modelBuilder.Entity<Weather>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("weather_pk");
@@ -1000,27 +465,6 @@ public partial class BotDbContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Weather)
                 .HasForeignKey<Weather>(d => d.UserId)
                 .HasConstraintName("weather_user_userid_fk");
-        });
-
-        modelBuilder.Entity<Welcome>(entity =>
-        {
-            entity.HasKey(e => e.GuildId).HasName("welcome_pk");
-
-            entity.ToTable("welcome");
-
-            entity.HasIndex(e => e.GuildId, "welcome_guildid_uindex").IsUnique();
-
-            entity.Property(e => e.GuildId)
-                .ValueGeneratedNever()
-                .HasColumnName("guildID");
-            entity.Property(e => e.Channel).HasColumnName("channel");
-            entity.Property(e => e.Message)
-                .HasColumnType("character varying")
-                .HasColumnName("message");
-
-            entity.HasOne(d => d.Guild).WithOne(p => p.Welcome)
-                .HasForeignKey<Welcome>(d => d.GuildId)
-                .HasConstraintName("welcome_guild_guildid_fk");
         });
         modelBuilder.HasSequence("bento_bentoDate_seq");
 
