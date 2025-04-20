@@ -20,8 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
-      <ProjectReference Include="..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
+        <ProjectReference Include="..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>
