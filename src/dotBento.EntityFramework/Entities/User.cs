@@ -20,13 +20,9 @@ public partial class User
     public virtual Bento? Bento { get; set; }
 
     public virtual ICollection<GuildMember> GuildMembers { get; set; } = new List<GuildMember>();
-
-    public virtual Horoscope? Horoscope { get; set; }
-
+    
     public virtual Lastfm? Lastfm { get; set; }
-
-    public virtual ICollection<NotificationMessage> NotificationMessages { get; set; } = new List<NotificationMessage>();
-
+    
     public virtual Patreon? Patreon { get; set; }
 
     public virtual Profile? Profile { get; set; }
