@@ -7,14 +7,13 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy only the src folder contents
 COPY src/dotBento.WebApi/ dotBento.WebApi/
 COPY src/dotBento.EntityFramework/ dotBento.EntityFramework/
 
-# Set working directory to WebApi
+COPY src/dotBento.WebApi/configs/ dotBento.WebApi/configs/
+
 WORKDIR /src/dotBento.WebApi
 
-# Restore dependencies
 RUN dotnet restore "dotBento.WebApi.csproj"
 
 FROM build AS publish
