@@ -7,7 +7,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["dotBento.WebApi/dotBento.WebApi.csproj", "dotBento.WebApi/"]
+COPY ["src/dotBento.WebApi/dotBento.WebApi.csproj", "dotBento.WebApi/"]
 RUN dotnet restore "dotBento.WebApi/dotBento.WebApi.csproj"
 COPY . .
 WORKDIR "/src/dotBento.WebApi"
