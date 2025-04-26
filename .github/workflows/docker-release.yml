@@ -45,10 +45,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT }}
 
-      - name: Build and Push to Production
+      - name: Build and Push Bot to Production
         uses: docker/build-push-action@v6
         with:
           file: src/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and Push Bot to Production
+        uses: docker/build-push-action@v6
+        with:
+          file: src/dotBento.WebApi/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -67,9 +76,9 @@ jobs:
             sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
 
             # Stop and remove any existing instance of the production bot
-            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-prod || true
-            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-prod || true
+            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-prod webapi || true
+            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-prod webapi || true
 
             # Pull the new image and redeploy the production bot
-            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-prod
-            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-prod
+            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-prod webapi
+            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-prod webapi
