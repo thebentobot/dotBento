@@ -70,7 +70,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT }}
 
-      - name: Build and push
+      - name: Build and push bot image
         if: env.SKIP_PRERELEASE == 'false'
         uses: docker/build-push-action@v6
         with:
@@ -78,6 +78,16 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Build and push Web API Image
+        if: env.SKIP_PRERELEASE == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          file: src/dotBento.WebApi/Dockerfile  # <-- new path!
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/thebentobot/dotbento-webapi:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
       
       - name: Deploy to Server
@@ -95,9 +105,9 @@ jobs:
             sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
             
             # Stop and remove any existing instance of bot-sta to prevent name conflicts
-            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta || true
-            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-sta || true
+            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta webapi || true
+            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-sta webapi || true
 
             # Pull the new image and redeploy the service
-            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta
-            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta
+            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta webapi
+            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta webapi

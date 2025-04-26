@@ -17,6 +17,23 @@ services:
     env_file:
       - .env
 
+  webapi:
+    build:
+      context: ./src/dotBento.WebApi
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          target: /app
+    ports:
+      - "5027:5027"
+    env_file:
+      - .env
+    networks:
+      - web
+      - bento_net
+
   sushii-image-server:
     image: ghcr.io/sushiibot/sushii-image-server:latest
     container_name: sushii-image-server

@@ -91,3 +91,4 @@ src/dotBento.Bot/configs
 .idea
 .DS_Store
 node_modules
+src/dotBento.WebApi/configs
