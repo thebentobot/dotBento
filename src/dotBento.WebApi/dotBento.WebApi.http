@@ -1,0 +1,25 @@
+@dotBento_WebApi_HostAddress = http://localhost:5072
+
+### Get usage statistics (total users + servers)
+GET {{dotBento_WebApi_HostAddress}}/Information/UsageStats
+Accept: application/json
+
+###
+
+### Get list of Patreon users
+GET {{dotBento_WebApi_HostAddress}}/Information/Patreon
+Accept: application/json
+
+###
+
+### Get global leaderboard (no guildId param)
+GET {{dotBento_WebApi_HostAddress}}/Information/Leaderboard
+Accept: application/json
+
+###
+
+### Get server leaderboard by guildId (replace 123 with a real one)
+GET {{dotBento_WebApi_HostAddress}}/Information/Leaderboard/123
+Accept: application/json
+
+###
