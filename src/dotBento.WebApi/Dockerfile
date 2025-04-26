@@ -10,8 +10,6 @@ WORKDIR /src
 COPY src/dotBento.WebApi/ dotBento.WebApi/
 COPY src/dotBento.EntityFramework/ dotBento.EntityFramework/
 
-COPY src/dotBento.WebApi/configs/ dotBento.WebApi/configs/
-
 WORKDIR /src/dotBento.WebApi
 
 RUN dotnet restore "dotBento.WebApi.csproj"
