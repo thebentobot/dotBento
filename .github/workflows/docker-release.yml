@@ -75,6 +75,9 @@ jobs:
             # Update the docker-compose.yml file to use the stable version tag (e.g., v1.0.0)
             sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
 
+            # Update the WebAPI image tag
+            sed -i 's|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+
             # Stop and remove any existing instance of the production bot
             docker compose -f $USER_DIR/bento/docker-compose.yml down bot-prod webapi || true
             docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-prod webapi || true
