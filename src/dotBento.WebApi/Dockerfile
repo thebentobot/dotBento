@@ -13,7 +13,6 @@ COPY ["src/dotBento.EntityFramework/dotBento.EntityFramework.csproj", "dotBento.
 RUN dotnet restore "dotBento.WebApi/dotBento.WebApi.csproj"
 COPY . .
 WORKDIR "/src/dotBento.WebApi"
-RUN dotnet build "dotBento.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
