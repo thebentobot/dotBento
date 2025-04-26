@@ -54,13 +54,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Build and Push Bot to Production
+      - name: Build and Push webapi to Production
         uses: docker/build-push-action@v6
         with:
           file: src/dotBento.WebApi/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/thebentobot/dotbento-webapi:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Deploy to Production Server
