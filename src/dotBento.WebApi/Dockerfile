@@ -17,9 +17,6 @@ WORKDIR /src/dotBento.WebApi
 # Restore dependencies
 RUN dotnet restore "dotBento.WebApi.csproj"
 
-# Build
-RUN dotnet build "dotBento.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "dotBento.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
