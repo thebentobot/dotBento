@@ -2,46 +2,35 @@ using dotBento.EntityFramework.Context;
 using dotBento.WebApi;
 using Microsoft.EntityFrameworkCore;
 
-var configBuilder = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("configs/config.json", optional: false, reloadOnChange: true)
-    .AddEnvironmentVariables();
+var builder = WebApplication.CreateBuilder(args);
 
-var configuration = configBuilder.Build();
-
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    Args = args,
-    ApplicationName = typeof(Program).Assembly.FullName
-});
-
-// Override default config with your own
-builder.Configuration.AddConfiguration(configuration);
+// Just use environment variables
+builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Get connection string from environment variables
 var connectionString = builder.Configuration["DatabaseConnectionString"];
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("DatabaseConnectionString is not configured.");
+}
+
 builder.Services.AddDbContextFactory<BotDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
 app.UseMiddleware<ApiKeyMiddleware>();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
