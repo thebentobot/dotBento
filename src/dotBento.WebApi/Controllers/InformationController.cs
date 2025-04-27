@@ -32,15 +32,29 @@ public class InformationController(ILogger<InformationController> logger, BotDbC
     {
         if (string.IsNullOrEmpty(guildId))
         {
-            return Ok(await GetGlobalLeaderboardAsync());
+            return Ok(new LeaderboardResponseDto(
+                GuildName: null,
+                Icon: null,
+                Users: await GetGlobalLeaderboardAsync()
+            ));
         }
 
         if (!long.TryParse(guildId, out var guildIdLong))
         {
             return BadRequest("Invalid guild ID");
         }
+        
+        var guild = await dbContext.Guilds.FindAsync(guildIdLong);
+        if (guild == null)
+        {
+            return NotFound("Guild not found");
+        }
 
-        return Ok(await GetGuildLeaderboardAsync(guildIdLong));
+        return Ok(new LeaderboardResponseDto(
+            GuildName: guild.GuildName,
+            Icon: guild.Icon,
+            Users: await GetGuildLeaderboardAsync(guildIdLong)
+        ));
     }
     
     private async Task<List<LeaderboardUserDto>> GetGlobalLeaderboardAsync()

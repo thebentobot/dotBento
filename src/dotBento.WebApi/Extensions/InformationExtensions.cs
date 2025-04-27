@@ -29,5 +29,11 @@ public static class InformationExtensions
         new(
             patreon.UserId,
             patreon.Name,
-            patreon.Avatar);
+            patreon.Avatar,
+            patreon.Sponsor,
+            patreon.Disciple,
+            patreon.Enthusiast,
+            patreon.Follower,
+            patreon.Supporter
+        );
 }
