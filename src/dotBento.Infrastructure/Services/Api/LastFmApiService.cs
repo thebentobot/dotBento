@@ -126,7 +126,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
                 "Could not deserialize the response from lastfm. It might be down.");
         }
 
-        Statistics.LastfmApiCalls.WithLabels(ApiMethod.RecentTracks).Inc();
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.TopAlbums).Inc();
 
         return Result.Success(responseModel);
     }
