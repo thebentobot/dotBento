@@ -48,7 +48,8 @@ public static class ConfigData
             ImageServer = new ImageServerConfig
             {
                 ImageServerHost = "localhost"
-            }
+            },
+            LokiUrl = "http://localhost:3100"
         };
 
         var configBuilder = new ConfigurationBuilder()

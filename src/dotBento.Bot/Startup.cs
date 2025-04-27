@@ -24,6 +24,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Sinks.Discord;
+using Serilog.Sinks.Grafana.Loki;
 using BackgroundService = dotBento.Bot.Services.BackgroundService;
 using RunMode = Discord.Commands.RunMode;
 
@@ -63,11 +64,18 @@ public sealed class Startup
 
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console(consoleLevel)
+            .WriteTo.GrafanaLoki(
+                Configuration["LokiUrl"],
+                labels: new[]
+                {
+                    new LokiLabel { Key = "app", Value = "dotbento-bot" }, // or "dotbento-webapi"
+                    new LokiLabel { Key = "environment", Value = Configuration["Environment"] ?? "development" }
+                }
+            )
             .MinimumLevel.Is(logLevel)
             .Enrich.WithProperty("Environment", !string.IsNullOrEmpty(Configuration.GetSection("Environment").Value) ? Configuration.GetSection("Environment").Value : "unknown")
             .Enrich.WithExceptionDetails()
             .WriteTo.Discord(Convert.ToUInt64(Configuration["Discord:LogWebhookId"]), Configuration["Discord:LogWebhookToken"])
-            //.WriteTo.File($"logs/log-{DateTime.Now:dd.MM.yy_HH.mm}.log")
             .CreateLogger();
 
         AppDomain.CurrentDomain.UnhandledException += AppUnhandledException;

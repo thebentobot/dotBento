@@ -1,18 +1,37 @@
 using dotBento.EntityFramework.Context;
 using dotBento.WebApi;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
+using Serilog;
+using Serilog.Exceptions;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.Grafana.Loki;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Just use environment variables
 builder.Configuration.AddEnvironmentVariables();
 
-// Add services to the container.
+var configuration = builder.Configuration;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(new RenderedCompactJsonFormatter())
+    .WriteTo.GrafanaLoki(
+        configuration["LokiUrl"] ?? "http://localhost:3100",
+        labels: new[]
+        {
+            new LokiLabel { Key = "app", Value = "dotbento-webapi" },
+            new LokiLabel { Key = "environment", Value = configuration["Environment"] ?? "development" }
+        })
+    .Enrich.WithExceptionDetails()
+    .Enrich.WithProperty("Environment", configuration["Environment"] ?? "unknown")
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Get connection string from environment variables
-var connectionString = builder.Configuration["DatabaseConnectionString"];
+var connectionString = configuration["DatabaseConnectionString"];
 if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("DatabaseConnectionString is not configured.");
@@ -23,7 +42,9 @@ builder.Services.AddDbContextFactory<BotDbContext>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+app.UseMetricServer();
+app.UseHttpMetrics();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
