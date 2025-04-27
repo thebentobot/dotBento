@@ -1,4 +1,5 @@
 using Discord.WebSocket;
+using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Handlers;
@@ -34,6 +35,8 @@ public sealed class GuildMemberRemoveHandler
     private async Task GuildMemberRemoved(SocketGuild guild, SocketUser discordUser)
     {
         if (discordUser.IsBot) return;
+        
+        Statistics.DiscordEvents.WithLabels(nameof(GuildMemberRemoved)).Inc();
         await _guildService.DeleteGuildMember(guild.Id, discordUser.Id);
         var guildsForUser = _guildService.FindGuildsForUser(discordUser.Id).Result;
         if (guildsForUser.Count == 0)

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using dotBento.Domain;
 using dotBento.Infrastructure.Models.LastFm;
 using dotBento.Infrastructure.Models.LastFm.RecentTracks;
 using dotBento.Infrastructure.Models.LastFm.TopAlbums;
@@ -32,6 +33,8 @@ public sealed class LastFmApiService(HttpClient httpClient)
         {
             return Result.Failure<RecentTracksResponse>(LastFmApiError((int)response.StatusCode, lastFmUsername));
         }
+        
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.RecentTracks).Inc();
 
         var responseContent = await response.Content.ReadAsStringAsync();
         var options = new JsonSerializerOptions
@@ -72,7 +75,18 @@ public sealed class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopTracksResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopTracksResponse>("Could not deserialize the response from lastfm. It might be down.");
+        if (responseModel == null)
+        {
+            Statistics.LastfmErrors.WithLabels(ApiMethod.RecentTracks).Inc();
+            Statistics.LastfmFailureErrors.WithLabels(ApiMethod.RecentTracks).Inc();
+
+            return Result.Failure<TopTracksResponse>(
+                "Could not deserialize the response from lastfm. It might be down.");
+        }
+
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.RecentTracks).Inc();
+
+        return Result.Success(responseModel);
     }
     
     public async Task<Result<TopAlbumsResponse>> GetTopAlbums(string lastFmUsername, string apiKey, string period, int? limit = 50)
@@ -103,7 +117,18 @@ public sealed class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopAlbumsResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopAlbumsResponse>("Could not deserialize the response from lastfm. It might be down.");
+        if (responseModel == null)
+        {
+            Statistics.LastfmErrors.WithLabels(ApiMethod.TopAlbums).Inc();
+            Statistics.LastfmFailureErrors.WithLabels(ApiMethod.TopAlbums).Inc();
+
+            return Result.Failure<TopAlbumsResponse>(
+                "Could not deserialize the response from lastfm. It might be down.");
+        }
+
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.RecentTracks).Inc();
+
+        return Result.Success(responseModel);
     }
     
     public async Task<Result<TopArtistsResponse>> GetTopArtists(string lastFmUsername, string apiKey, string period, int? limit = 50)
@@ -134,7 +159,18 @@ public sealed class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<TopArtistsResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<TopArtistsResponse>("Could not deserialize the response from lastfm. It might be down.");
+        if (responseModel == null)
+        {
+            Statistics.LastfmErrors.WithLabels(ApiMethod.TopArtists).Inc();
+            Statistics.LastfmFailureErrors.WithLabels(ApiMethod.TopArtists).Inc();
+
+            Result.Failure<TopArtistsResponse>("Could not deserialize the response from lastfm. It might be down.");
+        }
+
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.TopArtists).Inc();
+
+        // TODO: I do not know why it warns here but not the other methods, and it should not be null if it reach here
+        return Result.Success(responseModel)!;
     }
     
     public async Task<Result<UserInfoResponse>> GetUserInfo(string lastFmUsername, string apiKey)
@@ -163,7 +199,18 @@ public sealed class LastFmApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<UserInfoResponse>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<UserInfoResponse>("Could not deserialize the response from lastfm. It might be down.");
+        if (responseModel == null)
+        {
+            Statistics.LastfmErrors.WithLabels(ApiMethod.UserInfo).Inc();
+            Statistics.LastfmFailureErrors.WithLabels(ApiMethod.UserInfo).Inc();
+
+            return Result.Failure<UserInfoResponse>(
+                "Could not deserialize the response from lastfm. It might be down.");
+        }
+
+        Statistics.LastfmApiCalls.WithLabels(ApiMethod.UserInfo).Inc();
+
+        return Result.Success(responseModel);
     }
 
     private static string LastFmApiError(int responseStatusCode, string lastFmUsername) =>

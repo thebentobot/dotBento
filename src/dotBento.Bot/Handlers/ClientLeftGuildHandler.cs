@@ -42,6 +42,7 @@ public sealed class ClientLeftGuildHandler
         }
         if (!keepData)
         {
+            Statistics.DiscordEvents.WithLabels(nameof(ClientLeftGuild)).Inc();
             Log.Information(
                 "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
             await _guildService.RemoveGuildAsync(guild.Id);

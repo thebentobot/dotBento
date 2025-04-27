@@ -78,7 +78,7 @@ public sealed class InteractionHandler
             {
                 case InteractionCommandError.ParseFailed:
                 {
-                    Statistics.CommandsFailed.WithLabels(command.Name).Inc();
+                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Invalid input")
                         .WithDescription($"{result.ErrorReason}")
@@ -88,7 +88,7 @@ public sealed class InteractionHandler
                 }
                 case InteractionCommandError.BadArgs:
                 {
-                    Statistics.CommandsFailed.WithLabels(command.Name).Inc();
+                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Bad argument count")
                         .WithDescription($"You have provided too many or too few arguments for the command `{command.Name}`")
@@ -98,7 +98,7 @@ public sealed class InteractionHandler
                 }
                 case InteractionCommandError.Exception:
                 {
-                    Statistics.CommandsFailed.WithLabels(command.Name).Inc();
+                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Exception")
                         .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
@@ -108,7 +108,7 @@ public sealed class InteractionHandler
                 }
                 case InteractionCommandError.Unsuccessful:
                 {
-                    Statistics.CommandsFailed.WithLabels(command.Name).Inc();
+                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Unsuccessful")
                         .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
@@ -127,7 +127,7 @@ public sealed class InteractionHandler
                 case InteractionCommandError.UnmetPrecondition:
                 default:
                     Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction);
-                    Statistics.CommandsFailed.WithLabels(command.Name).Inc();
+                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     break;
             }
         }
@@ -166,7 +166,7 @@ public sealed class InteractionHandler
         {
             case InteractionCommandError.ParseFailed:
             {
-                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Invalid input")
                     .WithDescription($"{result.ErrorReason}")
@@ -176,7 +176,7 @@ public sealed class InteractionHandler
             }
             case InteractionCommandError.BadArgs:
             {
-                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Bad argument count")
                     .WithDescription($"You have provided too many or too few arguments for the command `{commandSearch.Command.Name}`")
@@ -186,7 +186,7 @@ public sealed class InteractionHandler
             }
             case InteractionCommandError.Exception:
             {
-                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Exception")
                     .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
@@ -196,7 +196,7 @@ public sealed class InteractionHandler
             }
             case InteractionCommandError.Unsuccessful:
             {
-                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Unsuccessful")
                     .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
@@ -215,7 +215,7 @@ public sealed class InteractionHandler
             case InteractionCommandError.UnmetPrecondition:
             default:
                 Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction); 
-                Statistics.CommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
+                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 break;
         }
     }
