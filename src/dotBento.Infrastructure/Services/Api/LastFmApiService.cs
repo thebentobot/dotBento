@@ -164,7 +164,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
             Statistics.LastfmErrors.WithLabels(ApiMethod.TopArtists).Inc();
             Statistics.LastfmFailureErrors.WithLabels(ApiMethod.TopArtists).Inc();
 
-            Result.Failure<TopArtistsResponse>("Could not deserialize the response from lastfm. It might be down.");
+            return Result.Failure<TopArtistsResponse>("Could not deserialize the response from lastfm. It might be down.");
         }
 
         Statistics.LastfmApiCalls.WithLabels(ApiMethod.TopArtists).Inc();
