@@ -42,9 +42,6 @@ builder.Services.AddDbContextFactory<BotDbContext>(options =>
 
 var app = builder.Build();
 
-app.UseMetricServer();
-app.UseHttpMetrics();
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -53,5 +50,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
+app.UseMetricServer();
+app.UseHttpMetrics();
 app.MapControllers();
 app.Run();
