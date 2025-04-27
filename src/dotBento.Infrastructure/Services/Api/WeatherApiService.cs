@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using dotBento.Domain;
 using dotBento.Infrastructure.Models.Weather;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -33,7 +34,14 @@ public sealed class WeatherApiService(HttpClient httpClient)
         };
         var responseModel = JsonSerializer.Deserialize<OpenWeatherApiObject>(responseContent, options);
 
-        return responseModel != null ? Result.Success(responseModel) : Result.Failure<OpenWeatherApiObject>("Could not deserialize the response from OpenWeather. It might be down.");
+        if (responseModel == null)
+        {
+            Statistics.WeatherApiErrors.WithLabels("GetWeatherForCity").Inc();
+            return Result.Failure<OpenWeatherApiObject>("Could not deserialize the response from OpenWeather. It might be down.");
+        }
+        
+        Statistics.WeatherApiCalls.WithLabels("GetWeatherForCity").Inc();
+        return Result.Success(responseModel);
     }
     
     private static string WeatherApiError(int statusCode, string city) =>

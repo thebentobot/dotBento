@@ -15,13 +15,6 @@ public static class Statistics
             {
                 LabelNames = new[] { "method" }
             });
-    
-    public static readonly Counter LastfmNowPlayingUpdates = Metrics
-        .CreateCounter("lastfm_scrobbling_nowplaying", "Amount of now playing updates sent to Last.fm",
-            new CounterConfiguration
-            {
-                LabelNames = new[] { "bot" }
-            });
 
     public static readonly Counter LastfmErrors = Metrics
         .CreateCounter("lastfm_errors", "Amount of errors Last.fm is returning");
@@ -31,6 +24,15 @@ public static class Statistics
 
     public static readonly Counter SpotifyApiCalls = Metrics
         .CreateCounter("spotify_api_calls", "Amount of Spotify API calls");
+    
+    public static readonly Counter SpotifyApiErrors = Metrics
+        .CreateCounter("spotify_api_errors", "Amount of Spotify API errors");
+    
+    public static readonly Counter WeatherApiCalls = Metrics
+        .CreateCounter("weather_api_calls", "Amount of Weather API calls");
+    
+    public static readonly Counter WeatherApiErrors = Metrics
+        .CreateCounter("weather_api_errors", "Amount of Weather API errors");
 
     public static readonly Counter CommandsExecuted = Metrics
         .CreateCounter("bot_commands_executed", "Amount of commands executed",
@@ -86,6 +88,7 @@ public static class Statistics
     public static readonly Gauge RegisteredGuildCount = Metrics
         .CreateGauge("bot_registered_guilds_count", "Total count of all guilds in the database");
 
+    /*
     public static readonly Gauge OneDayActiveUserCount = Metrics
         .CreateGauge("bot_active_users_count_1d", "Total count of users who've used the bot in the last day");
 
@@ -94,9 +97,7 @@ public static class Statistics
 
     public static readonly Gauge ThirtyDayActiveUserCount = Metrics
         .CreateGauge("bot_active_users_count_30d", "Total count of users who've used the bot in the last 30 days");
-
-    public static readonly Counter UpdatedUsers = Metrics
-        .CreateCounter("bot_updated_users", "Amount of updated users");
+    */
 
     public static readonly Counter CommandsFailed = Metrics
         .CreateCounter("bot_commands_failed", "Amount of commands that failed",

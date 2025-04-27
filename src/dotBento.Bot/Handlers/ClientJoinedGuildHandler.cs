@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using Serilog;
 
@@ -28,6 +29,8 @@ public sealed class ClientJoinedGuildHandler
     
     private async Task ClientJoinedGuild(SocketGuild guild)
     {
+        Statistics.DiscordEvents.WithLabels(nameof(ClientJoinedGuild)).Inc();
+
         Log.Information(
             "JoinedGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
         
