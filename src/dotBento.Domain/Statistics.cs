@@ -17,22 +17,46 @@ public static class Statistics
             });
 
     public static readonly Counter LastfmErrors = Metrics
-        .CreateCounter("lastfm_errors", "Amount of errors Last.fm is returning");
+        .CreateCounter("lastfm_errors", "Amount of errors Last.fm is returning",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
 
     public static readonly Counter LastfmFailureErrors = Metrics
-        .CreateCounter("lastfm_errors_failure", "Amount of failure errors Last.fm is returning");
+        .CreateCounter("lastfm_errors_failure", "Amount of failure errors Last.fm is returning",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
 
     public static readonly Counter SpotifyApiCalls = Metrics
-        .CreateCounter("spotify_api_calls", "Amount of Spotify API calls");
+        .CreateCounter("spotify_api_calls", "Amount of Spotify API calls",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
     
     public static readonly Counter SpotifyApiErrors = Metrics
-        .CreateCounter("spotify_api_errors", "Amount of Spotify API errors");
+        .CreateCounter("spotify_api_errors", "Amount of Spotify API errors",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
     
     public static readonly Counter WeatherApiCalls = Metrics
-        .CreateCounter("weather_api_calls", "Amount of Weather API calls");
+        .CreateCounter("weather_api_calls", "Amount of Weather API calls",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
     
     public static readonly Counter WeatherApiErrors = Metrics
-        .CreateCounter("weather_api_errors", "Amount of Weather API errors");
+        .CreateCounter("weather_api_errors", "Amount of Weather API errors",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "method" }
+            });
 
     public static readonly Counter CommandsExecuted = Metrics
         .CreateCounter("bot_commands_executed", "Amount of commands executed",
@@ -52,7 +76,7 @@ public static class Statistics
         .CreateHistogram("bot_text_command_handler_duration", "Histogram of text command handler duration");
 
     public static readonly Histogram SlashCommandHandlerDuration = Metrics
-        .CreateHistogram("bot_slash_command_handler_duration", "Histogram of text command handler duration");
+        .CreateHistogram("bot_slash_command_handler_duration", "Histogram of slash command handler duration");
 
     public static readonly Counter UserCommandsExecuted = Metrics
         .CreateCounter("bot_user_commands_executed", "Amount of user commands executed");
