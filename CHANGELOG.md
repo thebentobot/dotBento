@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.5.0](https://github.com/thebentobot/dotBento/compare/v1.4.0...v1.5.0) (2025-04-28)
+
+
+### Features
+
+* **dependabot:** add nuget tests check ([a359087](https://github.com/thebentobot/dotBento/commit/a3590876385ee05cb1d366a4651423e16eca52b8))
+* **docker:** add webapi to the pipelines and docker-compose ([897c809](https://github.com/thebentobot/dotBento/commit/897c809d34cffc3d73e01514a68af086a4dd6583))
+* **dotBento:** add prometheus to bot and webapi, as well as add stats ([e53f2b5](https://github.com/thebentobot/dotBento/commit/e53f2b57fb6b356d7fa7f0f93571a9dd1d37c191))
+* **dotBento:** setup loki and setup serilog for webapi ([b0a5c20](https://github.com/thebentobot/dotBento/commit/b0a5c2091a938eab919226c0788a2fb24881f20a))
+* **webapi:** initial webapi commit ([f5dd0d6](https://github.com/thebentobot/dotBento/commit/f5dd0d60b751fdb3cd521b0d76e5ccbcd0eb4fe4))
+
+
+### Bug Fixes
+
+* **actions/docker-release:** correct tags and comment ([8725fbf](https://github.com/thebentobot/dotBento/commit/8725fbf5f1ffbd4ccdcd1d4f88b6d44abe28615f))
+* **Cmds/UserCommand:** add extra safety in case user does not exist ([db915d6](https://github.com/thebentobot/dotBento/commit/db915d61c903b226ae2a60faae59cdac3f7d81e8))
+* **dotBento.Bot:** remove prometheus-net.AspNetCore ([cd82c2a](https://github.com/thebentobot/dotBento/commit/cd82c2ad6ef3416a734a8567cdb0ce5856098e02))
+* **statistics:** make sure labels are added when needed ([4b41f61](https://github.com/thebentobot/dotBento/commit/4b41f61d2946d0927cf9dd41f0add0cd30258f01))
+* **webapi/dockerfile:** copy configs folder ([b7e4181](https://github.com/thebentobot/dotBento/commit/b7e4181483694ce6a55cbb07f0357add15ff37ca))
+* **webapi/dockerfile:** copy contents correctly ([89206ad](https://github.com/thebentobot/dotBento/commit/89206ad18a83bdf8491e67825d6183f0fe28054b))
+* **webapi/dockerfile:** correct path ([39b3355](https://github.com/thebentobot/dotBento/commit/39b3355f6f318cc9a99e069a66f2a55d8f5a2235))
+* **webapi/dockerfile:** make it build by adding entity framework project ([289104c](https://github.com/thebentobot/dotBento/commit/289104c56fba3ec58ce9f03ec3de6780c649b4fd))
+* **webapi/dockerfile:** make it build by specifying build ([ad0cfc3](https://github.com/thebentobot/dotBento/commit/ad0cfc3bc098fee59fbce913db211969c6d4f3c6))
+* **webapi/dockerfile:** remove config copy ([46162cd](https://github.com/thebentobot/dotBento/commit/46162cd100946ce97bf0d6a2b95a8c792205d22f))
+* **webapi/dockerfile:** remove dotnet build to make docker build ([ea2787e](https://github.com/thebentobot/dotBento/commit/ea2787ee63759aa447e915df3a0b13a212e3dc69))
+* **webapi/dockerfile:** remove redundant build step uhh ([8824108](https://github.com/thebentobot/dotBento/commit/8824108d2866969050ad0e64190048cafd3f790b))
+* **webapi/program:** just use env var instead of config stuff ([cd9c1f9](https://github.com/thebentobot/dotBento/commit/cd9c1f977b8b98869f407a73701c12d9ff8eed2d))
+* **webapi:** add forgotten attributes ([349ce11](https://github.com/thebentobot/dotBento/commit/349ce115c9af85e84d4c96fc701a807d5edb8295))
+* **webapi:** make output type exe for minimal api ([b030cf2](https://github.com/thebentobot/dotBento/commit/b030cf28fb61bb54b0955e4fbefe835e53d92faf))
+* **webapi:** make sure configs folder gets copied when publish ([7f5dccc](https://github.com/thebentobot/dotBento/commit/7f5dccc055fbee7f2caa61ba6274232a5af81ed7))
+* **webapi:** reorder app ([838c195](https://github.com/thebentobot/dotBento/commit/838c19572c2127bfb24fa28761f6915009e3ffbe))
+* **workflows:** update webapi on new push ([119675c](https://github.com/thebentobot/dotBento/commit/119675ce91f38bedd3c13c40f0ed0d1520f4414f))
+
 ## [1.4.0](https://github.com/thebentobot/dotBento/compare/v1.3.0...v1.4.0) (2025-04-20)
 
 
