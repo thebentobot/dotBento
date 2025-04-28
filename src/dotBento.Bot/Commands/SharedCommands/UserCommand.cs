@@ -39,7 +39,18 @@ public sealed class UserCommand(
         {
             ResponseType = ResponseType.ImageOnly,
         };
+        // TODO: we should fix this so the extra step is not needed
         await userService.CreateOrAddUserToCache(guildMember);
+        var user = await userService.GetUserAsync((ulong)userId);
+        if (user == null)
+        {
+            result.ResponseType = ResponseType.Embed;
+            result.Embed
+                .WithColor(Color.Red)
+                .WithTitle("Error")
+                .WithDescription("This user does not exist in the database. They have most likely not written on the server or used the bot yet, so their profile has not been created yet. Please try again later.");
+            return result;
+        }
         var imageServerHost = config.Value.ImageServer.ImageServerHost;
         var lastFmApiKey = config.Value.LastFmApiKey;
         var profile =
