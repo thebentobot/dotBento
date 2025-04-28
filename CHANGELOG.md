@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/thebentobot/dotBento/compare/v1.5.0...v1.5.1) (2025-04-28)
+
+
+### Bug Fixes
+
+* **prometheus:** fix metrics ([6d2a5e7](https://github.com/thebentobot/dotBento/commit/6d2a5e79c6699a2c3f571469b0ddead41f549019))
+* **prometheus:** revert ([cd643c0](https://github.com/thebentobot/dotBento/commit/cd643c0a1984a4e455c4d7519ef61e587eefbf1c))
+
 ## [1.5.0](https://github.com/thebentobot/dotBento/compare/v1.4.0...v1.5.0) (2025-04-28)
 
 
