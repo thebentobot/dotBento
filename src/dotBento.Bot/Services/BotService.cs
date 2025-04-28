@@ -68,7 +68,7 @@ public sealed class BotService(DiscordSocketClient client,
         InitializeHangfireConfig();
         backgroundService.QueueJobs();
     
-        StartMetricsPusher();
+        StartMetricsServer();
 
         await CacheDiscordUserIds();
 
@@ -132,25 +132,11 @@ public sealed class BotService(DiscordSocketClient client,
 #endif
     }
     
-    private void StartMetricsPusher()
+    private void StartMetricsServer()
     {
-        string metricsPusherEndpoint = config.Value.Prometheus.MetricsPusherEndpoint ??
-                                       throw new InvalidOperationException(
-                                           "MetricsPusherEndpoint environment variable are not set.");
-        string metricsPusherName = config.Value.Prometheus.MetricsPusherName ??
-                                   throw new InvalidOperationException(
-                                       "MetricsPusherName environment variable are not set.");
-
-        Log.Information("Starting metrics pusher");
-        var pusher = new MetricPusher(new MetricPusherOptions
-        {
-            Endpoint = metricsPusherEndpoint,
-            Job = metricsPusherName
-        });
-
-        pusher.Start();
-
-        Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
+        Log.Information("Starting Prometheus Metric Server on port 8080");
+        var metricServer = new KestrelMetricServer(port: 8080);
+        metricServer.Start();
     }
     
     private static void PrepareCacheFolder()
