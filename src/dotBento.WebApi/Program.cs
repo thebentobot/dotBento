@@ -29,6 +29,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AddOpenApi();
 
 var connectionString = configuration["DatabaseConnectionString"];
