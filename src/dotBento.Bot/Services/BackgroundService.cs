@@ -3,9 +3,11 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Resources;
 using dotBento.Domain;
+using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -14,7 +16,8 @@ public sealed class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
     SupporterService supporterService,
-    ReminderCommands reminderCommands)
+    ReminderCommands reminderCommands,
+    IDbContextFactory<BotDbContext> contextFactory)
 {
     public void QueueJobs()
     {
@@ -32,6 +35,9 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateGuildMemberCounts)}");
         RecurringJob.AddOrUpdate(nameof(UpdateGuildMemberCounts), () => UpdateGuildMemberCounts(), "0 0 * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
+        RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 0 * * *");
     }
 
     public async Task UpdateStatus()
@@ -158,6 +164,46 @@ public sealed class BackgroundService(UserService userService,
         catch (Exception e)
         {
             Log.Error(e, nameof(UpdateGuildMemberCounts));
+            throw;
+        }
+    }
+
+    public async Task UpdateLeaderboardUserAvatars()
+    {
+        Log.Information($"Running {nameof(UpdateLeaderboardUserAvatars)}");
+
+        try
+        {
+            await using var db = await contextFactory.CreateDbContextAsync();
+            var topUsers = await db.Users
+                .OrderByDescending(u => u.Level)
+                .ThenByDescending(u => u.Xp)
+                .Take(50)
+                .ToListAsync();
+
+            Log.Information($"Found {topUsers.Count} users in the global leaderboard");
+
+            var updatedCount = 0;
+            foreach (var user in topUsers)
+            {
+                try
+                {
+                    var discordUser = client.GetUser((ulong)user.UserId);
+                    if (discordUser == null) continue;
+                    await userService.UpdateUserAvatarAsync(discordUser);
+                    updatedCount++;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, $"Failed to update avatar for user {user.UserId}");
+                }
+            }
+
+            Log.Information($"Updated avatars for {updatedCount} users in the global leaderboard");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(UpdateLeaderboardUserAvatars));
             throw;
         }
     }
