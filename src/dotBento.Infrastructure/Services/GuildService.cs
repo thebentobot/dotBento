@@ -17,7 +17,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         var guild = await db.Guilds
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
-        
+
         return guild.AsMaybe();
     }
 
@@ -32,7 +32,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         return guildMembers.AsMaybe();
     }
-    
+
     public async Task<Maybe<GuildMember>> GetGuildMemberAsync(ulong discordGuildId,
         ulong discordUserId)
     {
@@ -56,7 +56,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             await RemoveGuildFromCache(discordGuildId);
         }
     }
-    
+
     public async Task AddGuildAsync(SocketGuild guild)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -112,7 +112,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     {
         return $"guild-member-{guildMemberGuildId}-{guildMemberUserId}";
     }
-    
+
     private Task RemoveGuildMemberFromCache(ulong guildMemberGuildId, ulong guildMemberUserId)
     {
         cache.Remove(CacheKeyForGuildMember(guildMemberGuildId, guildMemberUserId));
@@ -126,7 +126,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         cache.Set(CacheKeyForGuild((ulong)guild.GuildId), guild, cacheEntryOptions);
         return Task.CompletedTask;
     }
-    
+
     public async Task<Maybe<Guild>> UpdateGuildPrefixAsync(ulong discordGuildId, string prefix)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -139,7 +139,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         return guild.AsMaybe();
     }
-    
+
     private Task RemoveGuildFromCache(ulong discordGuildId)
     {
         cache.Remove(CacheKeyForGuild(discordGuildId));
@@ -150,7 +150,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     {
         return $"guild-{discordGuildId}";
     }
-    
+
     public async Task DeleteGuildMember(ulong guildId, ulong discordUserId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -175,7 +175,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             .ToListAsync();
         return listOfGuildsForUser;
     }
-    
+
     public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -199,7 +199,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             .AsQueryable()
             .CountAsync();
     }
-    
+
     public async Task<Maybe<int>> GetGuildMemberRankAsync(long discordUserId, long discordGuildId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -221,5 +221,18 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             .CountAsync();
 
         return rank + 1;
+    }
+
+    public async Task UpdateGuildMemberCountAsync(ulong discordGuildId, int memberCount)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
+
+        if (guild != null)
+        {
+            guild.MemberCount = memberCount;
+            await db.SaveChangesAsync();
+            await AddGuildToCache(guild);
+        }
     }
 }

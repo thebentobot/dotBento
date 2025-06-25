@@ -23,14 +23,17 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
-        
+
         Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
         RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(UpdateGuildMemberCounts)}");
+        RecurringJob.AddOrUpdate(nameof(UpdateGuildMemberCounts), () => UpdateGuildMemberCounts(), "0 0 * * *");
     }
-    
+
     public async Task UpdateStatus()
     {
         Log.Information($"Running {nameof(UpdateStatus)}");
@@ -45,7 +48,7 @@ public sealed class BackgroundService(UserService userService,
         var userCount = client.Guilds.Sum(x => x.MemberCount);
 
         var formattedUserCount = FormatUserCount(userCount);
-    
+
         var activities = new List<Game>
         {
             new($"{formattedUserCount} users", ActivityType.Listening),
@@ -72,7 +75,7 @@ public sealed class BackgroundService(UserService userService,
         {
             return;
         }
-        
+
         foreach (var reminder in reminders.Value)
         {
             var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
@@ -81,7 +84,7 @@ public sealed class BackgroundService(UserService userService,
                 await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
                 continue;
             }
-            
+
             var user = await client.GetUserAsync((ulong)reminder.UserId);
 
             var dmChannel = await user.CreateDMChannelAsync();
@@ -93,7 +96,7 @@ public sealed class BackgroundService(UserService userService,
             await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
         }
     }
-    
+
     public async Task UpdateMetrics()
     {
         Log.Information($"Running {nameof(UpdateMetrics)}");
@@ -126,10 +129,36 @@ public sealed class BackgroundService(UserService userService,
             throw;
         }
     }
-    
+
     public void ClearUserCache()
     {
         client.PurgeUserCache();
         Log.Information("Purged discord user cache");
+    }
+
+    public async Task UpdateGuildMemberCounts()
+    {
+        Log.Information($"Running {nameof(UpdateGuildMemberCounts)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(UpdateGuildMemberCounts)}");
+                return;
+            }
+
+            foreach (var guild in client.Guilds)
+            {
+                await guildService.UpdateGuildMemberCountAsync(guild.Id, guild.MemberCount);
+            }
+
+            Log.Information($"Updated member counts for {client.Guilds.Count} guilds");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(UpdateGuildMemberCounts));
+            throw;
+        }
     }
 }
