@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.0](https://github.com/thebentobot/dotBento/compare/v1.5.1...v1.6.0) (2025-06-25)
+
+
+### Features
+
+* **backgroundService:** update top 50 leaderboard user avatars ([5a063db](https://github.com/thebentobot/dotBento/commit/5a063db234f7e2dd874f1c7f09031ce302df67ca))
+* **WebApi:** add rate limiting for unauthorised ([95e6aee](https://github.com/thebentobot/dotBento/commit/95e6aeeecc32d2393ae9a28295bc0f868a408a21))
+
+
+### Bug Fixes
+
+* **backgroundService:** update guild member count ([54dab36](https://github.com/thebentobot/dotBento/commit/54dab361710b643fa2855a80452d34ca56166f88))
+* **docker-prerelease:** fix updates of containers ([6c37846](https://github.com/thebentobot/dotBento/commit/6c378465b668fdf402ab40fe79faa317de649c0e))
+* **WebApi/ApiKeyMiddleware:** fix rate limiting ([afcff58](https://github.com/thebentobot/dotBento/commit/afcff58d31b51cc20bb5a18e6c05e8cf924bca1f))
+* **WebApi:** add memorycache ([55211d5](https://github.com/thebentobot/dotBento/commit/55211d5c015230253f093410c1ca7f5d89aeddfd))
+
 ## [1.5.1](https://github.com/thebentobot/dotBento/compare/v1.5.0...v1.5.1) (2025-04-28)
 
 
