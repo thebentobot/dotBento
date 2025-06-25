@@ -20,13 +20,6 @@ public class ApiKeyMiddleware
     {
         var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        if (_cache.TryGetValue($"Blocked_{ipAddress}", out _))
-        {
-            context.Response.StatusCode = 429;
-            await context.Response.WriteAsync("Too many failed attempts. Try again later.");
-            return;
-        }
-
         if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var extractedApiKey))
         {
             await HandleFailure(ipAddress, context, "API Key was not provided");
@@ -41,8 +34,11 @@ public class ApiKeyMiddleware
         }
 
         _cache.Remove($"Failures_{ipAddress}");
+        _cache.Remove($"Blocked_{ipAddress}");
+
         await _next(context);
     }
+
 
     private async Task HandleFailure(string ipAddress, HttpContext context, string message)
     {
