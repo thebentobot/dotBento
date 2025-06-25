@@ -101,11 +101,11 @@ jobs:
             # Set the user directory using the secret
             USER_DIR="/${{ secrets.SERVER_USERNAME }}"
             
-            # Update the docker-compose.yml file with the new pre-release image tag
-            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+            # Only update the bot-sta service, NOT bot-prod
+            sed -i '/bot-sta:/,/image:/s|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
 
-            # Update the WebAPI image tag
-            sed -i 's|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+            # Only update the WebAPI service
+            sed -i '/webapi:/,/image:/s|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
             
             # Stop and remove any existing instance of bot-sta to prevent name conflicts
             docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta webapi || true
