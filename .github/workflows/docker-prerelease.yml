@@ -37,7 +37,7 @@ jobs:
 
       - name: Create GitHub Pre-release
         if: env.SKIP_PRERELEASE == 'false'
-        uses: ncipollo/release-action@v1.18.0
+        uses: ncipollo/release-action@v1.20.0
         with:
           name: Pre-release ${{ env.NEW_TAG }}
           tag: ${{ env.NEW_TAG }}
