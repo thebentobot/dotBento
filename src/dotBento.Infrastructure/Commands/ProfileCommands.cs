@@ -47,10 +47,8 @@ public sealed class ProfileCommands(
         int guildUsersAmount,
         string botAvatarUrl)
     {
-        var lastFmBoard = profile.LastfmBoard == true ? 
-            await GetLastFmNowPlayingHtml(profile, lastFmApiKey) : null;
-        var xpBoard = profile.XpBoard == true ? 
-            await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
+        var lastFmBoard = profile.LastfmBoard == true ? await GetLastFmNowPlayingHtml(profile, lastFmApiKey) : null;
+        var xpBoard = profile.XpBoard == true ? await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
         // TODO: Make one data method to avoid overfetching and make it more readable
         var bentoUser = userService.GetUserAsync((ulong)profile.UserId).Result.Value;
         var bentoGuildUser = guildService
@@ -102,12 +100,18 @@ public sealed class ProfileCommands(
         var xpText2Colour = $"{profile.XpText2Colour}{ConvertOpacityToHex(profile.XpText2Opacity)}";
         var xpBarColour = $"{profile.XpBarColour}{ConvertOpacityToHex(profile.XpBarOpacity)}";
         var xpBar2Colour = $"{profile.XpBar2Colour}{ConvertOpacityToHex(profile.XpBar2Opacity)}";
-        var xpDoneServerColour1 = $"{profile.XpDoneServerColour1}{ConvertOpacityToHex(profile.XpDoneServerColour1Opacity)}";
-        var xpDoneServerColour2 = $"{profile.XpDoneServerColour2}{ConvertOpacityToHex(profile.XpDoneServerColour2Opacity)}";
-        var xpDoneServerColour3 = $"{profile.XpDoneServerColour3}{ConvertOpacityToHex(profile.XpDoneServerColour3Opacity)}";
-        var xpDoneGlobalColour1 = $"{profile.XpDoneGlobalColour1}{ConvertOpacityToHex(profile.XpDoneGlobalColour1Opacity)}";
-        var xpDoneGlobalColour2 = $"{profile.XpDoneGlobalColour2}{ConvertOpacityToHex(profile.XpDoneGlobalColour2Opacity)}";
-        var xpDoneGlobalColour3 = $"{profile.XpDoneGlobalColour3}{ConvertOpacityToHex(profile.XpDoneGlobalColour3Opacity)}";
+        var xpDoneServerColour1 =
+            $"{profile.XpDoneServerColour1}{ConvertOpacityToHex(profile.XpDoneServerColour1Opacity)}";
+        var xpDoneServerColour2 =
+            $"{profile.XpDoneServerColour2}{ConvertOpacityToHex(profile.XpDoneServerColour2Opacity)}";
+        var xpDoneServerColour3 =
+            $"{profile.XpDoneServerColour3}{ConvertOpacityToHex(profile.XpDoneServerColour3Opacity)}";
+        var xpDoneGlobalColour1 =
+            $"{profile.XpDoneGlobalColour1}{ConvertOpacityToHex(profile.XpDoneGlobalColour1Opacity)}";
+        var xpDoneGlobalColour2 =
+            $"{profile.XpDoneGlobalColour2}{ConvertOpacityToHex(profile.XpDoneGlobalColour2Opacity)}";
+        var xpDoneGlobalColour3 =
+            $"{profile.XpDoneGlobalColour3}{ConvertOpacityToHex(profile.XpDoneGlobalColour3Opacity)}";
 
         var avatarUrl = guildMember.GetDisplayAvatarUrl() ??
                         $"https://cdn.discordapp.com/embed/avatars/{int.Parse(guildMember.Discriminator ?? "0") % 5}.png";
@@ -133,11 +137,11 @@ public sealed class ProfileCommands(
             { "USERNAME_SIZE", usernameSize }
         };
 
-        var userTimezone = profile.Timezone != null ? 
-            $"{GetCurrentTimeForTimezone(profile.Timezone).ToShortTimeString()} {ShowEmoteAccordingToTimeOfDay(GetCurrentTimeForTimezone(profile.Timezone))} "
+        var userTimezone = profile.Timezone != null
+            ? $"{GetCurrentTimeForTimezone(profile.Timezone).ToShortTimeString()} {ShowEmoteAccordingToTimeOfDay(GetCurrentTimeForTimezone(profile.Timezone))} "
             : "";
-        var userBirthday = profile.Birthday != null ? 
-            DateTime.Parse(profile.Birthday).ToString("MMM d") + " 🎂"
+        var userBirthday = profile.Birthday != null
+            ? DateTime.Parse(profile.Birthday).ToString("MMM d") + " 🎂"
             : "";
 
         var emoteArray = await GetUserEmotes(profile.UserId);
@@ -543,7 +547,7 @@ public sealed class ProfileCommands(
                 background-color: {overlayColour};
             }}
         ";
-        
+
         var htmlString = $@"
             <div class='wrapper {replacements["WRAPPER_CLASS"]}'>
                 <div class='inner-wrapper {replacements["OVERLAY_CLASS"]}'>
@@ -610,7 +614,7 @@ public sealed class ProfileCommands(
                 {htmlString}
             </body>
             </html>";
-        
+
         return htmlString;
     }
 
@@ -646,10 +650,10 @@ public sealed class ProfileCommands(
                             </div>
                         </div>
                     </div>";
-        
+
         return new LastFmHtmlBoardResult(lastFmHtml, latestSong.Track.Length, latestSong.Artist.Length);
     }
-    
+
     private static DateTime GetCurrentTimeForTimezone(string timezone)
     {
         var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timezone);
@@ -946,7 +950,7 @@ public sealed class ProfileCommands(
         "👿",
         "🤡",
     ];
-    
+
     private static string ShowEmoteAccordingToTimeOfDay(DateTime timeOfDay)
     {
         var hour = timeOfDay.Hour;
@@ -960,7 +964,7 @@ public sealed class ProfileCommands(
             _ => "🌙"
         };
     }
-    
+
     private static string ConvertOpacityToHex(int? opacityPercentage)
     {
         int opacityValue = opacityPercentage ?? 100; // Default to fully opaque if null
