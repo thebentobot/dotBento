@@ -19,7 +19,7 @@ public class ProfileController(BotDbContext dbContext) : ControllerBase
 
         if (bentoUser == null)
         {
-            return BadRequest("User does not exist in the Bento database.");
+            return NotFound();
         }
         
         var profile = await dbContext.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
