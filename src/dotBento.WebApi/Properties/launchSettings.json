@@ -7,7 +7,11 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5072",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ApiKey": "dev-test-key",
+        "Environment": "development",
+        "DatabaseConnectionString": "Host=localhost;Database=postgres;Username=postgres;Password=postgres;Command Timeout=60;Timeout=60;Persist Security Info=True;",
+        "LokiUrl": "http://localhost:3100"
       }
     },
     "https": {
@@ -16,7 +20,11 @@
       "launchBrowser": false,
       "applicationUrl": "https://localhost:7061;http://localhost:5072",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ApiKey": "dev-test-key",
+        "Environment": "development",
+        "DatabaseConnectionString": "Host=localhost;Database=postgres;Username=postgres;Password=postgres;Command Timeout=60;Timeout=60;Persist Security Info=True;",
+        "LokiUrl": "http://localhost:3100"
       }
     }
   }

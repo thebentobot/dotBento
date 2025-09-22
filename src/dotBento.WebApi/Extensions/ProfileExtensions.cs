@@ -1,0 +1,63 @@
+using dotBento.EntityFramework.Entities;
+using dotBento.WebApi.Dtos;
+
+namespace dotBento.WebApi.Extensions;
+
+public static class ProfileExtensions
+{
+    public static ProfileDto ToProfileDto(this Profile p) => new(
+        p.UserId,
+        p.LastfmBoard,
+        p.XpBoard,
+        p.BackgroundUrl,
+        p.BackgroundColourOpacity,
+        p.BackgroundColour,
+        p.DescriptionColourOpacity,
+        p.DescriptionColour,
+        p.OverlayOpacity,
+        p.OverlayColour,
+        p.UsernameColour,
+        p.DiscriminatorColour,
+        p.SidebarItemServerColour,
+        p.SidebarItemGlobalColour,
+        p.SidebarItemBentoColour,
+        p.SidebarItemTimezoneColour,
+        p.SidebarValueServerColour,
+        p.SidebarValueGlobalColour,
+        p.SidebarValueBentoColour,
+        p.SidebarOpacity,
+        p.SidebarColour,
+        p.SidebarBlur,
+        p.FmDivBgopacity,
+        p.FmDivBgcolour,
+        p.FmSongTextOpacity,
+        p.FmSongTextColour,
+        p.FmArtistTextOpacity,
+        p.FmArtistTextColour,
+        p.XpDivBgopacity,
+        p.XpDivBgcolour,
+        p.XpTextOpacity,
+        p.XpTextColour,
+        p.XpText2Opacity,
+        p.XpText2Colour,
+        p.XpDoneServerColour1Opacity,
+        p.XpDoneServerColour1,
+        p.XpDoneServerColour2Opacity,
+        p.XpDoneServerColour2,
+        p.XpDoneServerColour3Opacity,
+        p.XpDoneServerColour3,
+        p.XpDoneGlobalColour1Opacity,
+        p.XpDoneGlobalColour1,
+        p.XpDoneGlobalColour2Opacity,
+        p.XpDoneGlobalColour2,
+        p.XpDoneGlobalColour3Opacity,
+        p.XpDoneGlobalColour3,
+        p.Description,
+        p.Timezone,
+        p.Birthday,
+        p.XpBarOpacity,
+        p.XpBarColour,
+        p.XpBar2Opacity,
+        p.XpBar2Colour
+    );
+}
