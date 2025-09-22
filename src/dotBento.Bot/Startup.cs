@@ -155,6 +155,7 @@ public sealed class Startup
             .AddSingleton<BannerCommand>()
             .AddSingleton<ServerCommand>()
             .AddSingleton<UserCommand>()
+            .AddSingleton<ProfileEditCommand>()
             .AddSingleton<BentoCommand>()
             .AddSingleton<BentoService>()
             .AddSingleton<WeatherService>()

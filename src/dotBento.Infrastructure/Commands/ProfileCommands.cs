@@ -53,7 +53,8 @@ public sealed class ProfileCommands(
             await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
         // TODO: Make one data method to avoid overfetching and make it more readable
         var bentoUser = userService.GetUserAsync((ulong)profile.UserId).Result.Value;
-        var bentoGuildUser = guildService.GetGuildMemberAsync((ulong)guildId, (ulong)profile.UserId).Result.Value;
+        var bentoGuildUser = guildService
+            .GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, guildMember).Result.Value;
         var bentoGameData = await bentoService.FindBentoAsync(profile.UserId);
         var bentoUserCount = await userService.GetTotalDiscordUserCountAsync();
         var bentoTotalUserCount = await bentoService.GetTotalCountOfBentoUsersAsync();
