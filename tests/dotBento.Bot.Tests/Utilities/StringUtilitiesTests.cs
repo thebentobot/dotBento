@@ -12,7 +12,7 @@ public class StringUtilitiesTests
     [InlineData("cat", "cat's")]
     [InlineData("", "")]
     [InlineData(null, null)]
-    public void AddPossessiveS_WorksAsExpected(string input, string expected)
+    public void AddPossessiveS_WorksAsExpected(string? input, string? expected)
     {
         var result = StringUtilities.AddPossessiveS(input);
         Assert.Equal(expected, result);
