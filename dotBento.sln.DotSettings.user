@@ -9,4 +9,9 @@
     &lt;TestId&gt;xUnit::29BCF00A-C826-4D7A-87D7-5098ADF2F10E::net9.0::dotBento.WebApi.Tests.InformationControllerTests.GetUsageStats_ReturnsCorrectStats&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::29BCF00A-C826-4D7A-87D7-5098ADF2F10E::net9.0::dotBento.WebApi.Tests.InformationControllerTests&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7ce84f90_002D6ae2_002D4e9e_002D860e_002Deb90f45871f3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Junie Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::C0B6FF90-ADE2-4CF3-868E-32C1BA01ACC9::net9.0::dotBento.Bot.Tests.Utilities.StringUtilitiesTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
