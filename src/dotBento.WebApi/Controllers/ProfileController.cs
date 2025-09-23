@@ -5,30 +5,25 @@ using dotBento.WebApi.Dtos;
 using dotBento.WebApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.WebApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ProfileController(BotDbContext dbContext) : ControllerBase
+public class ProfileController(BotDbContext dbContext, ProfileService profileService) : ControllerBase
 {
     [HttpGet("{userId:long}")]
     public async Task<ActionResult<ProfileDto>> GetProfile(long userId)
     {
         var bentoUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
-
         if (bentoUser == null)
-        {
             return NotFound();
-        }
 
-        var profile = await dbContext.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile == null)
-        {
+        var maybe = await profileService.GetProfileAsync(userId);
+        if (maybe.HasNoValue)
             return NotFound();
-        }
-
-        return Ok(profile.ToProfileDto());
+        return Ok(maybe.Value.ToProfileDto());
     }
 
     [HttpPost]
@@ -40,34 +35,26 @@ public class ProfileController(BotDbContext dbContext) : ControllerBase
         }
 
         var bentoUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == request.UserId);
-
         if (bentoUser == null)
         {
             return NotFound("User does not exist in the Bento database.");
         }
 
-        var profile = await dbContext.Profiles.FirstOrDefaultAsync(p => p.UserId == request.UserId);
-        var isNew = false;
-        if (profile == null)
+        var maybeExisting = await profileService.GetProfileAsync(request.UserId);
+        var working = maybeExisting.HasValue ? maybeExisting.Value : new Profile { UserId = request.UserId };
+
+        if (request.LastfmBoard.HasValue) working.LastfmBoard = request.LastfmBoard.Value;
+        if (request.XpBoard.HasValue) working.XpBoard = request.XpBoard.Value;
+
+        var applyErr = TryApplyProfileChanges(working, request);
+        if (applyErr != null) return applyErr;
+
+        var saved = await profileService.CreateOrUpdateProfileAsync(request.UserId, p =>
         {
-            profile = new Profile { UserId = request.UserId };
-            isNew = true;
-        }
+            CopyProfileValues(working, p);
+        });
 
-        if (request.LastfmBoard.HasValue) profile.LastfmBoard = request.LastfmBoard.Value;
-        if (request.XpBoard.HasValue) profile.XpBoard = request.XpBoard.Value;
-
-        var applyError = TryApplyProfileChanges(profile, request);
-        if (applyError != null) return applyError;
-
-        if (isNew)
-            await dbContext.Profiles.AddAsync(profile);
-        else
-            dbContext.Profiles.Update(profile);
-
-        await dbContext.SaveChangesAsync();
-
-        return Ok(profile.ToProfileDto());
+        return Ok(saved.ToProfileDto());
     }
 
     private ActionResult? TryApplyProfileChanges(Profile profile, ProfileUpdateRequest request)
@@ -300,5 +287,61 @@ public class ProfileController(BotDbContext dbContext) : ControllerBase
 
         assign(value);
         return true;
+    }
+
+    private static void CopyProfileValues(Profile source, Profile target)
+    {
+        target.LastfmBoard = source.LastfmBoard;
+        target.XpBoard = source.XpBoard;
+        target.BackgroundUrl = source.BackgroundUrl;
+        target.BackgroundColourOpacity = source.BackgroundColourOpacity;
+        target.BackgroundColour = source.BackgroundColour;
+        target.DescriptionColourOpacity = source.DescriptionColourOpacity;
+        target.DescriptionColour = source.DescriptionColour;
+        target.OverlayOpacity = source.OverlayOpacity;
+        target.OverlayColour = source.OverlayColour;
+        target.UsernameColour = source.UsernameColour;
+        target.DiscriminatorColour = source.DiscriminatorColour;
+        target.SidebarItemServerColour = source.SidebarItemServerColour;
+        target.SidebarItemGlobalColour = source.SidebarItemGlobalColour;
+        target.SidebarItemBentoColour = source.SidebarItemBentoColour;
+        target.SidebarItemTimezoneColour = source.SidebarItemTimezoneColour;
+        target.SidebarValueServerColour = source.SidebarValueServerColour;
+        target.SidebarValueGlobalColour = source.SidebarValueGlobalColour;
+        target.SidebarValueBentoColour = source.SidebarValueBentoColour;
+        target.SidebarOpacity = source.SidebarOpacity;
+        target.SidebarColour = source.SidebarColour;
+        target.SidebarBlur = source.SidebarBlur;
+        target.FmDivBgopacity = source.FmDivBgopacity;
+        target.FmDivBgcolour = source.FmDivBgcolour;
+        target.FmSongTextOpacity = source.FmSongTextOpacity;
+        target.FmSongTextColour = source.FmSongTextColour;
+        target.FmArtistTextOpacity = source.FmArtistTextOpacity;
+        target.FmArtistTextColour = source.FmArtistTextColour;
+        target.XpDivBgopacity = source.XpDivBgopacity;
+        target.XpDivBgcolour = source.XpDivBgcolour;
+        target.XpTextOpacity = source.XpTextOpacity;
+        target.XpTextColour = source.XpTextColour;
+        target.XpText2Opacity = source.XpText2Opacity;
+        target.XpText2Colour = source.XpText2Colour;
+        target.XpDoneServerColour1Opacity = source.XpDoneServerColour1Opacity;
+        target.XpDoneServerColour1 = source.XpDoneServerColour1;
+        target.XpDoneServerColour2Opacity = source.XpDoneServerColour2Opacity;
+        target.XpDoneServerColour2 = source.XpDoneServerColour2;
+        target.XpDoneServerColour3Opacity = source.XpDoneServerColour3Opacity;
+        target.XpDoneServerColour3 = source.XpDoneServerColour3;
+        target.XpDoneGlobalColour1Opacity = source.XpDoneGlobalColour1Opacity;
+        target.XpDoneGlobalColour1 = source.XpDoneGlobalColour1;
+        target.XpDoneGlobalColour2Opacity = source.XpDoneGlobalColour2Opacity;
+        target.XpDoneGlobalColour2 = source.XpDoneGlobalColour2;
+        target.XpDoneGlobalColour3Opacity = source.XpDoneGlobalColour3Opacity;
+        target.XpDoneGlobalColour3 = source.XpDoneGlobalColour3;
+        target.Description = source.Description;
+        target.Timezone = source.Timezone;
+        target.Birthday = source.Birthday;
+        target.XpBarOpacity = source.XpBarOpacity;
+        target.XpBarColour = source.XpBarColour;
+        target.XpBar2Opacity = source.XpBar2Opacity;
+        target.XpBar2Colour = source.XpBar2Colour;
     }
 }

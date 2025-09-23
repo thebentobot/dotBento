@@ -32,6 +32,8 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 builder.Services.AddOpenApi();
 
+builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();
+
 var connectionString = configuration["DatabaseConnectionString"];
 if (string.IsNullOrEmpty(connectionString))
 {

@@ -6,8 +6,6 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-// TODO: If we want to use the cache, we need to make sure that the cache is invalidated when the database is updated
-// which could be the case if a user updates their profile on the website
 public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbContext> contextFactory)
 {
     public Task<Profile> CreateOrUpdateProfileAsync(long userId, Action<Profile>? applyChanges = null)
@@ -38,17 +36,17 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
         }
             
         await context.SaveChangesAsync();
-            
+        
         cache.Set($"profile:{profile.UserId}", profile);
-
+        
         return profile;
     }
     
     public async Task<Maybe<Profile>> GetProfileAsync(long userId)
     {
-        if (cache.TryGetValue($"profile:{userId}", out Profile? profile))
+        if (cache.TryGetValue($"profile:{userId}", out Profile? cached))
         {
-            return profile;
+            return cached;
         }
         
         await using var context = await contextFactory.CreateDbContextAsync();
