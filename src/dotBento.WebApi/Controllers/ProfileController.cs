@@ -5,31 +5,25 @@ using dotBento.WebApi.Dtos;
 using dotBento.WebApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.WebApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ProfileController(BotDbContext dbContext, IMemoryCache cache) : ControllerBase
+public class ProfileController(BotDbContext dbContext, ProfileService profileService) : ControllerBase
 {
     [HttpGet("{userId:long}")]
     public async Task<ActionResult<ProfileDto>> GetProfile(long userId)
     {
         var bentoUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
-
         if (bentoUser == null)
-        {
             return NotFound();
-        }
 
-        var profile = await dbContext.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile == null)
-        {
+        var maybe = await profileService.GetProfileAsync(userId);
+        if (maybe.HasNoValue)
             return NotFound();
-        }
-
-        return Ok(profile.ToProfileDto());
+        return Ok(maybe.Value.ToProfileDto());
     }
 
     [HttpPost]
@@ -41,37 +35,77 @@ public class ProfileController(BotDbContext dbContext, IMemoryCache cache) : Con
         }
 
         var bentoUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == request.UserId);
-
         if (bentoUser == null)
         {
             return NotFound("User does not exist in the Bento database.");
         }
 
-        var profile = await dbContext.Profiles.FirstOrDefaultAsync(p => p.UserId == request.UserId);
-        var isNew = false;
-        if (profile == null)
+        var maybeExisting = await profileService.GetProfileAsync(request.UserId);
+        var working = maybeExisting.HasValue ? maybeExisting.Value : new Profile { UserId = request.UserId };
+
+        if (request.LastfmBoard.HasValue) working.LastfmBoard = request.LastfmBoard.Value;
+        if (request.XpBoard.HasValue) working.XpBoard = request.XpBoard.Value;
+
+        var applyErr = TryApplyProfileChanges(working, request);
+        if (applyErr != null) return applyErr;
+
+        var saved = await profileService.CreateOrUpdateProfileAsync(request.UserId, p =>
         {
-            profile = new Profile { UserId = request.UserId };
-            isNew = true;
-        }
+            p.LastfmBoard = working.LastfmBoard;
+            p.XpBoard = working.XpBoard;
+            p.BackgroundUrl = working.BackgroundUrl;
+            p.BackgroundColourOpacity = working.BackgroundColourOpacity;
+            p.BackgroundColour = working.BackgroundColour;
+            p.DescriptionColourOpacity = working.DescriptionColourOpacity;
+            p.DescriptionColour = working.DescriptionColour;
+            p.OverlayOpacity = working.OverlayOpacity;
+            p.OverlayColour = working.OverlayColour;
+            p.UsernameColour = working.UsernameColour;
+            p.DiscriminatorColour = working.DiscriminatorColour;
+            p.SidebarItemServerColour = working.SidebarItemServerColour;
+            p.SidebarItemGlobalColour = working.SidebarItemGlobalColour;
+            p.SidebarItemBentoColour = working.SidebarItemBentoColour;
+            p.SidebarItemTimezoneColour = working.SidebarItemTimezoneColour;
+            p.SidebarValueServerColour = working.SidebarValueServerColour;
+            p.SidebarValueGlobalColour = working.SidebarValueGlobalColour;
+            p.SidebarValueBentoColour = working.SidebarValueBentoColour;
+            p.SidebarOpacity = working.SidebarOpacity;
+            p.SidebarColour = working.SidebarColour;
+            p.SidebarBlur = working.SidebarBlur;
+            p.FmDivBgopacity = working.FmDivBgopacity;
+            p.FmDivBgcolour = working.FmDivBgcolour;
+            p.FmSongTextOpacity = working.FmSongTextOpacity;
+            p.FmSongTextColour = working.FmSongTextColour;
+            p.FmArtistTextOpacity = working.FmArtistTextOpacity;
+            p.FmArtistTextColour = working.FmArtistTextColour;
+            p.XpDivBgopacity = working.XpDivBgopacity;
+            p.XpDivBgcolour = working.XpDivBgcolour;
+            p.XpTextOpacity = working.XpTextOpacity;
+            p.XpTextColour = working.XpTextColour;
+            p.XpText2Opacity = working.XpText2Opacity;
+            p.XpText2Colour = working.XpText2Colour;
+            p.XpDoneServerColour1Opacity = working.XpDoneServerColour1Opacity;
+            p.XpDoneServerColour1 = working.XpDoneServerColour1;
+            p.XpDoneServerColour2Opacity = working.XpDoneServerColour2Opacity;
+            p.XpDoneServerColour2 = working.XpDoneServerColour2;
+            p.XpDoneServerColour3Opacity = working.XpDoneServerColour3Opacity;
+            p.XpDoneServerColour3 = working.XpDoneServerColour3;
+            p.XpDoneGlobalColour1Opacity = working.XpDoneGlobalColour1Opacity;
+            p.XpDoneGlobalColour1 = working.XpDoneGlobalColour1;
+            p.XpDoneGlobalColour2Opacity = working.XpDoneGlobalColour2Opacity;
+            p.XpDoneGlobalColour2 = working.XpDoneGlobalColour2;
+            p.XpDoneGlobalColour3Opacity = working.XpDoneGlobalColour3Opacity;
+            p.XpDoneGlobalColour3 = working.XpDoneGlobalColour3;
+            p.Description = working.Description;
+            p.Timezone = working.Timezone;
+            p.Birthday = working.Birthday;
+            p.XpBarOpacity = working.XpBarOpacity;
+            p.XpBarColour = working.XpBarColour;
+            p.XpBar2Opacity = working.XpBar2Opacity;
+            p.XpBar2Colour = working.XpBar2Colour;
+        });
 
-        if (request.LastfmBoard.HasValue) profile.LastfmBoard = request.LastfmBoard.Value;
-        if (request.XpBoard.HasValue) profile.XpBoard = request.XpBoard.Value;
-
-        var applyError = TryApplyProfileChanges(profile, request);
-        if (applyError != null) return applyError;
-
-        if (isNew)
-            await dbContext.Profiles.AddAsync(profile);
-        else
-            dbContext.Profiles.Update(profile);
-
-        await dbContext.SaveChangesAsync();
-
-        // Invalidate cache so bot side reads fresh data
-        cache.Remove($"profile:{request.UserId}");
-
-        return Ok(profile.ToProfileDto());
+        return Ok(saved.ToProfileDto());
     }
 
     private ActionResult? TryApplyProfileChanges(Profile profile, ProfileUpdateRequest request)

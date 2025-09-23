@@ -4,6 +4,11 @@ using dotBento.WebApi.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using dotBento.EntityFramework.Context;
+using Microsoft.Extensions.Caching.Memory;
+using dotBento.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Linq;
 
 namespace dotBento.WebApi.Tests.Controllers;
 
@@ -53,11 +58,44 @@ public class ProfileControllerTests
         await context.SaveChangesAsync();
     }
 
+    private sealed class SingleContextFactory : IDbContextFactory<BotDbContext>
+    {
+        private readonly BotDbContext _ctx;
+        public SingleContextFactory(BotDbContext ctx) => _ctx = ctx;
+        public BotDbContext CreateDbContext()
+        {
+            return CreateNewContextSharingStore();
+        }
+        public Task<BotDbContext> CreateDbContextAsync(System.Threading.CancellationToken cancellationToken = default)
+            => Task.FromResult(CreateNewContextSharingStore());
+
+        private BotDbContext CreateNewContextSharingStore()
+        {
+            // Re-create a BotDbContext that points to the same InMemory database as the provided context
+            var options = _ctx.GetService<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions>();
+            var inMemoryExt = options.Extensions.OfType<Microsoft.EntityFrameworkCore.InMemory.Infrastructure.Internal.InMemoryOptionsExtension>().First();
+
+            var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+            var newOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<BotDbContext>()
+                .UseInMemoryDatabase(inMemoryExt.StoreName)
+                .Options;
+            return new BotDbContext(configuration, newOptions);
+        }
+    }
+
+    private static ProfileController CreateController(BotDbContext context)
+    {
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        var factory = new SingleContextFactory(context);
+        var service = new ProfileService(cache, factory);
+        return new ProfileController(context, service);
+    }
+
     [Fact]
     public async Task GetProfile_UserNotFound_Returns404()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
 
         var result = await controller.GetProfile(999);
 
@@ -68,7 +106,7 @@ public class ProfileControllerTests
     public async Task GetProfile_NotFound_Returns404()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 123);
 
         var result = await controller.GetProfile(123);
@@ -94,7 +132,7 @@ public class ProfileControllerTests
         });
         await context.SaveChangesAsync();
 
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 1);
 
         var result = await controller.GetProfile(1);
@@ -116,7 +154,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_CreatesNew_ReturnsDto_AndPersists()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
 
         await SeedUser(context, 5);
 
@@ -168,7 +206,7 @@ public class ProfileControllerTests
         });
         await context.SaveChangesAsync();
 
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
 
         await SeedUser(context, 10);
 
@@ -192,7 +230,7 @@ public class ProfileControllerTests
         Assert.False(dto.XpBoard);
         Assert.Equal("#000000", dto.BackgroundColour);
 
-        var entity = context.Profiles.First(p => p.UserId == 10);
+        var entity = await context.Profiles.AsNoTracking().FirstAsync(p => p.UserId == 10);
         Assert.True(entity.LastfmBoard);
         Assert.Equal("New", entity.Description);
         Assert.Equal(75, entity.BackgroundColourOpacity);
@@ -204,7 +242,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_InvalidBackgroundUrl_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 42);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -218,7 +256,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_InvalidHex_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 42);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -232,7 +270,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_InvalidOpacity_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 42);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -246,7 +284,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_InvalidTimezone_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 42);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -260,7 +298,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_InvalidBirthday_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 42);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -274,7 +312,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_NormalizesHexAndBirthday_Succeeds()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 77);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -299,7 +337,7 @@ public class ProfileControllerTests
             XpBar2Opacity = 50
         });
         await context.SaveChangesAsync();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 100);
         var result = await controller.GetProfile(100);
         var ok = Assert.IsType<OkObjectResult>(result.Result);
@@ -314,7 +352,7 @@ public class ProfileControllerTests
         string expectedMessage)
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 4242);
         var req = new ProfileUpdateRequest { UserId = 4242 };
         SetProperty(req, propertyName, "ZZZZZZ");
@@ -330,7 +368,7 @@ public class ProfileControllerTests
         string expectedMessage)
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 4343);
         var req = new ProfileUpdateRequest { UserId = 4343 };
         SetProperty(req, propertyName, 150);
@@ -344,7 +382,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_NegativeSidebarBlur_ReturnsSpecificBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 45);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -359,7 +397,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_ValidHttpUrl_IsAccepted()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 46);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
@@ -375,7 +413,7 @@ public class ProfileControllerTests
     public async Task UpsertProfile_Normalizes_UsernameHex()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new ProfileController(context);
+        var controller = CreateController(context);
         await SeedUser(context, 47);
         var result = await controller.UpsertProfile(new ProfileUpdateRequest
         {
