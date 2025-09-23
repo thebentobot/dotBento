@@ -27,6 +27,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
+      <ProjectReference Include="..\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>

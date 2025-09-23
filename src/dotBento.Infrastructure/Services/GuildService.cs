@@ -104,7 +104,8 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     {
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetSlidingExpiration(TimeSpan.FromMinutes(5));
-        cache.Set(CacheKeyForGuildMember((ulong)guildMember.GuildId, (ulong)guildMember.UserId), guildMember, cacheEntryOptions);
+        cache.Set(CacheKeyForGuildMember((ulong)guildMember.GuildId, (ulong)guildMember.UserId), guildMember,
+            cacheEntryOptions);
         return Task.CompletedTask;
     }
 
@@ -215,8 +216,8 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         var rank = await db.GuildMembers
             .AsNoTracking()
-            .Where(u => u.GuildId == discordGuildId && 
-                        (u.Level > guildMember.Level || 
+            .Where(u => u.GuildId == discordGuildId &&
+                        (u.Level > guildMember.Level ||
                          (u.Level == guildMember.Level && u.Xp > guildMember.Xp)))
             .CountAsync();
 
@@ -234,5 +235,42 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             await db.SaveChangesAsync();
             await AddGuildToCache(guild);
         }
+    }
+
+    public async Task<Maybe<GuildMember>> GetOrCreateGuildMemberAsync(ulong discordGuildId, ulong discordUserId,
+        SocketGuildUser guildUser)
+    {
+        var cachedKey = CacheKeyForGuildMember(discordGuildId, discordUserId);
+        if (cache.TryGetValue(cachedKey, out GuildMember? cachedGuildMember))
+        {
+            return cachedGuildMember.AsMaybe();
+        }
+
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var guildMember = await db.GuildMembers
+            .AsQueryable()
+            .FirstOrDefaultAsync(member =>
+                member.GuildId == (long)discordGuildId && member.UserId == (long)discordUserId);
+
+        if (guildMember != null)
+        {
+            await AddGuildMemberToCache(guildMember);
+            return guildMember.AsMaybe();
+        }
+
+        guildMember = new GuildMember
+        {
+            GuildId = (long)discordGuildId,
+            UserId = (long)discordUserId,
+            AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512),
+            Xp = 0,
+            Level = 1
+        };
+        await db.GuildMembers.AddAsync(guildMember);
+        await db.SaveChangesAsync();
+
+        await AddGuildMemberToCache(guildMember);
+
+        return guildMember.AsMaybe();
     }
 }
