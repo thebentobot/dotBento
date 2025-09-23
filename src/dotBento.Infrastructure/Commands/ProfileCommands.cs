@@ -140,9 +140,7 @@ public sealed class ProfileCommands(
         var userTimezone = profile.Timezone != null
             ? $"{GetCurrentTimeForTimezone(profile.Timezone).ToShortTimeString()} {ShowEmoteAccordingToTimeOfDay(GetCurrentTimeForTimezone(profile.Timezone))} "
             : "";
-        var userBirthday = profile.Birthday != null
-            ? DateTime.Parse(profile.Birthday).ToString("MMM d") + " 🎂"
-            : "";
+        var userBirthday = FormatBirthday(profile.Birthday);
 
         var emoteArray = await GetUserEmotes(profile.UserId);
 
@@ -963,6 +961,55 @@ public sealed class ProfileCommands(
             < 20 => "🌇",
             _ => "🌙"
         };
+    }
+
+    private static string FormatBirthday(string? birthday)
+    {
+        if (string.IsNullOrWhiteSpace(birthday)) return "";
+        var input = birthday.Trim();
+
+        // Try month-first formats first (e.g., MM-dd, MM/dd)
+        var monthFirstFormats = new[]
+        {
+            "MM-dd", "M-d", "MM/dd", "M/d"
+        };
+        if (DateTime.TryParseExact(input, monthFirstFormats, CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces, out var dtExact))
+        {
+            return dtExact.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
+        }
+        // Then try day-first interpretation of the same numeric patterns (e.g., dd-MM, dd/MM)
+        var dayFirstFormats = new[]
+        {
+            "dd-MM", "d-M", "dd/MM", "d/M"
+        };
+        if (DateTime.TryParseExact(input, dayFirstFormats, CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces, out dtExact))
+        {
+            return dtExact.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
+        }
+
+        // Prefer explicit text patterns first to avoid misinterpreting day as year (e.g., "7 february" -> year 7)
+        var enUS = CultureInfo.GetCultureInfo("en-US");
+        var textFormats = new[]
+        {
+            "d MMM", "d MMMM", "MMM d", "MMMM d",
+            "d MMM yyyy", "d MMMM yyyy", "MMM d yyyy", "MMMM d yyyy"
+        };
+        if (DateTime.TryParseExact(input, textFormats, enUS,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal, out var dt))
+        {
+            return dt.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
+        }
+
+
+        // Try with en-US explicitly (month names in English)
+        if (DateTime.TryParse(input, enUS, DateTimeStyles.AllowWhiteSpaces, out dt))
+        {
+            return dt.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
+        }
+
+        return "";
     }
 
     private static string ConvertOpacityToHex(int? opacityPercentage)
