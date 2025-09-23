@@ -6,8 +6,6 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-// NOTE: Profile caching is enabled. Cache is invalidated on updates in both bot service and Web API
-// to ensure users immediately see their changes after editing their profile.
 public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbContext> contextFactory)
 {
     public Task<Profile> CreateOrUpdateProfileAsync(long userId, Action<Profile>? applyChanges = null)
@@ -39,7 +37,6 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
             
         await context.SaveChangesAsync();
         
-        // Invalidate cache for this user so subsequent reads fetch fresh data
         cache.Remove($"profile:{profile.UserId}");
         
         return profile;
@@ -47,7 +44,6 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
     
     public async Task<Maybe<Profile>> GetProfileAsync(long userId)
     {
-        // Try cache first
         if (cache.TryGetValue($"profile:{userId}", out Profile? cached))
         {
             return cached;
@@ -62,7 +58,6 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
             return Maybe<Profile>.None;
         }
         
-        // Populate cache after successful fetch
         cache.Set($"profile:{userId}", profileEntity);
         
         return profileEntity;
