@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.2](https://github.com/thebentobot/dotBento/compare/v1.7.1...v1.7.2) (2025-09-23)
+
+
+### Bug Fixes
+
+* **ProfileCommands:** address date parsing PR comments ([6ec3dad](https://github.com/thebentobot/dotBento/commit/6ec3dadb3bdc1af181541515ee30cf68924f0470))
+* **ProfileCommands:** make birthday backwards compatible ([fae74e8](https://github.com/thebentobot/dotBento/commit/fae74e8d16b5bd63f5eac7d98c3535e9544e655a))
+* **ProfileCommands:** make birthday backwards compatible ([824e880](https://github.com/thebentobot/dotBento/commit/824e8809a6b6f19fa5f0f21010c8f44b873dcb83))
+
 ## [1.7.1](https://github.com/thebentobot/dotBento/compare/v1.7.0...v1.7.1) (2025-09-23)
 
 
