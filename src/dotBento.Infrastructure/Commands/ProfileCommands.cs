@@ -968,14 +968,23 @@ public sealed class ProfileCommands(
         if (string.IsNullOrWhiteSpace(birthday)) return "";
         var input = birthday.Trim();
 
-        // First, try numeric month/day inputs (new syntax) and some common numeric day/month variants
-        var numericFormats = new[]
+        // Try month-first formats first (e.g., MM-dd, MM/dd)
+        var monthFirstFormats = new[]
         {
-            "MM-dd", "M-d", "MM/dd", "M/d",
+            "MM-dd", "M-d", "MM/dd", "M/d"
+        };
+        if (DateTime.TryParseExact(input, monthFirstFormats, CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces, out var dtExact))
+        {
+            return dtExact.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
+        }
+        // Then try day-first formats (e.g., dd-MM, dd/MM)
+        var dayFirstFormats = new[]
+        {
             "dd-MM", "d-M", "dd/MM", "d/M"
         };
-        if (DateTime.TryParseExact(input, numericFormats, CultureInfo.InvariantCulture,
-                DateTimeStyles.AllowWhiteSpaces, out var dtExact))
+        if (DateTime.TryParseExact(input, dayFirstFormats, CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces, out dtExact))
         {
             return dtExact.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
         }
