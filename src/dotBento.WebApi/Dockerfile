@@ -9,6 +9,8 @@ WORKDIR /src
 
 COPY src/dotBento.WebApi/ dotBento.WebApi/
 COPY src/dotBento.EntityFramework/ dotBento.EntityFramework/
+COPY src/dotBento.Infrastructure/ dotBento.Infrastructure/
+COPY src/dotBento.Domain/ dotBento.Domain/
 
 WORKDIR /src/dotBento.WebApi
 
