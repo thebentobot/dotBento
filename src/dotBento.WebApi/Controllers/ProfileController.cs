@@ -51,58 +51,7 @@ public class ProfileController(BotDbContext dbContext, ProfileService profileSer
 
         var saved = await profileService.CreateOrUpdateProfileAsync(request.UserId, p =>
         {
-            p.LastfmBoard = working.LastfmBoard;
-            p.XpBoard = working.XpBoard;
-            p.BackgroundUrl = working.BackgroundUrl;
-            p.BackgroundColourOpacity = working.BackgroundColourOpacity;
-            p.BackgroundColour = working.BackgroundColour;
-            p.DescriptionColourOpacity = working.DescriptionColourOpacity;
-            p.DescriptionColour = working.DescriptionColour;
-            p.OverlayOpacity = working.OverlayOpacity;
-            p.OverlayColour = working.OverlayColour;
-            p.UsernameColour = working.UsernameColour;
-            p.DiscriminatorColour = working.DiscriminatorColour;
-            p.SidebarItemServerColour = working.SidebarItemServerColour;
-            p.SidebarItemGlobalColour = working.SidebarItemGlobalColour;
-            p.SidebarItemBentoColour = working.SidebarItemBentoColour;
-            p.SidebarItemTimezoneColour = working.SidebarItemTimezoneColour;
-            p.SidebarValueServerColour = working.SidebarValueServerColour;
-            p.SidebarValueGlobalColour = working.SidebarValueGlobalColour;
-            p.SidebarValueBentoColour = working.SidebarValueBentoColour;
-            p.SidebarOpacity = working.SidebarOpacity;
-            p.SidebarColour = working.SidebarColour;
-            p.SidebarBlur = working.SidebarBlur;
-            p.FmDivBgopacity = working.FmDivBgopacity;
-            p.FmDivBgcolour = working.FmDivBgcolour;
-            p.FmSongTextOpacity = working.FmSongTextOpacity;
-            p.FmSongTextColour = working.FmSongTextColour;
-            p.FmArtistTextOpacity = working.FmArtistTextOpacity;
-            p.FmArtistTextColour = working.FmArtistTextColour;
-            p.XpDivBgopacity = working.XpDivBgopacity;
-            p.XpDivBgcolour = working.XpDivBgcolour;
-            p.XpTextOpacity = working.XpTextOpacity;
-            p.XpTextColour = working.XpTextColour;
-            p.XpText2Opacity = working.XpText2Opacity;
-            p.XpText2Colour = working.XpText2Colour;
-            p.XpDoneServerColour1Opacity = working.XpDoneServerColour1Opacity;
-            p.XpDoneServerColour1 = working.XpDoneServerColour1;
-            p.XpDoneServerColour2Opacity = working.XpDoneServerColour2Opacity;
-            p.XpDoneServerColour2 = working.XpDoneServerColour2;
-            p.XpDoneServerColour3Opacity = working.XpDoneServerColour3Opacity;
-            p.XpDoneServerColour3 = working.XpDoneServerColour3;
-            p.XpDoneGlobalColour1Opacity = working.XpDoneGlobalColour1Opacity;
-            p.XpDoneGlobalColour1 = working.XpDoneGlobalColour1;
-            p.XpDoneGlobalColour2Opacity = working.XpDoneGlobalColour2Opacity;
-            p.XpDoneGlobalColour2 = working.XpDoneGlobalColour2;
-            p.XpDoneGlobalColour3Opacity = working.XpDoneGlobalColour3Opacity;
-            p.XpDoneGlobalColour3 = working.XpDoneGlobalColour3;
-            p.Description = working.Description;
-            p.Timezone = working.Timezone;
-            p.Birthday = working.Birthday;
-            p.XpBarOpacity = working.XpBarOpacity;
-            p.XpBarColour = working.XpBarColour;
-            p.XpBar2Opacity = working.XpBar2Opacity;
-            p.XpBar2Colour = working.XpBar2Colour;
+            CopyProfileValues(working, p);
         });
 
         return Ok(saved.ToProfileDto());
@@ -338,5 +287,61 @@ public class ProfileController(BotDbContext dbContext, ProfileService profileSer
 
         assign(value);
         return true;
+    }
+
+    private static void CopyProfileValues(Profile source, Profile target)
+    {
+        target.LastfmBoard = source.LastfmBoard;
+        target.XpBoard = source.XpBoard;
+        target.BackgroundUrl = source.BackgroundUrl;
+        target.BackgroundColourOpacity = source.BackgroundColourOpacity;
+        target.BackgroundColour = source.BackgroundColour;
+        target.DescriptionColourOpacity = source.DescriptionColourOpacity;
+        target.DescriptionColour = source.DescriptionColour;
+        target.OverlayOpacity = source.OverlayOpacity;
+        target.OverlayColour = source.OverlayColour;
+        target.UsernameColour = source.UsernameColour;
+        target.DiscriminatorColour = source.DiscriminatorColour;
+        target.SidebarItemServerColour = source.SidebarItemServerColour;
+        target.SidebarItemGlobalColour = source.SidebarItemGlobalColour;
+        target.SidebarItemBentoColour = source.SidebarItemBentoColour;
+        target.SidebarItemTimezoneColour = source.SidebarItemTimezoneColour;
+        target.SidebarValueServerColour = source.SidebarValueServerColour;
+        target.SidebarValueGlobalColour = source.SidebarValueGlobalColour;
+        target.SidebarValueBentoColour = source.SidebarValueBentoColour;
+        target.SidebarOpacity = source.SidebarOpacity;
+        target.SidebarColour = source.SidebarColour;
+        target.SidebarBlur = source.SidebarBlur;
+        target.FmDivBgopacity = source.FmDivBgopacity;
+        target.FmDivBgcolour = source.FmDivBgcolour;
+        target.FmSongTextOpacity = source.FmSongTextOpacity;
+        target.FmSongTextColour = source.FmSongTextColour;
+        target.FmArtistTextOpacity = source.FmArtistTextOpacity;
+        target.FmArtistTextColour = source.FmArtistTextColour;
+        target.XpDivBgopacity = source.XpDivBgopacity;
+        target.XpDivBgcolour = source.XpDivBgcolour;
+        target.XpTextOpacity = source.XpTextOpacity;
+        target.XpTextColour = source.XpTextColour;
+        target.XpText2Opacity = source.XpText2Opacity;
+        target.XpText2Colour = source.XpText2Colour;
+        target.XpDoneServerColour1Opacity = source.XpDoneServerColour1Opacity;
+        target.XpDoneServerColour1 = source.XpDoneServerColour1;
+        target.XpDoneServerColour2Opacity = source.XpDoneServerColour2Opacity;
+        target.XpDoneServerColour2 = source.XpDoneServerColour2;
+        target.XpDoneServerColour3Opacity = source.XpDoneServerColour3Opacity;
+        target.XpDoneServerColour3 = source.XpDoneServerColour3;
+        target.XpDoneGlobalColour1Opacity = source.XpDoneGlobalColour1Opacity;
+        target.XpDoneGlobalColour1 = source.XpDoneGlobalColour1;
+        target.XpDoneGlobalColour2Opacity = source.XpDoneGlobalColour2Opacity;
+        target.XpDoneGlobalColour2 = source.XpDoneGlobalColour2;
+        target.XpDoneGlobalColour3Opacity = source.XpDoneGlobalColour3Opacity;
+        target.XpDoneGlobalColour3 = source.XpDoneGlobalColour3;
+        target.Description = source.Description;
+        target.Timezone = source.Timezone;
+        target.Birthday = source.Birthday;
+        target.XpBarOpacity = source.XpBarOpacity;
+        target.XpBarColour = source.XpBarColour;
+        target.XpBar2Opacity = source.XpBar2Opacity;
+        target.XpBar2Colour = source.XpBar2Colour;
     }
 }

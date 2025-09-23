@@ -71,15 +71,18 @@ public class ProfileControllerTests
 
         private BotDbContext CreateNewContextSharingStore()
         {
-            // Re-create a BotDbContext that points to the same InMemory database as the provided context
-            var options = _ctx.GetService<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions>();
-            var inMemoryExt = options.Extensions.OfType<Microsoft.EntityFrameworkCore.InMemory.Infrastructure.Internal.InMemoryOptionsExtension>().First();
+            // Re-create a BotDbContext that points to the same InMemory database as the provided context,
+            // using public EF Core APIs instead of internal types.
+            if (_ctx is TestBotDbContext tctx)
+            {
+                var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+                var newOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<BotDbContext>()
+                    .UseInMemoryDatabase(tctx.DatabaseName, tctx.Root)
+                    .Options;
+                return new BotDbContext(configuration, newOptions);
+            }
 
-            var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-            var newOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<BotDbContext>()
-                .UseInMemoryDatabase(inMemoryExt.StoreName)
-                .Options;
-            return new BotDbContext(configuration, newOptions);
+            throw new InvalidOperationException("Expected TestBotDbContext for in-memory testing.");
         }
     }
 
