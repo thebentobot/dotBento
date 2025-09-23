@@ -978,7 +978,7 @@ public sealed class ProfileCommands(
         {
             return dtExact.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
         }
-        // Then try day-first formats (e.g., dd-MM, dd/MM)
+        // Then try day-first interpretation of the same numeric patterns (e.g., dd-MM, dd/MM)
         var dayFirstFormats = new[]
         {
             "dd-MM", "d-M", "dd/MM", "d/M"
