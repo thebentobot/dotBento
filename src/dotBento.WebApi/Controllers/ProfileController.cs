@@ -21,7 +21,7 @@ public class ProfileController(BotDbContext dbContext) : ControllerBase
         {
             return NotFound();
         }
-        
+
         var profile = await dbContext.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
         if (profile == null)
         {

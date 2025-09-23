@@ -54,10 +54,22 @@ public class ProfileControllerTests
     }
 
     [Fact]
+    public async Task GetProfile_UserNotFound_Returns404()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = new ProfileController(context);
+
+        var result = await controller.GetProfile(999);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
     public async Task GetProfile_NotFound_Returns404()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
         var controller = new ProfileController(context);
+        await SeedUser(context, 123);
 
         var result = await controller.GetProfile(123);
 
@@ -83,6 +95,7 @@ public class ProfileControllerTests
         await context.SaveChangesAsync();
 
         var controller = new ProfileController(context);
+        await SeedUser(context, 1);
 
         var result = await controller.GetProfile(1);
 
@@ -287,6 +300,7 @@ public class ProfileControllerTests
         });
         await context.SaveChangesAsync();
         var controller = new ProfileController(context);
+        await SeedUser(context, 100);
         var result = await controller.GetProfile(100);
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<ProfileDto>(ok.Value);
