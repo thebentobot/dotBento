@@ -37,7 +37,7 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
             
         await context.SaveChangesAsync();
         
-        cache.Remove($"profile:{profile.UserId}");
+        cache.Set($"profile:{profile.UserId}", profile);
         
         return profile;
     }
