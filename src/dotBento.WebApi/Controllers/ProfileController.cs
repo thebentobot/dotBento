@@ -13,8 +13,6 @@ namespace dotBento.WebApi.Controllers;
 [Route("[controller]")]
 public class ProfileController(BotDbContext dbContext, IMemoryCache cache) : ControllerBase
 {
-    // Backward-compatible ctor for tests and callers not providing IMemoryCache
-    public ProfileController(BotDbContext dbContext) : this(dbContext, new MemoryCache(new MemoryCacheOptions())) { }
     [HttpGet("{userId:long}")]
     public async Task<ActionResult<ProfileDto>> GetProfile(long userId)
     {
