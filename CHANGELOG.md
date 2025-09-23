@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.7.0](https://github.com/thebentobot/dotBento/compare/v1.6.0...v1.7.0) (2025-09-23)
+
+
+### Features
+
+* **bot.utilities:** add a test for regex patterns ([d9bf7aa](https://github.com/thebentobot/dotBento/commit/d9bf7aa1881f292d16ee832a827247e3882fdf50))
+* **profile:** add customisation commands to profile feature ([a868c28](https://github.com/thebentobot/dotBento/commit/a868c28c085c32993ac310bdc28d6533ba739940))
+* **webapi:** add profile customisation endpoint ([9f33f1e](https://github.com/thebentobot/dotBento/commit/9f33f1e218c8ad481ce5a6d369e81ecdb568d671))
+
+
+### Bug Fixes
+
+* **bot.tests/StringUtilities:** null warning ([98ae2b4](https://github.com/thebentobot/dotBento/commit/98ae2b4b1986c7ab61e1510526b7d9810d5eaaca))
+* **docker:** add projects to dockerfile to fix pipeline ([6412398](https://github.com/thebentobot/dotBento/commit/6412398c3cb7f7aeb47200d9483f721349bd379f))
+* **tests:** make profile tests run after last minute addition ([050a6c1](https://github.com/thebentobot/dotBento/commit/050a6c13f3021507ef6bb71664a7348be09373ef))
+
 ## [1.6.0](https://github.com/thebentobot/dotBento/compare/v1.5.1...v1.6.0) (2025-06-25)
 
 
