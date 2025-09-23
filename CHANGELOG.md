@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.1](https://github.com/thebentobot/dotBento/compare/v1.7.0...v1.7.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* **profile customisation:** remove user from cache when edit profile ([2a59fe9](https://github.com/thebentobot/dotBento/commit/2a59fe9a55f34744922e0df8edc35d425b0633c7))
+* **profile customisation:** remove user from cache when edit profile ([5538721](https://github.com/thebentobot/dotBento/commit/5538721c671b9239d09e875de2b7bdabed83791e))
+* **ProfileController:** adjust to PR comments ([877f61f](https://github.com/thebentobot/dotBento/commit/877f61fa8f9cacefae449c9a56929b323de842fe))
+* **WebAPI/ProfileController:** inject ProfileService ([df250e3](https://github.com/thebentobot/dotBento/commit/df250e3df15fc17e934f380236700f15f5ed2235))
+* **workflows/release-please:** update service as the former is deprecated ([b320e32](https://github.com/thebentobot/dotBento/commit/b320e328c6a10722cab2920dd469d3c792e9885a))
+
 ## [1.7.0](https://github.com/thebentobot/dotBento/compare/v1.6.0...v1.7.0) (2025-09-23)
 
 
