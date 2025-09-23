@@ -1002,11 +1002,6 @@ public sealed class ProfileCommands(
             return dt.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
         }
 
-        // Try general parsing with invariant culture (handles: '7 february', 'February 18', '4 July 2000', '25 Nov')
-        if (DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out dt))
-        {
-            return dt.ToString("MMM d", CultureInfo.InvariantCulture) + " 🎂";
-        }
 
         // Try with en-US explicitly (month names in English)
         if (DateTime.TryParse(input, enUS, DateTimeStyles.AllowWhiteSpaces, out dt))
