@@ -5,13 +5,16 @@ using dotBento.WebApi.Dtos;
 using dotBento.WebApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.WebApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ProfileController(BotDbContext dbContext) : ControllerBase
+public class ProfileController(BotDbContext dbContext, IMemoryCache cache) : ControllerBase
 {
+    // Backward-compatible ctor for tests and callers not providing IMemoryCache
+    public ProfileController(BotDbContext dbContext) : this(dbContext, new MemoryCache(new MemoryCacheOptions())) { }
     [HttpGet("{userId:long}")]
     public async Task<ActionResult<ProfileDto>> GetProfile(long userId)
     {
@@ -66,6 +69,9 @@ public class ProfileController(BotDbContext dbContext) : ControllerBase
             dbContext.Profiles.Update(profile);
 
         await dbContext.SaveChangesAsync();
+
+        // Invalidate cache so bot side reads fresh data
+        cache.Remove($"profile:{request.UserId}");
 
         return Ok(profile.ToProfileDto());
     }
