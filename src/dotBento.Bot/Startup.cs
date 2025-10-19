@@ -108,7 +108,7 @@ public sealed class Startup
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            // Add GatewayIntents.MessageContent when we have permission from Discord
+            // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
             GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
