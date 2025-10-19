@@ -1,6 +1,7 @@
 # Privacy
 
-*Last revised: August 30, 2022*
+*Last revised: October 19, 2025*
+
 ## Interpretation and Definitions
 
 ### Interpretation
@@ -13,34 +14,22 @@ regardless of whether they appear in singular or in plural.
 
 This privacy policy describes how we might use your information if you:
 
-* Visit our website at https://bentobot.xyz;
-* Use our Discord application(s) (a.k.a. "Discord Bot(s)" — Bento#3548);
-* Engage with us in other related ways ― including any sales, marketing, or events.
+* Visit our website at [https://bentobot.xyz](https://bentobot.xyz)
+* Use our Discord application(s) (a.k.a. "Discord Bot(s)" — Bento#3548)
+* Engage with us in other related ways ― including any sales, marketing, or events
 
 In this privacy policy, if we refer to:
 
-* **"Website"**, we are referring to any website of ours that references or
-  links to this policy;
-* **"Bot"** or **"App"**, we are referring to any Discord application of ours
-  that references or links to this policy, including any listed above;
-* **"Service(s)"**, we are referring to our Website, Bot, and other related
-  services, including any sales, marketing, or events;
-* **"Data"**, we are referring to any data, content, and information (including
-  personal information) owned, held, used or created by you (or on your behalf)
-  that may be stored using, or processed by, our Services;
-* **"Discord"**, we are referring to Discord Inc. and its related companies;
-* **"Discord End User"**, we are referring to you, as someone who is using
-   Discord-related services according to the Discord privacy policies and terms
-   of service;
-* **"Discord End User Data"**, we are referring to the data you provide to
-  Discord through the Discord App;
-* **"Discord App"**, we are referring to the client(s) (desktop, mobile, web, …)
-  that Discord offers to their End User(s) to access their services;
-* **"Discord API"** we are referring to the API (Application Programming
-  Interfaces) Discord provides to developers, that enables us to access your
-  Discord End User Data according to the Discord privacy policies and terms of
-  service.
-* **"Message XP"** we are referring to a number value that increments for every sent message by a **Discord End User**
+* **"Website"**: any website of ours that references or links to this policy
+* **"Bot"** or **"App"**: any Discord application of ours that references or links to this policy, including any listed above
+* **"Service(s)"**: our Website, Bot, and other related services, including any sales, marketing, or events
+* **"Data"**: any data, content, and information (including personal information) owned, held, used or created by you (or on your behalf) that may be stored using, or processed by, our Services
+* **"Discord"**: Discord Inc. and its related companies
+* **"Discord End User"**: you, as someone who is using Discord-related services according to the Discord privacy policies and terms of service
+* **"Discord End User Data"**: the data you provide to Discord through the Discord App
+* **"Discord App"**: the client(s) (desktop, mobile, web, …) that Discord offers to their End User(s) to access their services
+* **"Discord API"**: the API (Application Programming Interfaces) Discord provides to developers, that enables us to access your Discord End User Data according to the Discord privacy policies and terms of service
+* **"Message XP"**: a number value that increments for every sent message by a Discord End User
 
 The purpose of this privacy policy is to explain to you in the clearest way
 possible what information we collect, how we use it, and what rights you have in
@@ -49,32 +38,52 @@ relation to it.
 Please read this privacy policy carefully, as it will help you understand what
 we do with the information that we collect.
 
+---
+
 ## What information is collected
 
 We may collect personal information that you voluntarily provide to us when you
 express an interest in obtaining information about us or our products and
-Services, when you participate in activities on the Services or otherwise when
+Services, when you participate in activities on the Services, or otherwise when
 you contact us.
 
-Simultaneously, through our Bot, we may collect personal information related to
-you that Discord provides to us through the use of the Discord API (in this
-case, we refer to Discord End User Data).
+Through our Bot, we may collect personal information related to you that Discord
+provides to us through the Discord API (in this case, we refer to Discord End
+User Data).
 
 The personal information that we collect depends on the context of your
 interactions with us and the Services, the choices you make and the products and
 features you use within our Service and within the Discord servers that you
 share with Bento.
 
-By adding Bento or joining a server with Bento, the following information we
-collect may include the following:
+By adding Bento or joining a server with Bento, the information we collect may include:
 
 ### Automatically collected data
 
 * User ID
-* Username
-* Discriminator
+* Username (and discriminator where applicable)
 * Avatar URL
-* Messages for XP (Not the content of messages, only its initiation saved as message XP)
+* Messages for XP (not the content of messages; only that a message event occurred to increment XP)
+
+**We do not access or store the content of your Discord messages.** Our XP feature only records that a message event occurred; it does not log what was said.
+
+### Website login via Discord (OAuth2) & Cookies
+
+When you sign in on our Website using Discord, we receive limited public Discord
+profile information from Discord: your Discord user ID, username (and
+discriminator where applicable), and avatar URL. We store these fields in our
+database to create and maintain your account and to verify your session.
+
+**Cookies used for sign-in (strictly necessary):**
+
+* **Session cookie**: Keeps you logged in and ties your browser session to your account. Set as HTTP-only and Secure with an appropriate SameSite value. Expires on logout or after 7 days of inactivity.
+* **CSRF token**: Helps protect your account from cross-site request forgery. Expires at the end of the session or after a short period.
+
+We do not set non-essential cookies (such as analytics or marketing) without your consent. If we add such cookies in the future, we will request consent and update this policy and our Cookie notice.
+
+**Legal basis:** performance of a contract (providing your account) and/or our legitimate interests in providing and securing the Service.
+
+---
 
 ## How your information is used
 
@@ -82,59 +91,35 @@ We use personal information collected via our Services for a variety of business
 purposes described below. We process your personal information for these
 purposes in reliance on our legitimate business interests, in order to enter
 into or perform a contract with you, with your consent, and/or for compliance
-with our legal obligations. We use the information we collect or receive:
+with our legal obligations. We use the information we collect or receive to:
 
-* **To offer our services to you.** Our Service may need your data, specifically
-  obtained through the Discord API (in that case, we’re referring to Discord End
-  User Data) or voluntarily and directly provided to us.
-* **Request feedback.** We may use your information to request feedback and to
-  contact you about your use of our Services.
-* **To send administrative information to you** We may use your personal
-  information to send you product, service and new feature information and/or
-  information about changes to our terms, conditions, and policies.
-* **To protect our Services.** We may use your information as part of our
-  efforts to keep our Services safe and secure (for example, for fraud
-  monitoring and prevention).
-* **To enforce our terms, conditions and policies for business purposes, to
-  comply with legal and regulatory requirements or in connection with our
-  contract.**
-* **To respond to legal requests and prevent harm.** If we receive a subpoena or
-  other legal request, we may need to inspect the data we hold to determine how
-  to respond.
+* Offer our services to you (including Discord End User Data obtained via the Discord API or information you provide directly).
+* Request feedback and contact you about your use of our Services.
+* Send administrative information to you (e.g., product, service and new feature information and/or changes to our terms, conditions, and policies).
+* Protect our Services (e.g., for fraud monitoring and prevention).
+* Enforce our terms, conditions and policies; comply with legal and regulatory requirements; or perform our contract with you.
+* Respond to legal requests and prevent harm (e.g., in response to a subpoena or other legal process).
+* Authenticate Website users via Discord OAuth and maintain sessions.
+* Operate XP and other features without storing message content.
 
 The personal information we process may be used for the following purposes:
 
-* **Discord ID:** We use your Discord ID to identify you among the different
-  Services, and in relation to your "Discord End User Data".
-* **Partial Discord Message Content:** With partial Discord message content, we
-  refer to the content of messages that let you directly interact with our Bot,
-  such as when using commands and keyword notifications. We use your partial
-  Discord message content to provide you with the output of such commands.
-* **Full Discord Message Content:** With full Discord message content, we refer
-  to the full content of messages that you send using the Discord App, even when
-  the message is not related to a direct interaction with our Bot. We use your
-  full Discord message content to provide specific features that may be offered
-  through our Bot to you, or to other users, such as Notifications.
-* **Other Identifiers:** We may collect other types of identifiers, or contact
-  details, other than your Discord ID if you are directly interacting with us;
-  these identifiers will only be used to process specific inquiries, and may be
-  deleted after the inquiry is complete.
-* **Other Discord End User Data:** We may collect, store, and process other
-  types of content you share with Discord, and that is further provided to us
-  through the Discord API, to provide specific features related to our Services.
+* **Discord ID:** to identify you across our Services and in relation to your Discord End User Data.
+* **Discord OAuth profile fields (username/discriminator where applicable and avatar URL):** to create and maintain your Website account and personalize your experience.
 
-Hereafter, we also provide some additional remarks on how we process your data
-in relation to some specific use cases:
+We do not access or store Discord message content for our features at this time. If we introduce a feature that requires processing message content in the future, we will update this policy and clearly describe the scope and retention.
 
-* **Discord User Profile:** Your username, profile picture, and any data related to
-  your Discord user profile is provided from the Discord API based on your
-  Discord ID, only when needed;
-* **Statistics:** When statistics are provided by our Services, we only keep
-  aggregated and anonymized data into our database.
+**Specific use cases:**
+
+* **Discord User Profile:** Your username, profile picture, and any data related to your Discord user profile is provided via the Discord API based on your Discord ID, only when needed.
+* **Statistics:** When statistics are provided by our Services, we only keep aggregated and anonymized data in our database.
+* **Website Accounts:** When you sign in with Discord on the Website, we create an account record containing your Discord user ID, username (and discriminator where applicable), and avatar URL.
+
+---
 
 ## How your information may be shared
 
-**In Short:**  We only share information with your consent, to comply with laws, to
+**In short:** We only share information with your consent, to comply with laws, to
 provide you with services, to protect your rights, or to fulfill business
 obligations.
 
@@ -142,24 +127,17 @@ In general, we have no business needs that justify, nor direct interests in,
 sharing your information with other entities.
 
 We may process or share your data that we hold based on the following legal
-basis:
+bases:
 
-* **Consent:** We may process your data if you have given us specific consent to
-  use your personal information for a specific purpose.
-* **Legitimate Interests:** We may process your data when it is reasonably
-  necessary to achieve our legitimate business interests.
-* **Performance of a Contract:** Where we have entered into a contract with you,
-  we may process your personal information to fulfill the terms of our contract.
-* **Legal Obligations:** We may disclose your information where we are legally
-  required to do so in order to comply with applicable law, governmental
-  requests, a judicial proceeding, court order, or legal process, such as in
-  response to a court order or a subpoena (including in response to public
-  authorities to meet national security or law enforcement requirements).
-* **Vital Interests:** We may disclose your information where we believe it is
-  necessary to investigate, prevent, or take action regarding potential
-  violations of our policies, suspected fraud, situations involving potential
-  threats to the safety of any person and illegal activities, or as evidence in
-  litigation in which we are involved.
+* **Consent:** If you have given specific consent to use your personal information for a specific purpose.
+* **Legitimate Interests:** When it is reasonably necessary to achieve our legitimate business interests.
+* **Performance of a Contract:** Where we have entered into a contract with you and need to fulfill its terms.
+* **Legal Obligations:** Where we are legally required to do so to comply with applicable law, governmental requests, judicial proceedings, court orders, or legal processes (including responses to public authorities for national security or law enforcement requirements).
+* **Vital Interests:** Where necessary to investigate, prevent, or take action regarding potential violations of our policies, suspected fraud, situations involving potential threats to the safety of any person, illegal activities, or as evidence in litigation.
+
+**Service providers (subprocessors):** We use third-party providers to host and deliver our Services. This currently includes **Hetzner** (infrastructure/database hosting) and **Cloudflare** (security/CDN). Where personal data is transferred outside the EEA/UK, we rely on appropriate safeguards (e.g., Standard Contractual Clauses).
+
+---
 
 ## How long information is kept
 
@@ -174,6 +152,11 @@ information, we will automatically delete your data if you're out of the scope o
 archives), then we will securely store your personal information and isolate it
 from any further processing until deletion is possible.
 
+**Website session cookies** expire on logout or after 7 days of inactivity.
+**Account records** created via Discord sign-in (Discord user ID, username/discriminator where applicable, avatar URL) are kept while your account remains active and are deleted within a reasonable period after account deletion or prolonged inactivity.
+
+---
+
 ## How we keep your information secure
 
 We have implemented appropriate technical and organizational security measures
@@ -183,58 +166,50 @@ is 100% secure. Although we will do our best to protect your personal
 information, transmission of personal information to and from our Services is at
 your own risk. You should only access the services within a secure environment.
 
-Hereafter, you’ll find an exemplary and not exhaustive list of measures we
-implemented to keep your data safe:
+Examples of measures we implement include:
 
-* **User Identification and Discord End User Data Processing:** Wherever
-  possible, the only identification key related to you that is stored on our
-  system is your "Discord ID". Your "Discord ID" is a number provided by the
-  Discord API and linked to your Discord End User Data. Your username, message
-  content, data you provide to Discord, etc. is accessed by requesting such data
-  through the Discord API using your Discord ID, while a minimal amount of data
-  is stored in our Services.
-* **Encryption at Rest:** Data stored by our Services is encrypted at rest (when
-  saved in our database, or any data storage media we may be using) using
-  best-in-class algorithms (e.g. AES-256-GCM) and following the most diffuse
-  security guidelines. In some cases, data may be encrypted through multiple
-  levels of encryption using different encryption keys; this approach is applied
-  to all and any custom input we receive from the Discord API related to your
-  Discord message content.
-* **Encryption in Transit:** Data processed by our Services, or transferred
-  between different components of our infrastructure, is encrypted using
-  best-in-class algorithms (e.g. TLS 1.2+ with Mutual Authentication) and
-  following the most diffuse security guidelines.
-* **Authentication, Authorization, Auditing:** Our Services implement security
-  measures that only allow authorized users to access any stored data.
-* **Infrastructure Security:** Data is segregated into different components of
-  the infrastructure that provides our Services. Technical and organizational
-  security measures are in place to minimize the chance of an intruder having
-  access to our infrastructure.
+* **User Identification and Discord End User Data Processing:** Wherever possible, the only identification key related to you that is stored on our system is your Discord ID. Your username, message content, data you provide to Discord, etc. is accessed via the Discord API using your Discord ID, while a minimal amount of data is stored in our Services.
+* **Encryption at Rest:** Data stored by our Services is encrypted at rest using industry-standard algorithms (e.g., AES-256-GCM).
+* **Encryption in Transit:** Data processed by our Services, or transferred between different components of our infrastructure, is encrypted in transit (e.g., TLS 1.2+).
+* **Authentication, Authorization, Auditing:** Security measures ensure only authorized users can access stored data.
+* **Infrastructure Security:** Data is segregated into different components of our infrastructure with technical and organizational measures to minimize the chance of unauthorized access.
+* **Operational practices:** Role-based access controls, regular security updates, and monitoring appropriate to the scale of our Services.
+
+*(Note: We avoid overclaiming specific technologies beyond what we actually use.)*
+
+---
 
 ## Your privacy rights
 
 If you are a resident in the European Economic Area and you believe we are
-unlawfully processing your personal information, you also have the right to
+unlawfully processing your personal information, you have the right to
 complain to your local data protection supervisory authority. You can find their
-contact details here:
-http://ec.europa.eu/justice/data-protection/bodies/authorities/index_en.htm.
+contact details here: [http://ec.europa.eu/justice/data-protection/bodies/authorities/index_en.htm](http://ec.europa.eu/justice/data-protection/bodies/authorities/index_en.htm).
 
 If you are a resident in Switzerland, the contact details for the data
 protection authorities are available here:
-https://www.edoeb.admin.ch/edoeb/en/home.html.
+[https://www.edoeb.admin.ch/edoeb/en/home.html](https://www.edoeb.admin.ch/edoeb/en/home.html).
+
+If you are a resident in the EEA/UK, you also have the right to request access,
+correction, deletion, restriction, objection to processing, and data
+portability. To exercise these rights, contact us using the details below.
+
+---
 
 ## Children's privacy
 
 Our Service does not address anyone under the age of 13. We do not knowingly
 collect personally identifiable information from anyone under the age of 13. If
-You are a parent or guardian and You are aware that Your child has provided Us
-with Personal Data, please contact Us. If We become aware that We have collected
-Personal Data from anyone under the age of 13 without verification of parental
-consent, We take steps to remove that information from Our servers.
+you are a parent or guardian and you are aware that your child has provided us
+with personal data, please contact us. If we become aware that we have collected
+personal data from anyone under the age of 13 without verification of parental
+consent, we take steps to remove that information from our servers.
 
-If We need to rely on consent as a legal basis for processing Your information
-and Your country requires consent from a parent, We may require Your parent's
-consent before We collect and use that information.
+If we need to rely on consent as a legal basis for processing your information
+and your country requires consent from a parent, we may require your parent's
+consent before we collect and use that information.
+
+---
 
 ## Policy updates
 
@@ -245,13 +220,25 @@ we may notify you either by prominently posting a notice of such changes or by
 directly sending you a notification. We encourage you to review this privacy
 policy frequently to be informed of how we are protecting your information.
 
+Material changes will include any future introduction of features that process
+Discord message content.
+
+---
+
 ## Data removal
 
-To request your data to be removed, please contact us in the following section.
+To request your data to be removed, please contact us as described below.
+
+You may also request deletion of your Website account created via Discord
+sign-in; upon verification, associated profile fields (Discord user ID,
+username/discriminator where applicable, avatar URL) will be deleted within a
+reasonable period, subject to backup and legal retention requirements.
+
+---
 
 ## Contact us
 
-If you have any questions about this Privacy Policy, You can contact us:
+If you have any questions about this Privacy Policy, you can contact us:
 
-* Discord support server: https://discord.gg/dd68WwP
-* Banner on Discord, the maintainer of Bento: **banner.**
+* Discord support server: [https://discord.gg/dd68WwP](https://discord.gg/dd68WwP)
+* Banner on Discord, the maintainer of Bento's username on Discord: **banner.**
