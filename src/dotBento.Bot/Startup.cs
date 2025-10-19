@@ -208,7 +208,7 @@ public sealed class Startup
         }
         else
         {
-            throw new InvalidOperationException("Redis connection string is not configured. Set Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) to enable shared cache.");
+            throw new InvalidOperationException("Redis connection string is not configured. Set either Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable shared cache.");
         }
         
         // Keep IMemoryCache for local per-process caching used elsewhere
