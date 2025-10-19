@@ -19,6 +19,10 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,6 +31,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
+        <ProjectReference Include="..\..\src\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
     </ItemGroup>
 
 </Project>
