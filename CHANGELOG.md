@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.8.0](https://github.com/thebentobot/dotBento/compare/v1.7.2...v1.8.0) (2025-10-19)
+
+
+### Features
+
+* add redis cache between bot and webapi, update docs ([deed4ff](https://github.com/thebentobot/dotBento/commit/deed4ffb6f54a67f0dcb4966846aab9cc6e21350))
+* **Bot/Startup:** add todo comment ([711b9be](https://github.com/thebentobot/dotBento/commit/711b9bea5305cee65b8aeb7c1374b998908b363d))
+* **dotBento:** add redis for shared cache between bot and webapi ([6ca5159](https://github.com/thebentobot/dotBento/commit/6ca5159ff8c96b4395512867872e58f51ba0aa32))
+* **tests/infra:** add ProfileService tests ([9ebdeb2](https://github.com/thebentobot/dotBento/commit/9ebdeb24123a5fbe33b2b1594bd287eb35f80361))
+
+
+### Bug Fixes
+
+* **docs:** update privacy policy, readme, tos ([52c103d](https://github.com/thebentobot/dotBento/commit/52c103d2f9647ff00c55c9a9da6b07ac218d161b))
+* **Infra/ProfileService:** add stricter JsonSerializerOptions and logging in catch ([7ab8713](https://github.com/thebentobot/dotBento/commit/7ab87130cba5d727109a71ef708b5f50fce1696f))
+
 ## [1.7.2](https://github.com/thebentobot/dotBento/compare/v1.7.1...v1.7.2) (2025-09-23)
 
 
