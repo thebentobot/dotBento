@@ -4,7 +4,9 @@ using dotBento.WebApi.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using dotBento.EntityFramework.Context;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using dotBento.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -88,7 +90,7 @@ public class ProfileControllerTests
 
     private static ProfileController CreateController(BotDbContext context)
     {
-        var cache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         var factory = new SingleContextFactory(context);
         var service = new ProfileService(cache, factory);
         return new ProfileController(context, service);

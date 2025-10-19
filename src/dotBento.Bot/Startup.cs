@@ -108,7 +108,7 @@ public sealed class Startup
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            // Add GatewayIntents.MessageContent when we have permission from Discord
+            // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
             GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
@@ -196,6 +196,22 @@ public sealed class Startup
             b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
                 builder.Log(RelationalEventId.PendingModelChangesWarning)));
         
+        // Configure shared distributed cache (Redis) for cross-process caching. Fail if not configured.
+        var redisConnection = Configuration["Redis:ConnectionString"] ?? Configuration["RedisConnectionString"];
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+        {
+            services.AddStackExchangeRedisCache(opts =>
+            {
+                opts.Configuration = redisConnection;
+                opts.InstanceName = "dotbento:";
+            });
+        }
+        else
+        {
+            throw new InvalidOperationException("Redis connection string is not configured. Set either Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable shared cache.");
+        }
+        
+        // Keep IMemoryCache for local per-process caching used elsewhere
         services.AddMemoryCache();
     }
     
