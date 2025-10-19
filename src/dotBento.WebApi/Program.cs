@@ -29,7 +29,24 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
+// Keep IMemoryCache for local, per-process caching used elsewhere
 builder.Services.AddMemoryCache();
+
+// Configure shared distributed cache (Redis). Fail fast if no connection string.
+var redisConnection = configuration["Redis:ConnectionString"] ?? configuration["RedisConnectionString"];
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(opts =>
+    {
+        opts.Configuration = redisConnection;
+        opts.InstanceName = "dotbento:";
+    });
+}
+else
+{
+    throw new InvalidOperationException("Redis connection string is not configured. Set Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) to enable shared cache.");
+}
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();

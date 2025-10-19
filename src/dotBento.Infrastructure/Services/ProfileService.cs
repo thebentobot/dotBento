@@ -1,13 +1,20 @@
+using System.Text.Json;
 using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace dotBento.Infrastructure.Services;
 
-public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbContext> contextFactory)
+public sealed class ProfileService(IDistributedCache cache, IDbContextFactory<BotDbContext> contextFactory)
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly DistributedCacheEntryOptions CacheEntryOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
+    };
+
     public Task<Profile> CreateOrUpdateProfileAsync(long userId, Action<Profile>? applyChanges = null)
     {
         return UpsertProfileAsync(userId, applyChanges);
@@ -17,6 +24,8 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
     {
         return UpsertProfileAsync(userId, applyChanges);
     }
+
+    private static string CacheKey(long userId) => $"profile:{userId}";
 
     private async Task<Profile> UpsertProfileAsync(long userId, Action<Profile>? applyChanges)
     {
@@ -37,16 +46,28 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
             
         await context.SaveChangesAsync();
         
-        cache.Set($"profile:{profile.UserId}", profile);
+        var json = JsonSerializer.Serialize(profile, JsonOptions);
+        await cache.SetStringAsync(CacheKey(profile.UserId), json, CacheEntryOptions);
         
         return profile;
     }
     
     public async Task<Maybe<Profile>> GetProfileAsync(long userId)
     {
-        if (cache.TryGetValue($"profile:{userId}", out Profile? cached))
+        var key = CacheKey(userId);
+        var cachedJson = await cache.GetStringAsync(key);
+        if (!string.IsNullOrEmpty(cachedJson))
         {
-            return cached;
+            try
+            {
+                var cachedProfile = JsonSerializer.Deserialize<Profile>(cachedJson, JsonOptions);
+                if (cachedProfile != null)
+                    return cachedProfile;
+            }
+            catch
+            {
+                // ignore deserialization errors and fall back to DB
+            }
         }
         
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -58,7 +79,8 @@ public sealed class ProfileService(IMemoryCache cache, IDbContextFactory<BotDbCo
             return Maybe<Profile>.None;
         }
         
-        cache.Set($"profile:{userId}", profileEntity);
+        var json = JsonSerializer.Serialize(profileEntity, JsonOptions);
+        await cache.SetStringAsync(key, json, CacheEntryOptions);
         
         return profileEntity;
     }
