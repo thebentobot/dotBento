@@ -34,10 +34,10 @@ public sealed class BackgroundService(UserService userService,
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateGuildMemberCounts)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateGuildMemberCounts), () => UpdateGuildMemberCounts(), "0 0 * * *");
+        RecurringJob.AddOrUpdate(nameof(UpdateGuildMemberCounts), () => UpdateGuildMemberCounts(), "0 * * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 0 * * *");
+        RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
     }
 
     public async Task UpdateStatus()
@@ -49,19 +49,14 @@ public sealed class BackgroundService(UserService userService,
 
     private static Game GetRandomActivityStatus(DiscordSocketClient client)
     {
-        var random = new Random();
         var guildCount = client.Guilds.Count;
         var userCount = client.Guilds.Sum(x => x.MemberCount);
 
         var formattedUserCount = FormatUserCount(userCount);
+        var formattedGuildCount = FormatUserCount(guildCount);
 
-        var activities = new List<Game>
-        {
-            new($"{formattedUserCount} users", ActivityType.Listening),
-            new($"{guildCount} servers", ActivityType.Listening),
-        };
-
-        return activities[random.Next(activities.Count)];
+        var statusText = $"{formattedUserCount} users on {formattedGuildCount} servers";
+        return new Game(statusText, ActivityType.Watching);
     }
 
     private static string FormatUserCount(int count)
