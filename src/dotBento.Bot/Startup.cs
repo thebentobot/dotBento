@@ -196,19 +196,21 @@ public sealed class Startup
             b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
                 builder.Log(RelationalEventId.PendingModelChangesWarning)));
         
-        // Configure shared distributed cache (Redis) for cross-process caching. Fail if not configured.
-        var redisConnection = Configuration["Redis:ConnectionString"] ?? Configuration["RedisConnectionString"];
-        if (!string.IsNullOrWhiteSpace(redisConnection))
+        // Configure shared distributed cache (Valkey/Redis) for cross-process caching. Fail if not configured.
+        var distributedCacheConnection = Configuration["Valkey:ConnectionString"]
+            ?? Configuration["Redis:ConnectionString"]
+            ?? Configuration["RedisConnectionString"];
+        if (!string.IsNullOrWhiteSpace(distributedCacheConnection))
         {
             services.AddStackExchangeRedisCache(opts =>
             {
-                opts.Configuration = redisConnection;
+                opts.Configuration = distributedCacheConnection;
                 opts.InstanceName = "dotbento:";
             });
         }
         else
         {
-            throw new InvalidOperationException("Redis connection string is not configured. Set either Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable shared cache.");
+            throw new InvalidOperationException("Valkey/Redis connection string is not configured. Set Valkey:ConnectionString (env: VALKEY__CONNECTIONSTRING) or Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable the shared cache.");
         }
         
         // Keep IMemoryCache for local per-process caching used elsewhere

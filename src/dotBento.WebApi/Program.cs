@@ -33,18 +33,20 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 
 // Configure shared distributed cache (Redis). Fail fast if no connection string.
-var redisConnection = configuration["Redis:ConnectionString"] ?? configuration["RedisConnectionString"];
-if (!string.IsNullOrWhiteSpace(redisConnection))
+var distributedCacheConnection = configuration["Valkey:ConnectionString"]
+    ?? configuration["Redis:ConnectionString"]
+    ?? configuration["RedisConnectionString"];
+if (!string.IsNullOrWhiteSpace(distributedCacheConnection))
 {
     builder.Services.AddStackExchangeRedisCache(opts =>
     {
-        opts.Configuration = redisConnection;
+        opts.Configuration = distributedCacheConnection;
         opts.InstanceName = "dotbento:";
     });
 }
 else
 {
-    throw new InvalidOperationException("Redis connection string is not configured. Set either Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable shared cache.");
+    throw new InvalidOperationException("Valkey/Redis connection string is not configured. Set Valkey:ConnectionString (env: VALKEY__CONNECTIONSTRING) or Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable the shared cache.");
 }
 
 builder.Services.AddOpenApi();
