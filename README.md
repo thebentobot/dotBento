@@ -10,7 +10,7 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 - Modular command architecture with Discord.NET (Commands + Interactions)
 - PostgreSQL via Entity Framework Core
 - Optional Prometheus metrics and Loki/Serilog logging
-- Redis caching between bot and web api instances
+- Valkey caching between bot and web api instances
 - Docker-ready deployment
 - Separate Web API for public/auxiliary endpoints
 
