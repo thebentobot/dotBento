@@ -13,14 +13,6 @@ updates:
       timezone: 'Europe/Copenhagen'
     assignees:
       - 'banner4422'
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "tests/" # Location of package manifests
-    schedule:
-      interval: 'daily'
-      time: '06:00'
-      timezone: 'Europe/Copenhagen'
-    assignees:
-      - 'banner4422'
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
