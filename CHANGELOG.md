@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.0](https://github.com/thebentobot/dotBento/compare/v1.8.0...v1.9.0) (2025-11-13)
+
+
+### Features
+
+* install dotnet husky and dotnet linter, remove npm stuff ([d507b4f](https://github.com/thebentobot/dotBento/commit/d507b4f84c30c154274fa476189f2b188fcbb784))
+
+
+### Bug Fixes
+
+* **bot/backgroundService:** update bot status ([41d83dc](https://github.com/thebentobot/dotBento/commit/41d83dcd969d5f7508bf9840ec728ada656a719a))
+* **dependabot:** attempt to make nuget dependabot work again ([e7bbc39](https://github.com/thebentobot/dotBento/commit/e7bbc39edf6c9fecda6ebbf5cf81a6a187298520))
+* **program:** update redis to valkey ([b1b481c](https://github.com/thebentobot/dotBento/commit/b1b481c7a4bad542494de634d131aeb8a7ab6b1e))
+* **readme:** replace redis with valkey ([b510fbb](https://github.com/thebentobot/dotBento/commit/b510fbb77974ef18d620c1a4351bddce69e30099))
+
 ## [1.8.0](https://github.com/thebentobot/dotBento/compare/v1.7.2...v1.8.0) (2025-10-19)
 
 
