@@ -52,14 +52,14 @@ public sealed class BackgroundService(UserService userService,
         var guildCount = client.Guilds.Count;
         var userCount = client.Guilds.Sum(x => x.MemberCount);
 
-        var formattedUserCount = FormatUserCount(userCount);
-        var formattedGuildCount = FormatUserCount(guildCount);
+        var formattedUserCount = FormatThousandsCount(userCount);
+        var formattedGuildCount = FormatThousandsCount(guildCount);
 
-        var statusText = $"{formattedUserCount} users on {formattedGuildCount} servers";
+        var statusText = $"{userCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
         return new Game(statusText, ActivityType.Watching);
     }
 
-    private static string FormatUserCount(int count)
+    private static string FormatThousandsCount(int count)
     {
         if (count >= 1_000_000)
             return $"{count / 1_000_000.0:0.0}M";
