@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.1](https://github.com/thebentobot/dotBento/compare/v1.10.0...v1.10.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* **readme:** Update README.md ([f34f889](https://github.com/thebentobot/dotBento/commit/f34f8895d4bb65e39f00c64dbd39efca0c6c0d44))
+* Update README.md ([5bf105f](https://github.com/thebentobot/dotBento/commit/5bf105faa44c2c19501ada5c2c37f5d8cb5608b1))
+
 ## [1.10.0](https://github.com/thebentobot/dotBento/compare/v1.9.1...v1.10.0) (2025-11-14)
 
 
