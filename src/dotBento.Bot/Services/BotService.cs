@@ -1,5 +1,4 @@
 using System.Reflection;
-using BotListAPI;
 using Discord;
 using Discord.Commands;
 using Discord.Interactions;
@@ -77,45 +76,9 @@ public sealed class BotService(DiscordSocketClient client,
             Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
             await RegisterSlashCommands();
             await CacheSlashCommandIds();
-            StartBotSiteUpdater();
         };
     }
 
-
-    // public instead of private because of Hangfire BackgroundJob
-    // ReSharper disable once MemberCanBePrivate.Global
-    public void StartBotSiteUpdater()
-    {
-        if (!client.CurrentUser.Id.Equals(Constants.BotProductionId))
-        {
-            Log.Information("Cancelled botlist updater, non-production bot detected");
-            return;
-        }
-
-        Log.Information("Starting botlist updater");
-
-        var listConfig = new ListConfig
-        {
-            TopGG = config.Value.BotLists.TopGgApiToken
-        };
-
-        try
-        {
-            var listClient = new ListClient(client, listConfig);
-
-            listClient.Start();
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Exception while attempting to start botlist updater!");
-        }
-    }
-
-    public async Task StopAsync()
-    {
-        await client.StopAsync();
-    }
-    
     // public instead of private because of Hangfire BackgroundJob
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task RegisterSlashCommands()

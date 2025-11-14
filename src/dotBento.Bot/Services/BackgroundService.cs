@@ -1,9 +1,6 @@
 using System.Diagnostics;
-using System.Net;
 using Discord;
 using Discord.WebSocket;
-using Discord.Net;
-using dotBento.Bot.Resources;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Commands;
@@ -18,6 +15,7 @@ public sealed class BackgroundService(UserService userService,
     GuildService guildService,
     DiscordSocketClient client,
     SupporterService supporterService,
+    BotListService botListService,
     ReminderCommands reminderCommands,
     IDbContextFactory<BotDbContext> contextFactory,
     IDiscordUserResolver userResolver,
@@ -42,6 +40,9 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
+        
+        Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
+        RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
     }
 
     public async Task UpdateStatus()
@@ -229,5 +230,10 @@ public sealed class BackgroundService(UserService userService,
             Log.Error(e, nameof(UpdateLeaderboardUserAvatars));
             throw;
         }
+    }
+    
+    public async Task UpdateBotLists()
+    {
+        await botListService.UpdateBotLists(client.Guilds.Count);
     }
 }

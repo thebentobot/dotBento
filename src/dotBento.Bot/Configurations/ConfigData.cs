@@ -36,7 +36,9 @@ public static class ConfigData
             },
             BotLists = new BotListConfig
             {
-                TopGgApiToken = "CHANGE-ME-TOPGG-API-TOKEN"
+                TopGgApiToken = "CHANGE-ME-TOPGG-API-TOKEN",
+                DiscordBotsGgToken = "CHANGE-ME-DISCORDBOTSGG-TOKEN",
+                DiscordBotListToken = "CHANGE-ME-DISCORDBOTLIST-TOKEN"
             },
             OpenWeatherApiKey = "CHANGE-ME-OPENWEATHER-API-KEY",
             LastFmApiKey = "CHANGE-ME-LASTFM-API-KEY",
