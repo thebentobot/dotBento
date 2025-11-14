@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.1](https://github.com/thebentobot/dotBento/compare/v1.9.0...v1.9.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* **bot/backgroundservice:** handle and delete reminders that can't be sent ([232263c](https://github.com/thebentobot/dotBento/commit/232263c2aa3863114bad53c19086a30f8d838bbd))
+* **bot/backgroundservice:** handle and delete reminders that can't be sent ([7f0d43d](https://github.com/thebentobot/dotBento/commit/7f0d43d017b45ded80335497016e6a3726085e4e))
+* **Tests/BackgroundService:** add proper ulong id ([7e920dc](https://github.com/thebentobot/dotBento/commit/7e920dc3d7a9a65b6056d3c96d353857fb9bc73e))
+
 ## [1.9.0](https://github.com/thebentobot/dotBento/compare/v1.8.0...v1.9.0) (2025-11-13)
 
 
