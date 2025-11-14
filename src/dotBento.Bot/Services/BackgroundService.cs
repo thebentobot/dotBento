@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Net;
 using Discord;
 using Discord.WebSocket;
+using Discord.Net;
 using dotBento.Bot.Resources;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
@@ -17,7 +19,9 @@ public sealed class BackgroundService(UserService userService,
     DiscordSocketClient client,
     SupporterService supporterService,
     ReminderCommands reminderCommands,
-    IDbContextFactory<BotDbContext> contextFactory)
+    IDbContextFactory<BotDbContext> contextFactory,
+    IDiscordUserResolver userResolver,
+    IDmSender dmSender)
 {
     public void QueueJobs()
     {
@@ -86,15 +90,39 @@ public sealed class BackgroundService(UserService userService,
                 continue;
             }
 
-            var user = await client.GetUserAsync((ulong)reminder.UserId);
+            var user = await userResolver.GetUserAsync((ulong)reminder.UserId);
+            if (user is null)
+            {
+                Log.Warning(
+                    "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
+                    reminder.UserId, reminder.Id);
+                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                continue;
+            }
 
-            var dmChannel = await user.CreateDMChannelAsync();
-            await dmChannel.SendMessageAsync(embed: new EmbedBuilder()
-                .WithColor(DiscordConstants.BentoYellow)
-                .WithTitle("Reminder")
-                .WithDescription(reminder.Content)
-                .Build());
-            await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+            try
+            {
+                var result = await dmSender.SendReminderAsync(user, reminder.Content);
+                switch (result)
+                {
+                    case DmSendResult.Success:
+                        await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                        break;
+                    case DmSendResult.Forbidden:
+                        Log.Warning(
+                            "Cannot send reminder {ReminderId} to user {UserId} due to permission/DM restrictions. Deleting reminder.",
+                            reminder.Id, reminder.UserId);
+                        await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Unexpected error: log and keep the reminder so it can be retried later by the next run
+                Log.Error(ex,
+                    "Unexpected error sending reminder {ReminderId} to user {UserId}. Reminder will not be deleted to allow retry.",
+                    reminder.Id, reminder.UserId);
+            }
         }
     }
 

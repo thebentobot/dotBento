@@ -2,15 +2,14 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AAuthorizationAppBuilderExtensions_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003F_002E_002E_003FLibrary_003FApplication_0020Support_003FJetBrains_003FRider2024_002E3_003Fresharper_002Dhost_003FSourcesCache_003Fa382c6eb2b402eed6e6719bb247a6b58e6c462a5c36ca70996a4bff09c1147_003FAuthorizationAppBuilderExtensions_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AExceptionDispatchInfo_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003FLibrary_003FApplication_0020Support_003FJetBrains_003FRider2025_002E2_003Fresharper_002Dhost_003FSourcesCache_003Fbf9021a960b74107a7e141aa06bc9d8a0a53c929178c2fb95b1597be8af8dc_003FExceptionDispatchInfo_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AMetricPusher_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003F_002E_002E_003FLibrary_003FApplication_0020Support_003FJetBrains_003FRider2025_002E1_003Fresharper_002Dhost_003FSourcesCache_003Fb952b9137a5fc8bba4819338816867bc2932d3c21665c93fa367e3c986d1edf_003FMetricPusher_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=51981804_002D19a7_002D41bf_002D9524_002D2c113d00e04c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="StringUtilitiesTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;TestAncestor&gt;
-    &lt;TestId&gt;xUnit::C0B6FF90-ADE2-4CF3-868E-32C1BA01ACC9::net9.0::dotBento.Bot.Tests.Utilities.StringUtilitiesTests&lt;/TestId&gt;
-    &lt;TestId&gt;xUnit::4E57FB4F-1E65-4F69-B7DB-FF1FCD3765C8::net9.0::dotBento.Infrastructure.Tests.Utilities.LastFmTimePeriodUtilitiesTests&lt;/TestId&gt;
-    &lt;TestId&gt;xUnit::4E57FB4F-1E65-4F69-B7DB-FF1FCD3765C8::net9.0::dotBento.Infrastructure.Tests.Utilities.StylingUtilitiesTests&lt;/TestId&gt;
-    &lt;TestId&gt;xUnit::29BCF00A-C826-4D7A-87D7-5098ADF2F10E::net9.0::dotBento.WebApi.Tests.InformationControllerTests.GetUsageStats_ReturnsCorrectStats&lt;/TestId&gt;
-    &lt;TestId&gt;xUnit::29BCF00A-C826-4D7A-87D7-5098ADF2F10E::net9.0::dotBento.WebApi.Tests.InformationControllerTests&lt;/TestId&gt;
-  &lt;/TestAncestor&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=00621d36_002D0f61_002D4fc0_002Da4d8_002Dc0e1a6010728/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7ce84f90_002D6ae2_002D4e9e_002D860e_002Deb90f45871f3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Junie Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
-&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
+&lt;/SessionState&gt;</s:String>
+	
+	
+	
+	
+	</wpf:ResourceDictionary>
