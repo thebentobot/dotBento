@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +14,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
+    <PackageReference Include="xunit.v3.core" Version="0.6.1" />
+    <PackageReference Include="xunit.v3.assert" Version="0.6.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,6 +31,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\dotBento.Bot\dotBento.Bot.csproj" />
+    <ProjectReference Include="..\..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
   </ItemGroup>
 
 </Project>
