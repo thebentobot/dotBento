@@ -1,18 +1,18 @@
 # Bento
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![Build dotBento](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml/badge.svg)](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml)
-[![Discord Bots](https://top.gg/api/widget/servers/787041583580184609.svg?noavatar=true)](https://top.gg/bot/787041583580184609)
+[![Discord Bots](https://top.gg/api/widget/servers/787041583580184609.svg)](https://top.gg/bot/787041583580184609)
 
 A Discord bot written in .NET. This repository is the improved .NET rewrite of [Bento](https://github.com/thebentobot/Bento).
 
 ## Features (high level)
 - Slash commands and (configurable) prefix commands
 - Modular command architecture with Discord.NET (Commands + Interactions)
-- PostgreSQL via Entity Framework Core
+- PostgreSQL database via Entity Framework Core
 - Optional Prometheus metrics and Loki/Serilog logging
 - Valkey caching between bot and web api instances
 - Docker-ready deployment
-- Separate Web API for public/auxiliary endpoints
+- Separate Web API for public endpoints
 
 ## Tech stack
 - .NET 9
