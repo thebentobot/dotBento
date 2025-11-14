@@ -79,7 +79,8 @@ public sealed class BackgroundServiceTests
         // The other ctor args are not used in this method, so we can safely pass nulls.
         var guildService = (GuildService)null!;
         var supporterService = (SupporterService)null!;
-        return new BackgroundService(userService, guildService, client, supporterService, reminderCommands, contextFactory, userResolver, dmSender);
+        var botListService = (BotListService)null!;
+        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender);
     }
 
     [Fact]
