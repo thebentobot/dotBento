@@ -64,6 +64,8 @@ public sealed class BotConfig
 public sealed class BotListConfig
 {
     public string TopGgApiToken { get; set; } = string.Empty;
+    public string DiscordBotsGgToken { get; set; } = string.Empty;
+    public string DiscordBotListToken { get; set; } = string.Empty;
 }
 
 public sealed class ImageServerConfig

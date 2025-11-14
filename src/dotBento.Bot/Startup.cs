@@ -181,6 +181,7 @@ public sealed class Startup
 
         services.AddSingleton<InteractionHandler>();
         
+        services.AddHttpClient<BotListService>();
         services.AddHttpClient<StylingUtilities>();
         services.AddHttpClient<UrbanDictionaryService>();
         services.AddHttpClient<WeatherApiService>();
