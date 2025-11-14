@@ -8,11 +8,11 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 ## Features (high level)
 - Slash commands and (configurable) prefix commands
 - Modular command architecture with Discord.NET (Commands + Interactions)
-- PostgreSQL via Entity Framework Core
+- PostgreSQL database via Entity Framework Core
 - Optional Prometheus metrics and Loki/Serilog logging
 - Valkey caching between bot and web api instances
 - Docker-ready deployment
-- Separate Web API for public/auxiliary endpoints
+- Separate Web API for public endpoints
 
 ## Tech stack
 - .NET 9
