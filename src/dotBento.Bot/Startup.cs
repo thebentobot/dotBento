@@ -121,6 +121,8 @@ public sealed class Startup
 
         services
             .AddSingleton(discordClient)
+            .AddSingleton<IDiscordUserResolver, DiscordUserResolver>()
+            .AddSingleton<IDmSender, DmSender>()
             .AddSingleton(new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Info,
