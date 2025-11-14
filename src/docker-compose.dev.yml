@@ -57,6 +57,14 @@ services:
     networks:
       - bento_net
 
+  valkey-sta:
+    image: valkey/valkey:9-alpine
+    container_name: valkey-sta
+    restart: unless-stopped
+    command: [ "valkey-server", "--save", "", "--appendonly", "no" ]
+    networks:
+      - bento_net
+
 networks:
   web:
     internal: false
