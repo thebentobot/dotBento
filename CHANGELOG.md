@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0](https://github.com/thebentobot/dotBento/compare/v1.9.1...v1.10.0) (2025-11-14)
+
+
+### Features
+
+* **botlists:** add bot lists ([757b9f5](https://github.com/thebentobot/dotBento/commit/757b9f5641a4768c8c70c747a583c4e992eb2224))
+
+
+### Bug Fixes
+
+* **tests/BackgroundServiceTests:** fix broken test because of new service ([350bf6b](https://github.com/thebentobot/dotBento/commit/350bf6b6b96debac681440eda5c5951782b1073d))
+
 ## [1.9.1](https://github.com/thebentobot/dotBento/compare/v1.9.0...v1.9.1) (2025-11-14)
 
 
