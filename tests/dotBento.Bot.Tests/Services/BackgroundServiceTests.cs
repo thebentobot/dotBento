@@ -90,8 +90,8 @@ public sealed class BackgroundServiceTests
         var cache = new MemoryCache(new MemoryCacheOptions());
         var userService = new UserService(cache, dbFactory);
 
-        const long userId = 12345;
-        var reminderId = await SeedReminderAsync(dbFactory, userId, DateTime.UtcNow.AddMinutes(-1));
+        const ulong discordUserId = 232584569289703424UL;
+        var reminderId = await SeedReminderAsync(dbFactory, (long)discordUserId, DateTime.UtcNow.AddMinutes(-1));
 
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
@@ -124,17 +124,17 @@ public sealed class BackgroundServiceTests
         var cache = new MemoryCache(new MemoryCacheOptions());
         var userService = new UserService(cache, dbFactory);
 
-        const long userId = 22222;
-        await SeedUserAsync(dbFactory, userId);
+        const ulong discordUserId = 395743869201203200UL;
+        await SeedUserAsync(dbFactory, (long)discordUserId);
 
-        var reminderId = await SeedReminderAsync(dbFactory, userId, DateTime.UtcNow.AddMinutes(-1));
+        var reminderId = await SeedReminderAsync(dbFactory, (long)discordUserId, DateTime.UtcNow.AddMinutes(-1));
 
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
 
         var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
-        resolverMock.Setup(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()))
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
             .Returns(ValueTask.FromResult((IUser?)null));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
@@ -150,7 +150,7 @@ public sealed class BackgroundServiceTests
             var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
             Assert.Null(deleted);
         }
-        resolverMock.Verify(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()), Times.Once);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
         dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<IUser>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -162,10 +162,10 @@ public sealed class BackgroundServiceTests
         var cache = new MemoryCache(new MemoryCacheOptions());
         var userService = new UserService(cache, dbFactory);
 
-        const long userId = 33333;
-        await SeedUserAsync(dbFactory, userId);
+        const ulong discordUserId = 517219876543210496UL;
+        await SeedUserAsync(dbFactory, (long)discordUserId);
 
-        var reminderId = await SeedReminderAsync(dbFactory, userId, DateTime.UtcNow.AddMinutes(-1));
+        var reminderId = await SeedReminderAsync(dbFactory, (long)discordUserId, DateTime.UtcNow.AddMinutes(-1));
 
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
@@ -174,7 +174,7 @@ public sealed class BackgroundServiceTests
 
         var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
-        resolverMock.Setup(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()))
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
             .Returns(ValueTask.FromResult<IUser?>(channelUserMock.Object));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
@@ -193,7 +193,7 @@ public sealed class BackgroundServiceTests
             var stillThere = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
             Assert.NotNull(stillThere);
         }
-        resolverMock.Verify(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()), Times.Once);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
         dmSenderMock.Verify(s => s.SendReminderAsync(channelUserMock.Object, It.IsAny<string>()), Times.Once);
     }
 
@@ -205,10 +205,10 @@ public sealed class BackgroundServiceTests
         var cache = new MemoryCache(new MemoryCacheOptions());
         var userService = new UserService(cache, dbFactory);
 
-        const long userId = 44444;
-        await SeedUserAsync(dbFactory, userId);
+        const ulong discordUserId = 684932157480309760UL;
+        await SeedUserAsync(dbFactory, (long)discordUserId);
 
-        var reminderId = await SeedReminderAsync(dbFactory, userId, DateTime.UtcNow.AddMinutes(-1));
+        var reminderId = await SeedReminderAsync(dbFactory, (long)discordUserId, DateTime.UtcNow.AddMinutes(-1));
 
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
@@ -216,7 +216,7 @@ public sealed class BackgroundServiceTests
         var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
         var discordUserMock = new Mock<IUser>(MockBehavior.Strict);
-        resolverMock.Setup(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()))
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
             .Returns(ValueTask.FromResult<IUser?>(discordUserMock.Object));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
@@ -235,7 +235,7 @@ public sealed class BackgroundServiceTests
             var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
             Assert.Null(deleted);
         }
-        resolverMock.Verify(r => r.GetUserAsync(userId, It.IsAny<RequestOptions?>()), Times.Once);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
         dmSenderMock.Verify(s => s.SendReminderAsync(discordUserMock.Object, It.IsAny<string>()), Times.Once);
     }
 }
