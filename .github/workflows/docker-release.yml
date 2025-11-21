@@ -13,7 +13,7 @@ jobs:
     if: ${{ github.event.release.prerelease == false }}  # Run only if it's an actual release, not a pre-release
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
