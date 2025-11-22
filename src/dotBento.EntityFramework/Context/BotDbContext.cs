@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using dotBento.EntityFramework.Entities;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace dotBento.EntityFramework.Context;
 

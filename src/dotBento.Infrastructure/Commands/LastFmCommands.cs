@@ -3,7 +3,6 @@ using CSharpFunctionalExtensions;
 using dotBento.Domain.Entities.LastFm;
 using dotBento.Infrastructure.Extensions;
 using dotBento.Infrastructure.Services.Api;
-using Ganss.Xss;
 
 namespace dotBento.Infrastructure.Commands;
 

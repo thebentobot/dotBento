@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace dotBento.EntityFramework.Entities;
+﻿namespace dotBento.EntityFramework.Entities;
 
 public partial class Guild
 {
