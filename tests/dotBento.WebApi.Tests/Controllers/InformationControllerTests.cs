@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace dotBento.WebApi.Tests;
+namespace dotBento.WebApi.Tests.Controllers;
 
 public class InformationControllerTests
 {

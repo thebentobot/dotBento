@@ -60,7 +60,7 @@ public sealed class BackgroundService(UserService userService,
         var formattedUserCount = FormatThousandsCount(userCount);
         var formattedGuildCount = FormatThousandsCount(guildCount);
 
-        var statusText = $"{userCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
+        var statusText = $"{formattedUserCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
         return new Game(statusText, ActivityType.Watching);
     }
 
