@@ -1,5 +1,4 @@
 using System.Text.Json;
-using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using dotBento.Infrastructure.Services;
@@ -12,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace dotBento.Infrastructure.Tests;
 

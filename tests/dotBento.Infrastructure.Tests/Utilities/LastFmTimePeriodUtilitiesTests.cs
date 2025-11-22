@@ -1,6 +1,5 @@
 ﻿using dotBento.Infrastructure.Models.LastFm;
 using dotBento.Infrastructure.Utilities;
-using Xunit;
 
 namespace dotBento.Infrastructure.Tests.Utilities;
 
