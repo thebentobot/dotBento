@@ -64,14 +64,18 @@ public sealed class BackgroundService(UserService userService,
         return new Game(statusText, ActivityType.Watching);
     }
 
-    private static string FormatThousandsCount(int count)
-    {
-        if (count >= 1_000_000)
-            return $"{count / 1_000_000.0:0.0}M";
-        if (count >= 1_000)
-            return $"{count / 1_000.0:0.0}k";
-        return count.ToString();
-    }
+    private static string FormatThousandsCount(int count) =>
+        count switch
+        {
+            >= 1_000_000 => TrimTrailingZero($"{count / 1_000_000.0:0.0}") + "M",
+            >= 1_000 => TrimTrailingZero($"{count / 1_000.0:0.0}") + "k",
+            _ => count.ToString()
+        };
+
+    private static string TrimTrailingZero(string value) =>
+        value.EndsWith(".0")
+            ? value.Substring(0, value.Length - 2)
+            : value;
 
     public async Task SendRemindersToUsers()
     {
