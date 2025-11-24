@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.2](https://github.com/thebentobot/dotBento/compare/v1.10.1...v1.10.2) (2025-11-24)
+
+
+### Bug Fixes
+
+* **BackgroundService:** correct 0 in thousand formatter ([947491a](https://github.com/thebentobot/dotBento/commit/947491afaf8b80035db53d813285d434ff26a494))
+
 ## [1.10.1](https://github.com/thebentobot/dotBento/compare/v1.10.0...v1.10.1) (2025-11-22)
 
 
