@@ -107,9 +107,9 @@ public sealed class BackgroundServiceTests
         await sut.SendRemindersToUsers();
 
         // Assert
-        await using (var db = await dbFactory.CreateDbContextAsync())
+        await using (var db = await dbFactory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
+            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(deleted);
         }
         // We expect no Discord API lookups when the user isn't in our DB.
@@ -146,9 +146,9 @@ public sealed class BackgroundServiceTests
         await sut.SendRemindersToUsers();
 
         // Assert
-        await using (var db = await dbFactory.CreateDbContextAsync())
+        await using (var db = await dbFactory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
+            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(deleted);
         }
         resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
@@ -189,9 +189,9 @@ public sealed class BackgroundServiceTests
         await sut.SendRemindersToUsers();
 
         // Assert
-        await using (var db = await dbFactory.CreateDbContextAsync())
+        await using (var db = await dbFactory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            var stillThere = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
+            var stillThere = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(stillThere);
         }
         resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
@@ -231,9 +231,9 @@ public sealed class BackgroundServiceTests
         await sut.SendRemindersToUsers();
 
         // Assert
-        await using (var db = await dbFactory.CreateDbContextAsync())
+        await using (var db = await dbFactory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId);
+            var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(deleted);
         }
         resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);

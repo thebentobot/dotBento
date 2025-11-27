@@ -66,7 +66,7 @@ public class ProfileControllerTests
         {
             return CreateNewContextSharingStore();
         }
-        public Task<BotDbContext> CreateDbContextAsync(System.Threading.CancellationToken cancellationToken = default)
+        public Task<BotDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(CreateNewContextSharingStore());
 
         private BotDbContext CreateNewContextSharingStore()
@@ -76,7 +76,7 @@ public class ProfileControllerTests
             if (_ctx is TestBotDbContext tctx)
             {
                 var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-                var newOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<BotDbContext>()
+                var newOptions = new DbContextOptionsBuilder<BotDbContext>()
                     .UseInMemoryDatabase(tctx.DatabaseName, tctx.Root)
                     .Options;
                 return new BotDbContext(configuration, newOptions);
@@ -133,7 +133,7 @@ public class ProfileControllerTests
             Timezone = "Europe/Oslo",
             Birthday = "2000-07-21"
         });
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var controller = CreateController(context);
         await SeedUser(context, 1);
@@ -207,7 +207,7 @@ public class ProfileControllerTests
             BackgroundColour = "#000000",
             BackgroundColourOpacity = 50
         });
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var controller = CreateController(context);
 
@@ -233,7 +233,7 @@ public class ProfileControllerTests
         Assert.False(dto.XpBoard);
         Assert.Equal("#000000", dto.BackgroundColour);
 
-        var entity = await context.Profiles.AsNoTracking().FirstAsync(p => p.UserId == 10);
+        var entity = await context.Profiles.AsNoTracking().FirstAsync(p => p.UserId == 10, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(entity.LastfmBoard);
         Assert.Equal("New", entity.Description);
         Assert.Equal(75, entity.BackgroundColourOpacity);
@@ -339,7 +339,7 @@ public class ProfileControllerTests
             UsernameColour = "#ABCDEF",
             XpBar2Opacity = 50
         });
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var controller = CreateController(context);
         await SeedUser(context, 100);
         var result = await controller.GetProfile(100);

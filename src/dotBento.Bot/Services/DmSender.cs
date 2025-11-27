@@ -1,5 +1,4 @@
 using System.Net;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Net;
 using dotBento.Bot.Resources;

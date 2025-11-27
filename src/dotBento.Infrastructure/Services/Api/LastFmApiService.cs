@@ -169,8 +169,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
 
         Statistics.LastfmApiCalls.WithLabels(ApiMethod.TopArtists).Inc();
 
-        // TODO: I do not know why it warns here but not the other methods, and it should not be null if it reach here
-        return Result.Success(responseModel)!;
+        return Result.Success(responseModel);
     }
     
     public async Task<Result<UserInfoResponse>> GetUserInfo(string lastFmUsername, string apiKey)

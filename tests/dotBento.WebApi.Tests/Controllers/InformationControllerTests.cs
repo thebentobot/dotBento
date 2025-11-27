@@ -36,7 +36,7 @@ public class InformationControllerTests
                 MemberCount = 20
             }
         );
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var logger = new Mock<ILogger<InformationController>>();
         var controller = new InformationController(logger.Object, context);
@@ -59,7 +59,7 @@ public class InformationControllerTests
             new Patreon { UserId = 1, Name = "Alice", Avatar = "alice.png", Supporter = true, Follower = true },
             new Patreon { UserId = 2, Name = "Bob", Avatar = "bob.png", Sponsor = true, Enthusiast = true }
         );
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
 
@@ -102,7 +102,7 @@ public class InformationControllerTests
                 Xp = 1000 - i
             });
         }
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
 
@@ -152,7 +152,7 @@ public class InformationControllerTests
                 AvatarUrl = $"avatar{i}"
             });
         }
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
 

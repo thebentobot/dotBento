@@ -15,7 +15,7 @@ public class StylingUtilitiesTests
         // Arrange
         var image = new Image<Rgba32>(2, 2); // a small blank image
         var imageStream = new MemoryStream();
-        await image.SaveAsPngAsync(imageStream);
+        await image.SaveAsPngAsync(imageStream, cancellationToken: TestContext.Current.CancellationToken);
         imageStream.Position = 0;
 
         var mockHandler = new Mock<HttpMessageHandler>();

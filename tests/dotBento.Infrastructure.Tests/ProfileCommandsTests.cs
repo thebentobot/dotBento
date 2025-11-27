@@ -10,7 +10,7 @@ public class ProfileCommandsTests
     {
         var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
         Assert.NotNull(method);
-        var result = method!.Invoke(null, args);
+        var result = method.Invoke(null, args);
         return result is null ? default : (T)result;
     }
 

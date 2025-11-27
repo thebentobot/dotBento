@@ -84,7 +84,7 @@ public static class InteractionContextExtensions
                         : "") +
                     imageEmbedFilename,
                     null,
-                    [response.Embed?.Build()],
+                    [response.Embed.Build()],
                     ephemeral: ephemeral,
                     components: response.Components?.Build());
                 break;

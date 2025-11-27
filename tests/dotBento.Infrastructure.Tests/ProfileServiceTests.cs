@@ -76,7 +76,7 @@ public class ProfileServiceTests
         var cache = CreateMemoryCache();
         var profile = new Profile { UserId = 42, Description = "from-cache" };
         var json = JsonSerializer.Serialize(profile, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        await cache.SetStringAsync("profile:42", json);
+        await cache.SetStringAsync("profile:42", json, token: TestContext.Current.CancellationToken);
 
         var factory = new ThrowingFactory();
         var service = new ProfileService(cache, factory);
@@ -108,11 +108,11 @@ public class ProfileServiceTests
         // Assert
         Assert.True(maybe.HasValue);
         Assert.Equal("from-db", maybe.Value.Description);
-        var cached = await cache.GetStringAsync("profile:7");
+        var cached = await cache.GetStringAsync("profile:7", token: TestContext.Current.CancellationToken);
         Assert.False(string.IsNullOrEmpty(cached));
-        var roundtrip = JsonSerializer.Deserialize<Profile>(cached!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var roundtrip = JsonSerializer.Deserialize<Profile>(cached, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(roundtrip);
-        Assert.Equal(7, roundtrip!.UserId);
+        Assert.Equal(7, roundtrip.UserId);
         Assert.Equal("from-db", roundtrip.Description);
     }
 
@@ -121,7 +121,7 @@ public class ProfileServiceTests
     {
         // Arrange invalid cache
         var cache = CreateMemoryCache();
-        await cache.SetStringAsync("profile:9", "{not-json}");
+        await cache.SetStringAsync("profile:9", "{not-json}", token: TestContext.Current.CancellationToken);
 
         var factory = new SharedInMemoryFactory();
         await using (var ctx = factory.CreateDbContext())
@@ -140,11 +140,11 @@ public class ProfileServiceTests
         Assert.Equal("from-db", maybe.Value.Description);
 
         // Assert cache refreshed to valid JSON
-        var cached = await cache.GetStringAsync("profile:9");
+        var cached = await cache.GetStringAsync("profile:9", token: TestContext.Current.CancellationToken);
         Assert.NotEqual("{not-json}", cached);
         var parsed = JsonSerializer.Deserialize<Profile>(cached!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(parsed);
-        Assert.Equal(9, parsed!.UserId);
+        Assert.Equal(9, parsed.UserId);
 
         // Verify a warning was logged
         logger.Verify(
@@ -153,7 +153,7 @@ public class ProfileServiceTests
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to deserialize Profile from cache")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!
             ),
             Times.Once);
     }
@@ -171,18 +171,21 @@ public class ProfileServiceTests
         // Assert DB contains it
         await using (var verify = factory.CreateDbContext())
         {
-            var dbProfile = await verify.Profiles.FindAsync(100L);
+            var dbProfile = await verify.Profiles.FindAsync([100L], TestContext.Current.CancellationToken);
             Assert.NotNull(dbProfile);
-            Assert.Equal("hello", dbProfile!.Description);
+            Assert.Equal("hello", dbProfile.Description);
         }
 
         // Assert cache populated
-        var cached = await cache.GetStringAsync("profile:100");
+        var cached = await cache.GetStringAsync("profile:100", token: TestContext.Current.CancellationToken);
         Assert.False(string.IsNullOrEmpty(cached));
-        var parsed = JsonSerializer.Deserialize<Profile>(cached!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var parsed = JsonSerializer.Deserialize<Profile>(cached, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(parsed);
-        Assert.Equal(100, parsed!.UserId);
+        Assert.Equal(100, parsed.UserId);
         Assert.Equal("hello", parsed.Description);
+        
+        Assert.Equal(100, created.UserId);
+        Assert.Equal("hello", created.Description);
     }
 
     [Fact]
@@ -203,16 +206,19 @@ public class ProfileServiceTests
         // Assert DB updated
         await using (var verify = factory.CreateDbContext())
         {
-            var dbProfile = await verify.Profiles.FindAsync(200L);
+            var dbProfile = await verify.Profiles.FindAsync(new object?[] { 200L }, TestContext.Current.CancellationToken);
             Assert.NotNull(dbProfile);
-            Assert.Equal("new", dbProfile!.Description);
+            Assert.Equal("new", dbProfile.Description);
         }
 
         // Assert cache updated
-        var cached = await cache.GetStringAsync("profile:200");
+        var cached = await cache.GetStringAsync("profile:200", token: TestContext.Current.CancellationToken);
         var parsed = JsonSerializer.Deserialize<Profile>(cached!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(parsed);
-        Assert.Equal("new", parsed!.Description);
+        Assert.Equal("new", parsed.Description);
+        
+        Assert.Equal(200, updated.UserId);
+        Assert.Equal("new", updated.Description);
     }
 
     [Fact]
@@ -232,8 +238,11 @@ public class ProfileServiceTests
             p.Description = null; // ensure a null value exists
         });
 
-        var json = await cache.GetStringAsync("profile:300");
+        var json = await cache.GetStringAsync("profile:300", token: TestContext.Current.CancellationToken);
         Assert.False(string.IsNullOrEmpty(json));
-        Assert.Contains("\"description\":null", json!);
+        Assert.Contains("\"description\":null", json);
+        
+        Assert.Equal(300, profile.UserId);
+        Assert.Null(profile.Description);
     }
 }
