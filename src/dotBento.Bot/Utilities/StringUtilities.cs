@@ -29,7 +29,7 @@ public static class StringUtilities
     
     public static string AddPossessiveS(string text) 
     {
-        if (string.IsNullOrEmpty(text))
+        if (string.IsNullOrWhiteSpace(text))
             return text;
 
         return text.EndsWith("s", StringComparison.OrdinalIgnoreCase) ? $"{text}'" : $"{text}'s";
