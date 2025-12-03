@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.3](https://github.com/thebentobot/dotBento/compare/v1.10.2...v1.10.3) (2025-12-03)
+
+
+### Bug Fixes
+
+* clean up warnings and small stuff ([b87e2ee](https://github.com/thebentobot/dotBento/commit/b87e2eeeaa1c4ecc6c674d004dec28b74830a538))
+* **StringUtilities:** include whitespace check and fix test ([eeceff6](https://github.com/thebentobot/dotBento/commit/eeceff69ab02fd5c2d30817650d1d88b12707a25))
+
 ## [1.10.2](https://github.com/thebentobot/dotBento/compare/v1.10.1...v1.10.2) (2025-11-24)
 
 
