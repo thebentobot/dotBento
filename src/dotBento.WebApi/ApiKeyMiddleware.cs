@@ -18,6 +18,12 @@ public class ApiKeyMiddleware
 
     public async Task InvokeAsync(HttpContext context, IConfiguration configuration)
     {
+        if (context.Request.Path.StartsWithSegments("/metrics"))
+        {
+            await _next(context);
+            return;
+        }
+
         var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var extractedApiKey))

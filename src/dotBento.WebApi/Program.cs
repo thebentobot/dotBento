@@ -3,6 +3,7 @@ using dotBento.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
+using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
@@ -14,6 +15,9 @@ builder.Configuration.AddEnvironmentVariables();
 var configuration = builder.Configuration;
 
 Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .ReadFrom.Configuration(configuration)
     .WriteTo.Console(new RenderedCompactJsonFormatter())
     .WriteTo.GrafanaLoki(
         configuration["LokiUrl"] ?? "http://localhost:3100",
