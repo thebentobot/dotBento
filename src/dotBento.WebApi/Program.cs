@@ -73,7 +73,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.UseMetricServer();
