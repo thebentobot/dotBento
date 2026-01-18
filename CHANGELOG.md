@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.11.0](https://github.com/thebentobot/dotBento/compare/v1.10.2...v1.11.0) (2026-01-15)
+
+
+### Features
+
+* **logging:** configure Serilog minimum levels and integrate configuration options ([b8ca86d](https://github.com/thebentobot/dotBento/commit/b8ca86d003297f7daa013507f45bab22c2346ba0))
+
+
+### Bug Fixes
+
+* **ApiKeyMiddleware:** skip /metrics endpoint ([bb25e38](https://github.com/thebentobot/dotBento/commit/bb25e3859d69af1ba285a6523ec61fa3898c01c0))
+* clean up warnings and small stuff ([b87e2ee](https://github.com/thebentobot/dotBento/commit/b87e2eeeaa1c4ecc6c674d004dec28b74830a538))
+* **StringUtilities:** include whitespace check and fix test ([eeceff6](https://github.com/thebentobot/dotBento/commit/eeceff69ab02fd5c2d30817650d1d88b12707a25))
+* **webapi:** conditionally enable HTTPS redirection in development environment ([639376d](https://github.com/thebentobot/dotBento/commit/639376d74b5e3c6ab8b54d389a7dc8e99f51c44c))
+* **webapi:** disable kestrel ([5a5b34a](https://github.com/thebentobot/dotBento/commit/5a5b34ae88debc5f1867e27b025ce3406c227215))
+* **webapi:** prometheus getting blocked by webapi ([07f0d06](https://github.com/thebentobot/dotBento/commit/07f0d063d36d224ea4e498a80b8cd679bdabf3f5))
+
 ## [1.10.2](https://github.com/thebentobot/dotBento/compare/v1.10.1...v1.10.2) (2025-11-24)
 
 
