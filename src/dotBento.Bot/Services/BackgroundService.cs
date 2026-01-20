@@ -2,12 +2,14 @@ using System.Diagnostics;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
+using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -20,12 +22,12 @@ public sealed class BackgroundService(UserService userService,
     ReminderCommands reminderCommands,
     IDbContextFactory<BotDbContext> contextFactory,
     IDiscordUserResolver userResolver,
-    IDmSender dmSender)
+    IDmSender dmSender,
+    IOptions<BotEnvConfig> botSettings)
 {
     public void QueueJobs()
     {
-        Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
+        var isProduction = string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase);
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
@@ -42,27 +44,43 @@ public sealed class BackgroundService(UserService userService,
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
+        if (isProduction)
+        {
+            Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
+            RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
 
-        // Cleanup and sync jobs - run daily at different times to spread the load
-        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
-        RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 2 * * *"); // 2 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
+            RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
-        RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 3 * * *"); // 3 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 2 * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
-        RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 4 * * *"); // 4 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 3 * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
-        RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *"); // 5 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 4 * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(SyncGuildData)}");
-        RecurringJob.AddOrUpdate(nameof(SyncGuildData), () => SyncGuildData(), "0 6 * * *"); // 6 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
-        RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *"); // 7 AM daily
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildData), () => SyncGuildData(), "0 6 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *");
+        }
+        else
+        {
+            RecurringJob.RemoveIfExists(nameof(UpdateMetrics));
+            RecurringJob.RemoveIfExists(nameof(UpdateBotLists));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuilds));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuildMembers));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleUsers));
+            RecurringJob.RemoveIfExists(nameof(SyncUserData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildMemberData));
+        }
     }
 
     public async Task UpdateStatus()
@@ -153,6 +171,11 @@ public sealed class BackgroundService(UserService userService,
 
     public async Task UpdateMetrics()
     {
+        if (!string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         Log.Information($"Running {nameof(UpdateMetrics)}");
 
         Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());

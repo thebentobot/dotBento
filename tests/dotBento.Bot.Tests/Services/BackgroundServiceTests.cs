@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.EntityFramework.Context;
 using EfReminder = dotBento.EntityFramework.Entities.Reminder;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace dotBento.Bot.Tests.Services;
@@ -80,7 +82,9 @@ public sealed class BackgroundServiceTests
         var guildService = (GuildService)null!;
         var supporterService = (SupporterService)null!;
         var botListService = (BotListService)null!;
-        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender);
+        var botSettings = new Mock<IOptions<BotEnvConfig>>();
+        botSettings.Setup(s => s.Value).Returns(new BotEnvConfig { Environment = "local" });
+        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object);
     }
 
     [Fact]
