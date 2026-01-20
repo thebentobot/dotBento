@@ -273,4 +273,116 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         return guildMember.AsMaybe();
     }
+
+    /// <summary>
+    /// Gets a batch of guilds from the database for background processing.
+    /// </summary>
+    public async Task<List<Guild>> GetGuildBatchAsync(int batchSize, int skip)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        return await db.Guilds
+            .AsNoTracking()
+            .OrderBy(g => g.GuildId)
+            .Skip(skip)
+            .Take(batchSize)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Gets a batch of guild members from the database for background processing.
+    /// </summary>
+    public async Task<List<GuildMember>> GetGuildMemberBatchAsync(int batchSize, int skip)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        return await db.GuildMembers
+            .AsNoTracking()
+            .OrderBy(gm => gm.GuildMemberId)
+            .Skip(skip)
+            .Take(batchSize)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Updates guild information (name, icon) from Discord.
+    /// </summary>
+    public async Task<bool> SyncGuildFromDiscordAsync(Guild dbGuild, IGuild discordGuild)
+    {
+        var hasChanges = false;
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var guild = await db.Guilds
+            .FirstOrDefaultAsync(g => g.GuildId == dbGuild.GuildId);
+
+        if (guild == null) return false;
+
+        if (guild.GuildName != discordGuild.Name)
+        {
+            guild.GuildName = discordGuild.Name;
+            hasChanges = true;
+        }
+
+        var newIconUrl = discordGuild.IconUrl;
+        if (guild.Icon != newIconUrl)
+        {
+            guild.Icon = newIconUrl;
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
+            await db.SaveChangesAsync();
+            await RemoveGuildFromCache((ulong)guild.GuildId);
+        }
+
+        return hasChanges;
+    }
+
+    /// <summary>
+    /// Updates guild member avatar from Discord.
+    /// </summary>
+    public async Task<bool> SyncGuildMemberFromDiscordAsync(GuildMember dbGuildMember, IGuildUser discordGuildUser)
+    {
+        var hasChanges = false;
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var guildMember = await db.GuildMembers
+            .FirstOrDefaultAsync(gm => gm.GuildMemberId == dbGuildMember.GuildMemberId);
+
+        if (guildMember == null) return false;
+
+        var newAvatarUrl = discordGuildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512);
+        if (guildMember.AvatarUrl != newAvatarUrl)
+        {
+            guildMember.AvatarUrl = newAvatarUrl;
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
+            await db.SaveChangesAsync();
+            await RemoveGuildMemberFromCache((ulong)guildMember.GuildId, (ulong)guildMember.UserId);
+        }
+
+        return hasChanges;
+    }
+
+    /// <summary>
+    /// Deletes guild members by their IDs in bulk.
+    /// </summary>
+    public async Task DeleteGuildMembersBulkAsync(List<long> guildMemberIds)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var guildMembers = await db.GuildMembers
+            .Where(gm => guildMemberIds.Contains(gm.GuildMemberId))
+            .ToListAsync();
+
+        if (guildMembers.Count > 0)
+        {
+            db.GuildMembers.RemoveRange(guildMembers);
+            await db.SaveChangesAsync();
+
+            foreach (var gm in guildMembers)
+            {
+                await RemoveGuildMemberFromCache((ulong)gm.GuildId, (ulong)gm.UserId);
+            }
+        }
+    }
 }

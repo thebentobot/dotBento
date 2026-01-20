@@ -40,9 +40,28 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
-        
+
         Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
         RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
+
+        // Cleanup and sync jobs - run daily at different times to spread the load
+        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
+        RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 2 * * *"); // 2 AM daily
+
+        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
+        RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 3 * * *"); // 3 AM daily
+
+        Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
+        RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 4 * * *"); // 4 AM daily
+
+        Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
+        RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *"); // 5 AM daily
+
+        Log.Information($"RecurringJob: Adding {nameof(SyncGuildData)}");
+        RecurringJob.AddOrUpdate(nameof(SyncGuildData), () => SyncGuildData(), "0 6 * * *"); // 6 AM daily
+
+        Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
+        RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *"); // 7 AM daily
     }
 
     public async Task UpdateStatus()
@@ -239,5 +258,384 @@ public sealed class BackgroundService(UserService userService,
     public async Task UpdateBotLists()
     {
         await botListService.UpdateBotLists(client.Guilds.Count);
+    }
+
+    /// <summary>
+    /// Removes guilds from database that the bot is no longer a member of.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task CleanupStaleGuilds()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuilds)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(CleanupStaleGuilds)}");
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var guilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (guilds.Count == 0) break;
+
+                foreach (var dbGuild in guilds)
+                {
+                    totalProcessed++;
+
+                    // Check if bot is still in this guild
+                    var discordGuild = client.GetGuild((ulong)dbGuild.GuildId);
+                    if (discordGuild == null)
+                    {
+                        Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
+                        await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
+                        totalDeleted++;
+                    }
+
+                    // Rate limiting: small delay between checks
+                    await Task.Delay(100);
+                }
+
+                skip += batchSize;
+
+                // Longer delay between batches
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuilds));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes guild members from database who are no longer in their respective guilds.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task CleanupStaleGuildMembers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuildMembers)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(CleanupStaleGuildMembers)}");
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var guildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (guildMembers.Count == 0) break;
+
+                var guildMembersToDelete = new List<long>();
+
+                foreach (var dbGuildMember in guildMembers)
+                {
+                    totalProcessed++;
+
+                    // Check if guild still exists
+                    var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId);
+                    if (discordGuild == null)
+                    {
+                        // Guild doesn't exist, mark for deletion
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        continue;
+                    }
+
+                    // Check if user is still in the guild
+                    var discordGuildUser = discordGuild.GetUser((ulong)dbGuildMember.UserId);
+                    if (discordGuildUser == null)
+                    {
+                        // User not in guild, mark for deletion
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                    }
+
+                    // Rate limiting: small delay between checks
+                    await Task.Delay(50);
+                }
+
+                // Delete in bulk
+                if (guildMembersToDelete.Count > 0)
+                {
+                    await guildService.DeleteGuildMembersBulkAsync(guildMembersToDelete);
+                    totalDeleted += guildMembersToDelete.Count;
+                    Log.Information($"Deleted {guildMembersToDelete.Count} stale guild members in this batch");
+                }
+
+                skip += batchSize;
+
+                // Longer delay between batches
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuildMembers)}: Processed {totalProcessed} guild members, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuildMembers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes users from database who have no guild memberships.
+    /// This should run after CleanupStaleGuildMembers to ensure orphaned users are removed.
+    /// </summary>
+    public async Task CleanupStaleUsers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleUsers)}");
+
+        try
+        {
+            await using var db = await contextFactory.CreateDbContextAsync();
+
+            // Find users with no guild memberships
+            var usersWithNoGuilds = await db.Users
+                .Where(u => !u.GuildMembers.Any())
+                .Select(u => u.UserId)
+                .ToListAsync();
+
+            if (usersWithNoGuilds.Count > 0)
+            {
+                Log.Information($"Found {usersWithNoGuilds.Count} users with no guild memberships");
+
+                foreach (var userId in usersWithNoGuilds)
+                {
+                    await userService.DeleteUserAsync((ulong)userId);
+                    await Task.Delay(100); // Rate limiting
+                }
+
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {usersWithNoGuilds.Count} users");
+            }
+            else
+            {
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: No users to delete");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleUsers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs user data (username, avatar) from Discord for users who can still be resolved.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncUserData()
+    {
+        Log.Information($"Running {nameof(SyncUserData)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(SyncUserData)}");
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var users = await userService.GetUserBatchAsync(batchSize, skip);
+                if (users.Count == 0) break;
+
+                foreach (var dbUser in users)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        // Try to resolve user from Discord
+                        var discordUser = await userResolver.GetUserAsync((ulong)dbUser.UserId);
+                        if (discordUser != null)
+                        {
+                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, discordUser);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
+                    }
+
+                    // Rate limiting: delay between each user
+                    await Task.Delay(200);
+                }
+
+                skip += batchSize;
+
+                // Longer delay between batches
+                await Task.Delay(3000);
+            }
+
+            Log.Information($"Completed {nameof(SyncUserData)}: Processed {totalProcessed} users, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncUserData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild data (name, icon) from Discord.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task SyncGuildData()
+    {
+        Log.Information($"Running {nameof(SyncGuildData)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(SyncGuildData)}");
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var guilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (guilds.Count == 0) break;
+
+                foreach (var dbGuild in guilds)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.GetGuild((ulong)dbGuild.GuildId);
+                        if (discordGuild != null)
+                        {
+                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
+                    }
+
+                    // Rate limiting
+                    await Task.Delay(100);
+                }
+
+                skip += batchSize;
+
+                // Longer delay between batches
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild member data (avatar) from Discord.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncGuildMemberData()
+    {
+        Log.Information($"Running {nameof(SyncGuildMemberData)}");
+
+        try
+        {
+            if (client.Guilds?.Count == null)
+            {
+                Log.Information($"Client guild count is null, cancelling {nameof(SyncGuildMemberData)}");
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var guildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (guildMembers.Count == 0) break;
+
+                foreach (var dbGuildMember in guildMembers)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId);
+                        if (discordGuild != null)
+                        {
+                            var discordGuildUser = discordGuild.GetUser((ulong)dbGuildMember.UserId);
+                            if (discordGuildUser != null)
+                            {
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser);
+                                if (synced)
+                                {
+                                    totalSynced++;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
+                    }
+
+                    // Rate limiting
+                    await Task.Delay(50);
+                }
+
+                skip += batchSize;
+
+                // Longer delay between batches
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildMemberData)}: Processed {totalProcessed} guild members, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildMemberData));
+            throw;
+        }
     }
 }
