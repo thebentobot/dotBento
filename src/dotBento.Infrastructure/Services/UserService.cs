@@ -351,11 +351,11 @@ public sealed class UserService(IMemoryCache cache,
                     Type = UserInteractionType.SlashCommand,
                     ErrorReferenceId = errorReference
                 };
-                
+
                 await using var db = await this._contextFactory.CreateDbContextAsync();
                 await db.UserInteractions.AddAsync(interaction);
                 await db.SaveChangesAsync();
-                
+
             }
         }
         catch (Exception e)
@@ -364,4 +364,68 @@ public sealed class UserService(IMemoryCache cache,
         }
     }
     */
+
+    /// <summary>
+    /// Gets a batch of users from the database for background processing.
+    /// </summary>
+    public async Task<List<User>> GetUserBatchAsync(int batchSize, int skip)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        return await db.Users
+            .AsNoTracking()
+            .OrderBy(u => u.UserId)
+            .Skip(skip)
+            .Take(batchSize)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Updates user information (username, discriminator, avatar) from Discord.
+    /// </summary>
+    public async Task<bool> SyncUserFromDiscordAsync(User dbUser, IUser discordUser)
+    {
+        var hasChanges = false;
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var user = await db.Users
+            .FirstOrDefaultAsync(u => u.UserId == dbUser.UserId);
+
+        if (user == null) return false;
+
+        var newAvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512);
+        if (user.AvatarUrl != newAvatarUrl)
+        {
+            user.AvatarUrl = newAvatarUrl;
+            hasChanges = true;
+        }
+
+        if (user.Username != discordUser.Username)
+        {
+            user.Username = discordUser.Username;
+            hasChanges = true;
+        }
+
+        if (user.Discriminator != discordUser.Discriminator)
+        {
+            user.Discriminator = discordUser.Discriminator;
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
+            await db.SaveChangesAsync();
+            RemoveUserFromCache(user);
+        }
+
+        return hasChanges;
+    }
+    
+    public async Task<List<long>> GetUsersWithoutGuilds()
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        return await db.Users
+            .Where(u => !u.GuildMembers.Any())
+            .Select(u => u.UserId)
+            .ToListAsync();
+    }
 }

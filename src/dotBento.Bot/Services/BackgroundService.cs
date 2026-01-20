@@ -1,12 +1,15 @@
 using System.Diagnostics;
+using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
+using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -19,12 +22,12 @@ public sealed class BackgroundService(UserService userService,
     ReminderCommands reminderCommands,
     IDbContextFactory<BotDbContext> contextFactory,
     IDiscordUserResolver userResolver,
-    IDmSender dmSender)
+    IDmSender dmSender,
+    IOptions<BotEnvConfig> botSettings)
 {
     public void QueueJobs()
     {
-        Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
+        var isProduction = string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase);
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
@@ -40,9 +43,44 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
-        
-        Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
-        RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
+
+        if (isProduction)
+        {
+            Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
+            RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
+            RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 2 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 3 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 4 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildData), () => SyncGuildData(), "0 6 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *");
+        }
+        else
+        {
+            RecurringJob.RemoveIfExists(nameof(UpdateMetrics));
+            RecurringJob.RemoveIfExists(nameof(UpdateBotLists));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuilds));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuildMembers));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleUsers));
+            RecurringJob.RemoveIfExists(nameof(SyncUserData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildMemberData));
+        }
     }
 
     public async Task UpdateStatus()
@@ -133,6 +171,11 @@ public sealed class BackgroundService(UserService userService,
 
     public async Task UpdateMetrics()
     {
+        if (!string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         Log.Information($"Running {nameof(UpdateMetrics)}");
 
         Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
@@ -239,5 +282,368 @@ public sealed class BackgroundService(UserService userService,
     public async Task UpdateBotLists()
     {
         await botListService.UpdateBotLists(client.Guilds.Count);
+    }
+
+    /// <summary>
+    /// Removes guilds from database that the bot is no longer a member of.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task CleanupStaleGuilds()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuilds)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(CleanupStaleGuilds)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
+
+                foreach (var dbGuild in dbGuilds)
+                {
+                    totalProcessed++;
+
+                    var guild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
+                    {
+                        Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
+                        await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
+                        totalDeleted++;
+                    }
+
+                    await Task.Delay(100);
+                }
+
+                skip += batchSize;
+
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuilds));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes guild members from database who are no longer in their respective guilds.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task CleanupStaleGuildMembers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuildMembers)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(CleanupStaleGuildMembers)))
+            {
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
+
+                var guildMembersToDelete = new List<long>();
+
+                foreach (var dbGuildMember in dbGuildMembers)
+                {
+                    totalProcessed++;
+
+                    var guild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
+                    {
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        continue;
+                    }
+
+                    var guildUser = guild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                    if (guildUser.HasNoValue)
+                    {
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                    }
+
+                    await Task.Delay(50);
+                }
+
+                if (guildMembersToDelete.Count > 0)
+                {
+                    await guildService.DeleteGuildMembersBulkAsync(guildMembersToDelete);
+                    totalDeleted += guildMembersToDelete.Count;
+                    Log.Information($"Deleted {guildMembersToDelete.Count} stale guild members in this batch");
+                }
+
+                skip += batchSize;
+
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuildMembers)}: Processed {totalProcessed} guild members, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuildMembers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes users from database who have no guild memberships.
+    /// This should run after CleanupStaleGuildMembers to ensure orphaned users are removed.
+    /// </summary>
+    public async Task CleanupStaleUsers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleUsers)}");
+
+        try
+        {
+            var usersWithNoGuilds = await userService.GetUsersWithoutGuilds();
+
+            if (usersWithNoGuilds.Count > 0)
+            {
+                Log.Information($"Found {usersWithNoGuilds.Count} users with no guild memberships");
+
+                foreach (var userId in usersWithNoGuilds)
+                {
+                    await userService.DeleteUserAsync((ulong)userId);
+                    await Task.Delay(100);
+                }
+
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {usersWithNoGuilds.Count} users");
+            }
+            else
+            {
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: No users to delete");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleUsers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs user data (username, avatar) from Discord for users who can still be resolved.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncUserData()
+    {
+        Log.Information($"Running {nameof(SyncUserData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncUserData)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbUsers = await userService.GetUserBatchAsync(batchSize, skip);
+                if (dbUsers.Count == 0) break;
+
+                foreach (var dbUser in dbUsers)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordUser = (await userResolver.GetUserAsync((ulong)dbUser.UserId)).AsMaybe();
+                        if (discordUser.HasValue)
+                        {
+                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, discordUser.Value);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
+                    }
+                    
+                    await Task.Delay(200);
+                }
+
+                skip += batchSize;
+                
+                await Task.Delay(3000);
+            }
+
+            Log.Information($"Completed {nameof(SyncUserData)}: Processed {totalProcessed} users, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncUserData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild data (name, icon) from Discord.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task SyncGuildData()
+    {
+        Log.Information($"Running {nameof(SyncGuildData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncGuildData)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
+
+                foreach (var dbGuild in dbGuilds)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
+                        {
+                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild.Value);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
+                    }
+                    
+                    await Task.Delay(100);
+                }
+
+                skip += batchSize;
+                
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild member data (avatar) from Discord.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncGuildMemberData()
+    {
+        Log.Information($"Running {nameof(SyncGuildMemberData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncGuildMemberData)))
+            {
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
+
+                foreach (var dbGuildMember in dbGuildMembers)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
+                        {
+                            var discordGuildUser = discordGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                            if (discordGuildUser.HasValue)
+                            {
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser.Value);
+                                if (synced)
+                                {
+                                    totalSynced++;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
+                    }
+                    
+                    await Task.Delay(50);
+                }
+
+                skip += batchSize;
+
+                await Task.Delay(2000);
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildMemberData)}: Processed {totalProcessed} guild members, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildMemberData));
+            throw;
+        }
+    }
+
+    private bool HasClientNoGuilds(string jobName)
+    {
+        var clientGuilds = client.Guilds.AsMaybe();
+        if (clientGuilds.HasNoValue)
+        {
+            Log.Information($"Client guilds not available, cancelling {jobName}");
+            return true;
+        }
+        
+        return false;
     }
 }
