@@ -271,10 +271,8 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            var clientGuilds = client.Guilds.AsMaybe();
-            if (clientGuilds.HasNoValue)
+            if (HasClientNoGuilds(nameof(CleanupStaleGuilds)))
             {
-                Log.Information($"Client guilds not available, cancelling {nameof(CleanupStaleGuilds)}");
                 return;
             }
 
@@ -285,29 +283,26 @@ public sealed class BackgroundService(UserService userService,
 
             while (true)
             {
-                var guilds = await guildService.GetGuildBatchAsync(batchSize, skip);
-                if (guilds.Count == 0) break;
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
 
-                foreach (var dbGuild in guilds)
+                foreach (var dbGuild in dbGuilds)
                 {
                     totalProcessed++;
 
-                    // Check if bot is still in this guild
-                    var maybeGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
-                    if (maybeGuild.HasNoValue)
+                    var guild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
                     {
                         Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
                         await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
                         totalDeleted++;
                     }
 
-                    // Rate limiting: small delay between checks
                     await Task.Delay(100);
                 }
 
                 skip += batchSize;
 
-                // Longer delay between batches
                 await Task.Delay(2000);
             }
 
@@ -330,10 +325,8 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            var clientGuilds = client.Guilds.AsMaybe();
-            if (clientGuilds.HasNoValue)
+            if (HasClientNoGuilds(nameof(CleanupStaleGuildMembers)))
             {
-                Log.Information($"Client guilds not available, cancelling {nameof(CleanupStaleGuildMembers)}");
                 return;
             }
 
@@ -344,37 +337,31 @@ public sealed class BackgroundService(UserService userService,
 
             while (true)
             {
-                var guildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
-                if (guildMembers.Count == 0) break;
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
 
                 var guildMembersToDelete = new List<long>();
 
-                foreach (var dbGuildMember in guildMembers)
+                foreach (var dbGuildMember in dbGuildMembers)
                 {
                     totalProcessed++;
 
-                    // Check if guild still exists
-                    var maybeGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
-                    if (maybeGuild.HasNoValue)
+                    var guild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
                     {
-                        // Guild doesn't exist, mark for deletion
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
                         continue;
                     }
 
-                    // Check if user is still in the guild
-                    var maybeGuildUser = maybeGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
-                    if (maybeGuildUser.HasNoValue)
+                    var guildUser = guild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                    if (guildUser.HasNoValue)
                     {
-                        // User not in guild, mark for deletion
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
                     }
 
-                    // Rate limiting: small delay between checks
                     await Task.Delay(50);
                 }
 
-                // Delete in bulk
                 if (guildMembersToDelete.Count > 0)
                 {
                     await guildService.DeleteGuildMembersBulkAsync(guildMembersToDelete);
@@ -384,7 +371,6 @@ public sealed class BackgroundService(UserService userService,
 
                 skip += batchSize;
 
-                // Longer delay between batches
                 await Task.Delay(2000);
             }
 
@@ -407,13 +393,7 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            await using var db = await contextFactory.CreateDbContextAsync();
-
-            // Find users with no guild memberships
-            var usersWithNoGuilds = await db.Users
-                .Where(u => !u.GuildMembers.Any())
-                .Select(u => u.UserId)
-                .ToListAsync();
+            var usersWithNoGuilds = await userService.GetUsersWithoutGuilds();
 
             if (usersWithNoGuilds.Count > 0)
             {
@@ -422,7 +402,7 @@ public sealed class BackgroundService(UserService userService,
                 foreach (var userId in usersWithNoGuilds)
                 {
                     await userService.DeleteUserAsync((ulong)userId);
-                    await Task.Delay(100); // Rate limiting
+                    await Task.Delay(100);
                 }
 
                 Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {usersWithNoGuilds.Count} users");
@@ -449,10 +429,8 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            var clientGuilds = client.Guilds.AsMaybe();
-            if (clientGuilds.HasNoValue)
+            if (HasClientNoGuilds(nameof(SyncUserData)))
             {
-                Log.Information($"Client guilds not available, cancelling {nameof(SyncUserData)}");
                 return;
             }
 
@@ -463,20 +441,19 @@ public sealed class BackgroundService(UserService userService,
 
             while (true)
             {
-                var users = await userService.GetUserBatchAsync(batchSize, skip);
-                if (users.Count == 0) break;
+                var dbUsers = await userService.GetUserBatchAsync(batchSize, skip);
+                if (dbUsers.Count == 0) break;
 
-                foreach (var dbUser in users)
+                foreach (var dbUser in dbUsers)
                 {
                     totalProcessed++;
 
                     try
                     {
-                        // Try to resolve user from Discord
-                        var maybeDiscordUser = (await userResolver.GetUserAsync((ulong)dbUser.UserId)).AsMaybe();
-                        if (maybeDiscordUser.HasValue)
+                        var discordUser = (await userResolver.GetUserAsync((ulong)dbUser.UserId)).AsMaybe();
+                        if (discordUser.HasValue)
                         {
-                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, maybeDiscordUser.Value);
+                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, discordUser.Value);
                             if (synced)
                             {
                                 totalSynced++;
@@ -487,14 +464,12 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
                     }
-
-                    // Rate limiting: delay between each user
+                    
                     await Task.Delay(200);
                 }
 
                 skip += batchSize;
-
-                // Longer delay between batches
+                
                 await Task.Delay(3000);
             }
 
@@ -517,10 +492,8 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            var clientGuilds = client.Guilds.AsMaybe();
-            if (clientGuilds.HasNoValue)
+            if (HasClientNoGuilds(nameof(SyncGuildData)))
             {
-                Log.Information($"Client guilds not available, cancelling {nameof(SyncGuildData)}");
                 return;
             }
 
@@ -531,19 +504,19 @@ public sealed class BackgroundService(UserService userService,
 
             while (true)
             {
-                var guilds = await guildService.GetGuildBatchAsync(batchSize, skip);
-                if (guilds.Count == 0) break;
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
 
-                foreach (var dbGuild in guilds)
+                foreach (var dbGuild in dbGuilds)
                 {
                     totalProcessed++;
 
                     try
                     {
-                        var maybeDiscordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
-                        if (maybeDiscordGuild.HasValue)
+                        var discordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
                         {
-                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, maybeDiscordGuild.Value);
+                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild.Value);
                             if (synced)
                             {
                                 totalSynced++;
@@ -554,14 +527,12 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
                     }
-
-                    // Rate limiting
+                    
                     await Task.Delay(100);
                 }
 
                 skip += batchSize;
-
-                // Longer delay between batches
+                
                 await Task.Delay(2000);
             }
 
@@ -584,10 +555,8 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            var clientGuilds = client.Guilds.AsMaybe();
-            if (clientGuilds.HasNoValue)
+            if (HasClientNoGuilds(nameof(SyncGuildMemberData)))
             {
-                Log.Information($"Client guilds not available, cancelling {nameof(SyncGuildMemberData)}");
                 return;
             }
 
@@ -598,22 +567,22 @@ public sealed class BackgroundService(UserService userService,
 
             while (true)
             {
-                var guildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
-                if (guildMembers.Count == 0) break;
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
 
-                foreach (var dbGuildMember in guildMembers)
+                foreach (var dbGuildMember in dbGuildMembers)
                 {
                     totalProcessed++;
 
                     try
                     {
-                        var maybeDiscordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
-                        if (maybeDiscordGuild.HasValue)
+                        var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
                         {
-                            var maybeDiscordGuildUser = maybeDiscordGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
-                            if (maybeDiscordGuildUser.HasValue)
+                            var discordGuildUser = discordGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                            if (discordGuildUser.HasValue)
                             {
-                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, maybeDiscordGuildUser.Value);
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser.Value);
                                 if (synced)
                                 {
                                     totalSynced++;
@@ -625,14 +594,12 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
                     }
-
-                    // Rate limiting
+                    
                     await Task.Delay(50);
                 }
 
                 skip += batchSize;
 
-                // Longer delay between batches
                 await Task.Delay(2000);
             }
 
@@ -643,5 +610,17 @@ public sealed class BackgroundService(UserService userService,
             Log.Error(e, nameof(SyncGuildMemberData));
             throw;
         }
+    }
+
+    private bool HasClientNoGuilds(string jobName)
+    {
+        var clientGuilds = client.Guilds.AsMaybe();
+        if (clientGuilds.HasNoValue)
+        {
+            Log.Information($"Client guilds not available, cancelling {jobName}");
+            return true;
+        }
+        
+        return false;
     }
 }

@@ -418,4 +418,14 @@ public sealed class UserService(IMemoryCache cache,
 
         return hasChanges;
     }
+    
+    public async Task<List<long>> GetUsersWithoutGuilds()
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        return await db.Users
+            .Where(u => !u.GuildMembers.Any())
+            .Select(u => u.UserId)
+            .ToListAsync();
+    }
 }
