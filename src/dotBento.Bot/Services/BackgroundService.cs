@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
 using dotBento.Domain;
