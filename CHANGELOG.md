@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.12.0](https://github.com/thebentobot/dotBento/compare/v1.11.0...v1.12.0) (2026-01-20)
+
+
+### Features
+
+* add background jobs for data cleanup and sync ([a300aa5](https://github.com/thebentobot/dotBento/commit/a300aa50285e63c4bfc41f24a54eb6569f6bb02c)), closes [#273](https://github.com/thebentobot/dotBento/issues/273)
+* add claude ([106f133](https://github.com/thebentobot/dotBento/commit/106f133a554269b7f94ac50e6154112a164cee89))
+* **bot/BackgroundService:** add environment-specific job handling logic ([b074084](https://github.com/thebentobot/dotBento/commit/b0740841ab06ccb4f2ed50fb4a3cdcd235d34f38))
+
+
+### Bug Fixes
+
+* **bot/BackgroundService:** add CSharpFunctionalExtensions to BackgroundService ([19bbb4b](https://github.com/thebentobot/dotBento/commit/19bbb4b0ea13c5fa53ebeeb87a75f6e6053ccc28))
+
 ## [1.11.0](https://github.com/thebentobot/dotBento/compare/v1.10.2...v1.11.0) (2026-01-15)
 
 
