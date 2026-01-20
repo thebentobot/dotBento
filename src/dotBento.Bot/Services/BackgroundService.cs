@@ -270,9 +270,10 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            var clientGuilds = client.Guilds.AsMaybe();
+            if (clientGuilds.HasNoValue)
             {
-                Log.Information($"Client guild count is null, cancelling {nameof(CleanupStaleGuilds)}");
+                Log.Information($"Client guilds not available, cancelling {nameof(CleanupStaleGuilds)}");
                 return;
             }
 
@@ -291,8 +292,8 @@ public sealed class BackgroundService(UserService userService,
                     totalProcessed++;
 
                     // Check if bot is still in this guild
-                    var discordGuild = client.GetGuild((ulong)dbGuild.GuildId);
-                    if (discordGuild == null)
+                    var maybeGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                    if (maybeGuild.HasNoValue)
                     {
                         Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
                         await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
@@ -328,9 +329,10 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            var clientGuilds = client.Guilds.AsMaybe();
+            if (clientGuilds.HasNoValue)
             {
-                Log.Information($"Client guild count is null, cancelling {nameof(CleanupStaleGuildMembers)}");
+                Log.Information($"Client guilds not available, cancelling {nameof(CleanupStaleGuildMembers)}");
                 return;
             }
 
@@ -351,8 +353,8 @@ public sealed class BackgroundService(UserService userService,
                     totalProcessed++;
 
                     // Check if guild still exists
-                    var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId);
-                    if (discordGuild == null)
+                    var maybeGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                    if (maybeGuild.HasNoValue)
                     {
                         // Guild doesn't exist, mark for deletion
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
@@ -360,8 +362,8 @@ public sealed class BackgroundService(UserService userService,
                     }
 
                     // Check if user is still in the guild
-                    var discordGuildUser = discordGuild.GetUser((ulong)dbGuildMember.UserId);
-                    if (discordGuildUser == null)
+                    var maybeGuildUser = maybeGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                    if (maybeGuildUser.HasNoValue)
                     {
                         // User not in guild, mark for deletion
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
@@ -446,9 +448,10 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            var clientGuilds = client.Guilds.AsMaybe();
+            if (clientGuilds.HasNoValue)
             {
-                Log.Information($"Client guild count is null, cancelling {nameof(SyncUserData)}");
+                Log.Information($"Client guilds not available, cancelling {nameof(SyncUserData)}");
                 return;
             }
 
@@ -469,10 +472,10 @@ public sealed class BackgroundService(UserService userService,
                     try
                     {
                         // Try to resolve user from Discord
-                        var discordUser = await userResolver.GetUserAsync((ulong)dbUser.UserId);
-                        if (discordUser != null)
+                        var maybeDiscordUser = (await userResolver.GetUserAsync((ulong)dbUser.UserId)).AsMaybe();
+                        if (maybeDiscordUser.HasValue)
                         {
-                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, discordUser);
+                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, maybeDiscordUser.Value);
                             if (synced)
                             {
                                 totalSynced++;
@@ -513,9 +516,10 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            var clientGuilds = client.Guilds.AsMaybe();
+            if (clientGuilds.HasNoValue)
             {
-                Log.Information($"Client guild count is null, cancelling {nameof(SyncGuildData)}");
+                Log.Information($"Client guilds not available, cancelling {nameof(SyncGuildData)}");
                 return;
             }
 
@@ -535,10 +539,10 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
-                        var discordGuild = client.GetGuild((ulong)dbGuild.GuildId);
-                        if (discordGuild != null)
+                        var maybeDiscordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
+                        if (maybeDiscordGuild.HasValue)
                         {
-                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild);
+                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, maybeDiscordGuild.Value);
                             if (synced)
                             {
                                 totalSynced++;
@@ -579,9 +583,10 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            var clientGuilds = client.Guilds.AsMaybe();
+            if (clientGuilds.HasNoValue)
             {
-                Log.Information($"Client guild count is null, cancelling {nameof(SyncGuildMemberData)}");
+                Log.Information($"Client guilds not available, cancelling {nameof(SyncGuildMemberData)}");
                 return;
             }
 
@@ -601,13 +606,13 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
-                        var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId);
-                        if (discordGuild != null)
+                        var maybeDiscordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
+                        if (maybeDiscordGuild.HasValue)
                         {
-                            var discordGuildUser = discordGuild.GetUser((ulong)dbGuildMember.UserId);
-                            if (discordGuildUser != null)
+                            var maybeDiscordGuildUser = maybeDiscordGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
+                            if (maybeDiscordGuildUser.HasValue)
                             {
-                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser);
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, maybeDiscordGuildUser.Value);
                                 if (synced)
                                 {
                                     totalSynced++;

@@ -88,3 +88,73 @@ docker compose -f src/docker-compose.dev.yml up
 - Follows [Conventional Commits](https://www.conventionalcommits.org/) for commit messages
 - Tests use xUnit v3 with Moq for mocking
 - `ResponseModel` pattern for consistent command responses (embed, text, file, or paginated)
+
+### Functional Programming with CSharpFunctionalExtensions
+
+The codebase uses [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions) for safer null handling and error management. Follow these patterns:
+
+**Use `Maybe<T>` instead of null checks:**
+```csharp
+// Good - using Maybe
+public async Task<Maybe<User>> GetUserAsync(ulong userId)
+{
+    var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+    return user.AsMaybe(); // Returns Maybe<User>
+}
+
+// In calling code
+var maybeUser = await GetUserAsync(userId);
+if (maybeUser.HasValue)
+{
+    var user = maybeUser.Value;
+    // Work with user
+}
+else
+{
+    // Handle missing user
+}
+
+// Bad - using null checks
+if (user == null) { /* ... */ }
+if (discordGuild != null) { /* ... */ }
+```
+
+**Use `Result` for operations that can fail:**
+```csharp
+// Good - using Result
+public async Task<Result<string>> ProcessCommandAsync()
+{
+    if (condition)
+        return Result.Failure<string>("Error message");
+
+    return Result.Success("Success value");
+}
+
+// In calling code
+var result = await ProcessCommandAsync();
+if (result.IsSuccess)
+{
+    var value = result.Value;
+}
+else
+{
+    Log.Error(result.Error);
+}
+```
+
+**Converting between Maybe and null:**
+```csharp
+// Entity to Maybe
+var user = await db.Users.FirstOrDefaultAsync(...);
+return user.AsMaybe();
+
+// Maybe to value with default
+var userId = maybeUser.HasValue ? maybeUser.Value.UserId : 0;
+var userId = maybeUser.Unwrap(defaultValue);
+```
+
+**Key benefits:**
+- Explicit handling of optional values - no surprise `NullReferenceException`
+- Chainable operations with `Map`, `Bind`, `Match`
+- Self-documenting code - return types show whether values are optional
+- Consistency with existing service methods that return `Maybe<T>` and `Result<T>`
