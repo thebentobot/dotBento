@@ -52,14 +52,14 @@ public sealed class BackgroundService(UserService userService,
             Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
             RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
 
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 2 * * *");
+
             Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
-            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 2 * * *");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 3 * * *");
 
             Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
-            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 3 * * *");
-
-            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
-            RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 4 * * *");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 4 * * *");
 
             Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
             RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *");
@@ -74,9 +74,9 @@ public sealed class BackgroundService(UserService userService,
         {
             RecurringJob.RemoveIfExists(nameof(UpdateMetrics));
             RecurringJob.RemoveIfExists(nameof(UpdateBotLists));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleUsers));
             RecurringJob.RemoveIfExists(nameof(CleanupStaleGuilds));
             RecurringJob.RemoveIfExists(nameof(CleanupStaleGuildMembers));
-            RecurringJob.RemoveIfExists(nameof(CleanupStaleUsers));
             RecurringJob.RemoveIfExists(nameof(SyncUserData));
             RecurringJob.RemoveIfExists(nameof(SyncGuildData));
             RecurringJob.RemoveIfExists(nameof(SyncGuildMemberData));
@@ -286,6 +286,8 @@ public sealed class BackgroundService(UserService userService,
 
     /// <summary>
     /// Removes guilds from database that the bot is no longer a member of.
+    /// Cascade deletes all guild members for those guilds automatically.
+    /// Runs at 3am daily, after CleanupStaleUsers.
     /// Processes in batches to avoid memory issues.
     /// </summary>
     public async Task CleanupStaleGuilds()
@@ -340,6 +342,8 @@ public sealed class BackgroundService(UserService userService,
 
     /// <summary>
     /// Removes guild members from database who are no longer in their respective guilds.
+    /// Only handles members who left guilds that the bot is still in (other cases handled by cascade deletion).
+    /// Runs at 4am daily, after CleanupStaleUsers and CleanupStaleGuilds.
     /// Processes in batches to avoid memory issues and rate limits.
     /// </summary>
     public async Task CleanupStaleGuildMembers()
@@ -382,7 +386,7 @@ public sealed class BackgroundService(UserService userService,
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
                     }
 
-                    await Task.Delay(50);
+                    await Task.Delay(1000);
                 }
 
                 if (guildMembersToDelete.Count > 0)
@@ -394,7 +398,7 @@ public sealed class BackgroundService(UserService userService,
 
                 skip += batchSize;
 
-                await Task.Delay(2000);
+                await Task.Delay(5000);
             }
 
             Log.Information($"Completed {nameof(CleanupStaleGuildMembers)}: Processed {totalProcessed} guild members, deleted {totalDeleted}");
@@ -408,7 +412,9 @@ public sealed class BackgroundService(UserService userService,
 
     /// <summary>
     /// Removes users from database who have no guild memberships.
-    /// This should run after CleanupStaleGuildMembers to ensure orphaned users are removed.
+    /// Cascade deletes any stale guild member records for these users automatically.
+    /// Runs at 2am daily, before CleanupStaleGuilds and CleanupStaleGuildMembers.
+    /// Running first allows cascade deletions from subsequent jobs to handle most cleanup automatically.
     /// </summary>
     public async Task CleanupStaleUsers()
     {
@@ -422,13 +428,27 @@ public sealed class BackgroundService(UserService userService,
             {
                 Log.Information($"Found {usersWithNoGuilds.Count} users with no guild memberships");
 
+                var deletedCount = 0;
                 foreach (var userId in usersWithNoGuilds)
                 {
-                    await userService.DeleteUserAsync((ulong)userId);
+                    try
+                    {
+                        await userService.DeleteUserAsync((ulong)userId);
+                        deletedCount++;
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        Log.Warning($"User {userId} was already deleted (likely by cascade from guild member cleanup)");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Failed to delete user {userId}");
+                    }
+
                     await Task.Delay(100);
                 }
 
-                Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {usersWithNoGuilds.Count} users");
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {deletedCount} users ({usersWithNoGuilds.Count - deletedCount} already deleted)");
             }
             else
             {
@@ -487,13 +507,13 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
                     }
-                    
-                    await Task.Delay(200);
+
+                    await Task.Delay(1500);
                 }
 
                 skip += batchSize;
-                
-                await Task.Delay(3000);
+
+                await Task.Delay(7000);
             }
 
             Log.Information($"Completed {nameof(SyncUserData)}: Processed {totalProcessed} users, synced {totalSynced}");
@@ -617,13 +637,13 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
                     }
-                    
-                    await Task.Delay(50);
+
+                    await Task.Delay(1000);
                 }
 
                 skip += batchSize;
 
-                await Task.Delay(2000);
+                await Task.Delay(5000);
             }
 
             Log.Information($"Completed {nameof(SyncGuildMemberData)}: Processed {totalProcessed} guild members, synced {totalSynced}");
