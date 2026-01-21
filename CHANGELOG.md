@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.1](https://github.com/thebentobot/dotBento/compare/v1.12.0...v1.12.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* **bot:** improve user and guild synchronization logic ([fc44724](https://github.com/thebentobot/dotBento/commit/fc447247f1fb81f4543e67cc09cdadf78ba300cc))
+* **ProfileCommands:** Update ProfileCommands padding and expose ports in docker-compose.dev.yml ([85058db](https://github.com/thebentobot/dotBento/commit/85058db84ef2740ba5923bb59fd383ff25cb1879))
+
 ## [1.12.0](https://github.com/thebentobot/dotBento/compare/v1.11.0...v1.12.0) (2026-01-20)
 
 
