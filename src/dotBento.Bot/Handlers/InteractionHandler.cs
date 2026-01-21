@@ -7,6 +7,7 @@ using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
+using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 using Prometheus;
 using Serilog;
@@ -19,16 +20,22 @@ public sealed class InteractionHandler
     private readonly InteractionService _interactionService;
     private readonly InteractiveService _fergunInteractiveService;
     private readonly IServiceProvider _provider;
+    private readonly UserService _userService;
+    private readonly GuildService _guildService;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
         IServiceProvider provider,
-        InteractiveService fergunInteractiveService)
+        InteractiveService fergunInteractiveService,
+        UserService userService,
+        GuildService guildService)
     {
         _client = client;
         _interactionService = interactionService;
         _provider = provider;
         _fergunInteractiveService = fergunInteractiveService;
+        _userService = userService;
+        _guildService = guildService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
         _client.SelectMenuExecuted += SelectMenuExecuted;
@@ -60,7 +67,9 @@ public sealed class InteractionHandler
             }
 
             var command = commandSearch.Command;
-            
+
+            await EnsureGuildAndUserExists(context);
+
             var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
 
             if (!keepGoing)
@@ -149,7 +158,9 @@ public sealed class InteractionHandler
         {
             return;
         }
-        
+
+        await EnsureGuildAndUserExists(context);
+
         var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
 
         if (!keepGoing)
@@ -217,6 +228,20 @@ public sealed class InteractionHandler
                 Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction); 
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 break;
+        }
+    }
+
+    private async Task EnsureGuildAndUserExists(SocketInteractionContext context)
+    {
+        if (context.Guild != null && !context.User.IsBot)
+        {
+            await _guildService.AddGuildAsync(context.Guild);
+            await _userService.CreateOrAddUserToCache(context.User);
+            var guildUser = context.Guild.GetUser(context.User.Id);
+            if (guildUser != null)
+            {
+                await _guildService.AddGuildMemberAsync(guildUser);
+            }
         }
     }
 

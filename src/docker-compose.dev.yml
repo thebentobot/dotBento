@@ -41,8 +41,8 @@ services:
     init: true
     cap_add:
       - SYS_ADMIN
-    expose:
-      - '3000'
+    ports:
+      - "3000:3000"
     networks:
       - bento_net
 
@@ -54,6 +54,8 @@ services:
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
       POSTGRES_DB: bento
+    ports:
+      - "5432:5432"
     networks:
       - bento_net
 
@@ -62,6 +64,8 @@ services:
     container_name: valkey-sta
     restart: unless-stopped
     command: [ "valkey-server", "--save", "", "--appendonly", "no" ]
+    ports:
+      - "6379:6379"
     networks:
       - bento_net
 
