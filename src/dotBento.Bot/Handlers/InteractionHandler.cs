@@ -68,16 +68,7 @@ public sealed class InteractionHandler
 
             var command = commandSearch.Command;
 
-            if (context.Guild != null && !context.User.IsBot)
-            {
-                await _guildService.AddGuildAsync(context.Guild);
-                await _userService.CreateOrAddUserToCache(context.User);
-                var guildUser = context.Guild.GetUser(context.User.Id);
-                if (guildUser != null)
-                {
-                    await _guildService.AddGuildMemberAsync(guildUser);
-                }
-            }
+            await EnsureGuildAndUserExists(context);
 
             var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
 
@@ -168,16 +159,7 @@ public sealed class InteractionHandler
             return;
         }
 
-        if (context.Guild != null && !context.User.IsBot)
-        {
-            await _guildService.AddGuildAsync(context.Guild);
-            await _userService.CreateOrAddUserToCache(context.User);
-            var guildUser = context.Guild.GetUser(context.User.Id);
-            if (guildUser != null)
-            {
-                await _guildService.AddGuildMemberAsync(guildUser);
-            }
-        }
+        await EnsureGuildAndUserExists(context);
 
         var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
 
@@ -246,6 +228,20 @@ public sealed class InteractionHandler
                 Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction); 
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 break;
+        }
+    }
+
+    private async Task EnsureGuildAndUserExists(SocketInteractionContext context)
+    {
+        if (context.Guild != null && !context.User.IsBot)
+        {
+            await _guildService.AddGuildAsync(context.Guild);
+            await _userService.CreateOrAddUserToCache(context.User);
+            var guildUser = context.Guild.GetUser(context.User.Id);
+            if (guildUser != null)
+            {
+                await _guildService.AddGuildMemberAsync(guildUser);
+            }
         }
     }
 
