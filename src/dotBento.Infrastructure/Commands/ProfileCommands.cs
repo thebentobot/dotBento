@@ -83,7 +83,7 @@ public sealed class ProfileCommands(
         {
             xpOpacity = 0;
             descriptionHeight = "310px";
-            fmPaddingTop = "32.5px";
+            fmPaddingTop = "88px";
         }
 
         // TODO: Improve this mess
