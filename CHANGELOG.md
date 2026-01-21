@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/thebentobot/dotBento/compare/v1.12.1...v1.13.0) (2026-01-21)
+
+
+### Features
+
+* **bot/BackgroundService:** update recurring job schedules and enhance cleanup logic ([f3c84c8](https://github.com/thebentobot/dotBento/commit/f3c84c8a9636b19fe0020ffd08560ba2ee4ce38b))
+
 ## [1.12.1](https://github.com/thebentobot/dotBento/compare/v1.12.0...v1.12.1) (2026-01-21)
 
 
