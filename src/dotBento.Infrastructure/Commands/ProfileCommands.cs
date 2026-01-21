@@ -624,7 +624,7 @@ public sealed class ProfileCommands(
         var lastfmNowPlaying =
             await lastFmCommands.NowPlaying(lastfmProfile.Value.Lastfm1, lastFmApiKey);
 
-        if (lastfmNowPlaying.Value == null) return Maybe<LastFmHtmlBoardResult>.None;
+        if (lastfmNowPlaying.IsFailure || lastfmNowPlaying.Value == null) return Maybe<LastFmHtmlBoardResult>.None;
         var latestSong = lastfmNowPlaying.Value.RecentTracks[0];
 
         var lastFmHtml = $@"
