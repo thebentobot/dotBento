@@ -70,5 +70,5 @@ public sealed class BotListConfig
 
 public sealed class ImageServerConfig
 {
-    public string ImageServerHost { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
 }

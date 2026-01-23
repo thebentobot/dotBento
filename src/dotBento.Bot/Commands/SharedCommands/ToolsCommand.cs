@@ -15,7 +15,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
     public async Task<ResponseModel> GetColour(string colour)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
-        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.ImageServerHost, colour);
+        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, colour);
         
         if (colourImage.IsFailure)
         {
@@ -75,7 +75,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         var rgbColor = $"{dominantColor.R},{dominantColor.G},{dominantColor.B}";
         var hsvColor = RgbToHsv(dominantColor.R, dominantColor.G, dominantColor.B);
         
-        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.ImageServerHost, hexColor);
+        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, hexColor);
         
         if (colourImage.IsFailure)
         {

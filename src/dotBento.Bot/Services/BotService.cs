@@ -97,12 +97,24 @@ public sealed class BotService(DiscordSocketClient client,
     
     private void StartMetricsPusher()
     {
-        string metricsPusherEndpoint = config.Value.Prometheus.MetricsPusherEndpoint ??
-                                       throw new InvalidOperationException(
-                                           "MetricsPusherEndpoint environment variable are not set.");
-        string metricsPusherName = config.Value.Prometheus.MetricsPusherName ??
-                                   throw new InvalidOperationException(
-                                       "MetricsPusherName environment variable are not set.");
+        var environment = config.Value.Environment;
+
+        // Only push metrics in production or staging environments
+        if (!environment.Equals("production", StringComparison.OrdinalIgnoreCase) &&
+            !environment.Equals("staging", StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Information("Skipping metrics pusher in {Environment} environment", environment);
+            return;
+        }
+
+        var metricsPusherEndpoint = config.Value.Prometheus.MetricsPusherEndpoint;
+        var metricsPusherName = config.Value.Prometheus.MetricsPusherName;
+
+        if (string.IsNullOrEmpty(metricsPusherEndpoint) || string.IsNullOrEmpty(metricsPusherName))
+        {
+            Log.Warning("Metrics pusher not configured - MetricsPusherEndpoint or MetricsPusherName is empty");
+            return;
+        }
 
         Log.Information("Starting metrics pusher");
         var pusher = new MetricPusher(new MetricPusherOptions

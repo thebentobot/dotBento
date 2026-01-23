@@ -566,7 +566,7 @@ public sealed class LastFmCommand(
             topArtistsWithImages
                 .Select(x => new BentoLastFmCollage(x.ImageUrl ?? discordAvatarUrl, x.Name, x.PlayCount, null))
                 .ToList(),
-            config.Value.ImageServer.ImageServerHost);
+            config.Value.ImageServer.Url);
 
         if (image.IsFailure)
         {
@@ -628,7 +628,7 @@ public sealed class LastFmCommand(
             topAlbums.Select(
                     x => new BentoLastFmCollage(x.ImageUrl ?? discordAvatarUrl, x.Name, x.PlayCount, x.Artist))
                 .ToList(),
-            config.Value.ImageServer.ImageServerHost);
+            config.Value.ImageServer.Url);
 
         if (image.IsFailure)
         {
@@ -705,7 +705,7 @@ public sealed class LastFmCommand(
             topTracksWithImages.Select(x =>
                     new BentoLastFmCollage(x.ImageUrl ?? discordAvatarUrl, x.Name, x.PlayCount, x.Artist))
                 .ToList(),
-            config.Value.ImageServer.ImageServerHost);
+            config.Value.ImageServer.Url);
 
         if (image.IsFailure)
         {

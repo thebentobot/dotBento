@@ -1,5 +1,6 @@
 using dotBento.EntityFramework.Context;
 using dotBento.WebApi;
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
@@ -7,6 +8,13 @@ using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
+
+// Load .env file if it exists (for local development)
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

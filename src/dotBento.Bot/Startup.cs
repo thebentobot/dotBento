@@ -2,8 +2,8 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using DotNetEnv;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Configurations;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
@@ -33,15 +33,37 @@ namespace dotBento.Bot;
 public sealed class Startup
 {
     private IConfiguration Configuration { get; }
-    
+
     public Startup()
     {
-        var configBuilder = new ConfigurationBuilder()
-            .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "configs", "config.json"), true)
-            .AddEnvironmentVariables();
-        Configuration = configBuilder.Build();
+        // Find repo root by looking for .env file traversing up from assembly location
+        var envPath = FindEnvFile();
+        if (envPath != null)
+        {
+            Env.Load(envPath);
+        }
 
-        Configuration.Bind(ConfigData.Data);
+        Configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+    }
+
+    private static string? FindEnvFile()
+    {
+        // Start from the assembly location and traverse up to find .env
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory != null)
+        {
+            var envPath = Path.Combine(directory.FullName, ".env");
+            if (File.Exists(envPath))
+            {
+                return envPath;
+            }
+            directory = directory.Parent;
+        }
+
+        return null;
     }
     
     public static async Task RunAsync(string[] args)
@@ -53,30 +75,53 @@ public sealed class Startup
     
     private async Task RunAsync()
     {
-        // ReSharper disable once RedundantAssignment
-        var consoleLevel = LogEventLevel.Warning;
-        // ReSharper disable once RedundantAssignment
-        var logLevel = LogEventLevel.Information;
+        var environment = Configuration["Environment"] ?? "local";
+        var isProduction = environment.Equals("production", StringComparison.OrdinalIgnoreCase);
+        var isStaging = environment.Equals("staging", StringComparison.OrdinalIgnoreCase);
+
+        // Logging levels based on environment:
+        //   production - Warning console, Information minimum
+        //   staging    - Verbose console, Verbose minimum
+        //   local      - Verbose console, Verbose minimum
+        var (consoleLevel, logLevel) = isProduction
+            ? (LogEventLevel.Warning, LogEventLevel.Information)
+            : (LogEventLevel.Verbose, LogEventLevel.Verbose);
+
 #if DEBUG
+        // Always use verbose logging in debug builds
         consoleLevel = LogEventLevel.Verbose;
-        logLevel = LogEventLevel.Information;
+        logLevel = LogEventLevel.Verbose;
 #endif
 
-        Log.Logger = new LoggerConfiguration()
+        var loggerConfig = new LoggerConfiguration()
             .WriteTo.Console(consoleLevel)
-            .WriteTo.GrafanaLoki(
-                Configuration["LokiUrl"],
-                labels: new[]
-                {
-                    new LokiLabel { Key = "app", Value = "dotbento-bot" }, // or "dotbento-webapi"
-                    new LokiLabel { Key = "environment", Value = Configuration["Environment"] ?? "development" }
-                }
-            )
             .MinimumLevel.Is(logLevel)
-            .Enrich.WithProperty("Environment", !string.IsNullOrEmpty(Configuration.GetSection("Environment").Value) ? Configuration.GetSection("Environment").Value : "unknown")
-            .Enrich.WithExceptionDetails()
-            .WriteTo.Discord(Convert.ToUInt64(Configuration["Discord:LogWebhookId"]), Configuration["Discord:LogWebhookToken"])
-            .CreateLogger();
+            .Enrich.WithProperty("Environment", environment)
+            .Enrich.WithExceptionDetails();
+
+        // Add Loki sink in production or staging when URL is configured
+        var lokiUrl = Configuration["LokiUrl"];
+        if ((isProduction || isStaging) && !string.IsNullOrEmpty(lokiUrl))
+        {
+            loggerConfig.WriteTo.GrafanaLoki(
+                lokiUrl,
+                labels:
+                [
+                    new LokiLabel { Key = "app", Value = "dotbento-bot" },
+                    new LokiLabel { Key = "environment", Value = environment }
+                ]
+            );
+        }
+
+        // Only add Discord webhook sink when configured
+        var discordWebhookId = Configuration["Discord:LogWebhookId"];
+        var discordWebhookToken = Configuration["Discord:LogWebhookToken"];
+        if (!string.IsNullOrEmpty(discordWebhookId) && !string.IsNullOrEmpty(discordWebhookToken))
+        {
+            loggerConfig.WriteTo.Discord(Convert.ToUInt64(discordWebhookId), discordWebhookToken);
+        }
+
+        Log.Logger = loggerConfig.CreateLogger();
 
         AppDomain.CurrentDomain.UnhandledException += AppUnhandledException;
 

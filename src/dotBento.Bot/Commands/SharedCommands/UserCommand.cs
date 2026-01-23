@@ -51,7 +51,7 @@ public sealed class UserCommand(
                 .WithDescription("Failed to create or retrieve user from database. Please try again later or contact support.");
             return result;
         }
-        var imageServerHost = config.Value.ImageServer.ImageServerHost;
+        var imageServerHost = config.Value.ImageServer.Url;
         var lastFmApiKey = config.Value.LastFmApiKey;
         var profile =
             await profileCommands.GetProfileAsync(imageServerHost, lastFmApiKey, userId, guildId, guildMember, guildMemberCount, botAvatarUrl);

@@ -92,3 +92,9 @@ src/dotBento.Bot/configs
 .DS_Store
 node_modules
 src/dotBento.WebApi/configs
+
+# Environment files (local secrets)
+.env
+.env.local
+.env.*.local
+!.env.example

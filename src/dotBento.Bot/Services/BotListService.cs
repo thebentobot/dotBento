@@ -1,18 +1,21 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using dotBento.Bot.Configurations;
+using dotBento.Bot.Models;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BotListService(HttpClient httpClient)
+public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> options)
 {
+    private readonly BotEnvConfig _config = options.Value;
+
     public async Task UpdateBotLists(int guildCount)
     {
-        if (ConfigData.Data.BotLists?.TopGgApiToken == null ||
-            ConfigData.Data.BotLists?.DiscordBotListToken == null ||
-            ConfigData.Data.BotLists?.DiscordBotsGgToken == null)
+        if (string.IsNullOrEmpty(_config.BotLists?.TopGgApiToken) ||
+            string.IsNullOrEmpty(_config.BotLists?.DiscordBotListToken) ||
+            string.IsNullOrEmpty(_config.BotLists?.DiscordBotsGgToken))
         {
             return;
         }
@@ -28,14 +31,14 @@ public class BotListService(HttpClient httpClient)
 
         Log.Information($"{nameof(UpdateBotLists)}: Starting");
         const string requestUri = "https://botblock.org/api/count";
-        
+
         var postData = new Dictionary<string, object>
         {
             { "server_count",  guildCount },
             { "bot_id", "787041583580184609" },
-            { "top.gg", ConfigData.Data.BotLists.TopGgApiToken },
-            { "discord.bots.gg", ConfigData.Data.BotLists.DiscordBotsGgToken },
-            { "discordbotlist.com", ConfigData.Data.BotLists.DiscordBotListToken },
+            { "top.gg", _config.BotLists.TopGgApiToken },
+            { "discord.bots.gg", _config.BotLists.DiscordBotsGgToken },
+            { "discordbotlist.com", _config.BotLists.DiscordBotListToken },
         };
 
         var json = JsonSerializer.Serialize(postData);
