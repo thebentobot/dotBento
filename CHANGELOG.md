@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/thebentobot/dotBento/compare/v1.13.0...v1.13.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* **bot/BackgroundService:** increase batch processing delays to reduce API throttling risks ([7564185](https://github.com/thebentobot/dotBento/commit/756418538d8385fb1adefc2a0e227f18d150ab5c))
+
 ## [1.13.0](https://github.com/thebentobot/dotBento/compare/v1.12.1...v1.13.0) (2026-01-21)
 
 
