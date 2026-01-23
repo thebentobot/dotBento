@@ -323,12 +323,12 @@ public sealed class BackgroundService(UserService userService,
                         totalDeleted++;
                     }
 
-                    await Task.Delay(100);
+                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
 
-                await Task.Delay(2000);
+                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
@@ -386,7 +386,7 @@ public sealed class BackgroundService(UserService userService,
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(10000);
                 }
 
                 if (guildMembersToDelete.Count > 0)
@@ -398,7 +398,7 @@ public sealed class BackgroundService(UserService userService,
 
                 skip += batchSize;
 
-                await Task.Delay(5000);
+                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(CleanupStaleGuildMembers)}: Processed {totalProcessed} guild members, deleted {totalDeleted}");
@@ -508,12 +508,12 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
                     }
 
-                    await Task.Delay(1500);
+                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
 
-                await Task.Delay(7000);
+                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(SyncUserData)}: Processed {totalProcessed} users, synced {totalSynced}");
@@ -570,13 +570,13 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
                     }
-                    
-                    await Task.Delay(100);
+
+                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
-                
-                await Task.Delay(2000);
+
+                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
@@ -638,12 +638,12 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
 
-                await Task.Delay(5000);
+                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(SyncGuildMemberData)}: Processed {totalProcessed} guild members, synced {totalSynced}");
