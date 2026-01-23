@@ -16,8 +16,6 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<Patreon> Patreons { get; set; }
 
-    public virtual DbSet<PrismaMigration> PrismaMigrations { get; set; }
-
     public virtual DbSet<Profile> Profiles { get; set; }
 
     public virtual DbSet<Reminder> Reminders { get; set; }
@@ -46,7 +44,7 @@ public partial class BotDbContext : DbContext
             // Comment out below connection string when creating migrations locally
             var connectionString = _configuration.GetConnectionString("PostgreSQL:ConnectionString") ?? throw new InvalidOperationException("PostgreSQL:ConnectionString environment variable are not set.");
             optionsBuilder.UseNpgsql(connectionString);
-            
+
             // Uncomment below connection string when creating migrations, and also comment out the above iconfiguration stuff
             // optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Username=postgres;Password=password;Database=bento;Command Timeout=60;Timeout=60;Persist Security Info=True");
         }
@@ -186,30 +184,6 @@ public partial class BotDbContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Patreon)
                 .HasForeignKey<Patreon>(d => d.UserId)
                 .HasConstraintName("patreon_user_userid_fk");
-        });
-
-        modelBuilder.Entity<PrismaMigration>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("_prisma_migrations_pkey");
-
-            entity.ToTable("_prisma_migrations");
-
-            entity.Property(e => e.Id)
-                .HasMaxLength(36)
-                .HasColumnName("id");
-            entity.Property(e => e.AppliedStepsCount).HasColumnName("applied_steps_count");
-            entity.Property(e => e.Checksum)
-                .HasMaxLength(64)
-                .HasColumnName("checksum");
-            entity.Property(e => e.FinishedAt).HasColumnName("finished_at");
-            entity.Property(e => e.Logs).HasColumnName("logs");
-            entity.Property(e => e.MigrationName)
-                .HasMaxLength(255)
-                .HasColumnName("migration_name");
-            entity.Property(e => e.RolledBackAt).HasColumnName("rolled_back_at");
-            entity.Property(e => e.StartedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("started_at");
         });
 
         modelBuilder.Entity<Profile>(entity =>
