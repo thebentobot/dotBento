@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/thebentobot/dotBento/compare/v1.13.1...v1.14.0) (2026-01-23)
+
+
+### Features
+
+* release ([5d8f694](https://github.com/thebentobot/dotBento/commit/5d8f694aeea386ecf037f19f6fdd62fd5855ffa2))
+
 ## [1.13.1](https://github.com/thebentobot/dotBento/compare/v1.13.0...v1.13.1) (2026-01-23)
 
 
