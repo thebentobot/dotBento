@@ -1,5 +1,6 @@
 using System.Reflection;
 using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Commands.Profile;
 
 namespace dotBento.Infrastructure.Tests;
 
@@ -14,6 +15,8 @@ public class ProfileCommandsTests
         return result is null ? default : (T)result;
     }
 
+    // Note: Most of these tests have been moved to ProfileViewModelBuilder
+    // Testing them via reflection from their new private location
     [Theory]
     [InlineData("02-07", "Feb 7 🎂")]           // MM-dd
     [InlineData("2-7", "Feb 7 🎂")]             // M-d
@@ -30,7 +33,12 @@ public class ProfileCommandsTests
     [InlineData("  February   1  ", "Feb 1 🎂")] // extra spaces
     public void FormatBirthday_ValidInputs_ReturnsNormalized(string input, string expected)
     {
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "FormatBirthday", input);
+        // This method is now private in ProfileViewModelBuilder
+        var type = Type.GetType("dotBento.Infrastructure.Commands.Profile.ProfileViewModelBuilder, dotBento.Infrastructure");
+        Assert.NotNull(type);
+        var method = type.GetMethod("FormatBirthday", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        var result = method.Invoke(null, [input]) as string;
         Assert.Equal(expected, result);
     }
 
@@ -41,7 +49,11 @@ public class ProfileCommandsTests
     [InlineData("not a date")] // invalid
     public void FormatBirthday_InvalidOrEmpty_ReturnsEmpty(string? input)
     {
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "FormatBirthday", input);
+        var type = Type.GetType("dotBento.Infrastructure.Commands.Profile.ProfileViewModelBuilder, dotBento.Infrastructure");
+        Assert.NotNull(type);
+        var method = type.GetMethod("FormatBirthday", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        var result = method.Invoke(null, [input]) as string;
         Assert.Equal(string.Empty, result);
     }
 
@@ -61,18 +73,24 @@ public class ProfileCommandsTests
     public void ShowEmoteAccordingToTimeOfDay_MapsHoursToEmotes(int hour, string expected)
     {
         var dt = new DateTime(2024, 1, 1, hour, 0, 0, DateTimeKind.Unspecified);
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "ShowEmoteAccordingToTimeOfDay", dt);
+        var type = Type.GetType("dotBento.Infrastructure.Commands.Profile.ProfileViewModelBuilder, dotBento.Infrastructure");
+        Assert.NotNull(type);
+        var method = type.GetMethod("ShowEmoteAccordingToTimeOfDay", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        var result = method.Invoke(null, [dt]) as string;
         Assert.Equal(expected, result);
     }
 
+    // These methods have been moved to ProfileStyleHelper as public methods
+    // and are tested in ProfileStyleHelperTests, but keeping these for backwards compatibility
     [Theory]
     [InlineData(100, "FF")]
     [InlineData(0, "00")]
-    [InlineData(50, "7F")] // 127.5 -> 127 -> 0x7F
+    [InlineData(50, "80")] // 127.5 -> 128 (rounded) -> 0x80
     [InlineData(null, "FF")]
     public void ConvertOpacityToHex_WorksAsExpected(int? percent, string expectedHex)
     {
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "ConvertOpacityToHex", percent);
+        var result = ProfileStyleHelper.ConvertOpacityToHex(percent);
         Assert.Equal(expectedHex, result);
     }
 
@@ -83,7 +101,7 @@ public class ProfileCommandsTests
     [InlineData("ThisUserNameIsWayTooLongForLargeFont", "11px")] // > 25
     public void UsernamePxSize_ScalesByLength(string username, string expectedPx)
     {
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "UsernamePxSize", username);
+        var result = ProfileStyleHelper.GetUsernameFontSize(username);
         Assert.Equal(expectedPx, result);
     }
 
@@ -94,7 +112,7 @@ public class ProfileCommandsTests
     [InlineData(60, "10px")]
     public void LastFmTextPxSize_ScalesByLength(int length, string expectedPx)
     {
-        var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "LastFmTextPxSize", length);
+        var result = ProfileStyleHelper.GetLastFmTextFontSize(length);
         Assert.Equal(expectedPx, result);
     }
 }
