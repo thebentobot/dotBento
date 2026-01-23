@@ -98,3 +98,7 @@ src/dotBento.WebApi/configs
 .env.local
 .env.*.local
 !.env.example
+
+dotBento.sln.DotSettings.user
+src/dotBento.sln.DotSettings
+src/dotBento.sln.DotSettings.user
