@@ -343,6 +343,7 @@ public sealed class BackgroundService(UserService userService,
     /// <summary>
     /// Removes guild members from database who are no longer in their respective guilds.
     /// Only handles members who left guilds that the bot is still in (other cases handled by cascade deletion).
+    /// Uses REST API calls to verify membership (not cache) to avoid false positives.
     /// Runs at 4am daily, after CleanupStaleUsers and CleanupStaleGuilds.
     /// Processes in batches to avoid memory issues and rate limits.
     /// </summary>
@@ -376,14 +377,32 @@ public sealed class BackgroundService(UserService userService,
                     var guild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
                     if (guild.HasNoValue)
                     {
+                        // Guild no longer exists in bot's guild list - safe to delete
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        await Task.Delay(10000);
                         continue;
                     }
 
-                    var guildUser = guild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
-                    if (guildUser.HasNoValue)
+                    try
                     {
+                        // Use GetUserAsync to make a REST API call instead of cache lookup
+                        // This ensures we don't delete valid members who just aren't in cache
+                        // Cast to IGuild to access the async REST method
+                        var guildUser = await ((IGuild)guild.Value).GetUserAsync((ulong)dbGuildMember.UserId);
+                        if (guildUser == null)
+                        {
+                            guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        }
+                    }
+                    catch (Discord.Net.HttpException ex) when (ex.HttpCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        // User not found in guild - safe to delete
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but don't delete on other errors - better to be safe
+                        Log.Warning(ex, $"Failed to verify guild member {dbGuildMember.GuildMemberId} in guild {dbGuildMember.GuildId}");
                     }
 
                     await Task.Delay(10000);
@@ -590,6 +609,7 @@ public sealed class BackgroundService(UserService userService,
 
     /// <summary>
     /// Syncs guild member data (avatar) from Discord.
+    /// Uses REST API calls to fetch members (not cache) to ensure all members can be synced.
     /// Processes in batches to avoid memory issues and rate limits.
     /// </summary>
     public async Task SyncGuildMemberData()
@@ -622,10 +642,12 @@ public sealed class BackgroundService(UserService userService,
                         var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
                         if (discordGuild.HasValue)
                         {
-                            var discordGuildUser = discordGuild.Value.GetUser((ulong)dbGuildMember.UserId).AsMaybe();
-                            if (discordGuildUser.HasValue)
+                            // Use GetUserAsync to make a REST API call instead of cache lookup
+                            // Cast to IGuild to access the async REST method
+                            var discordGuildUser = await ((IGuild)discordGuild.Value).GetUserAsync((ulong)dbGuildMember.UserId);
+                            if (discordGuildUser != null)
                             {
-                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser.Value);
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser);
                                 if (synced)
                                 {
                                     totalSynced++;
