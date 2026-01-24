@@ -90,7 +90,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             {
                 GuildId = (long)guildUser.Guild.Id,
                 UserId = (long)guildUser.Id,
-                AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512),
+                AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512),
                 Xp = 0,
                 Level = 1
             };
@@ -186,7 +186,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (user != null)
         {
-            user.AvatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512);
+            user.AvatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildMember.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
             await db.SaveChangesAsync();
             await RemoveGuildMemberFromCache((ulong)user.GuildId, (ulong)user.UserId);
             await AddGuildMemberToCache(user);
@@ -262,7 +262,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         {
             GuildId = (long)discordGuildId,
             UserId = (long)discordUserId,
-            AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512),
+            AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512),
             Xp = 0,
             Level = 1
         };
@@ -348,7 +348,8 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (guildMember == null) return false;
 
-        var newAvatarUrl = discordGuildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512);
+        var newAvatarUrl = discordGuildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512)
+            ?? discordGuildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
         if (guildMember.AvatarUrl != newAvatarUrl)
         {
             guildMember.AvatarUrl = newAvatarUrl;
