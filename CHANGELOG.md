@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.14.1](https://github.com/thebentobot/dotBento/compare/v1.14.0...v1.14.1) (2026-01-24)
+
+
+### Bug Fixes
+
+* fix:  ([85ec11d](https://github.com/thebentobot/dotBento/commit/85ec11d8264862745b418b4fe01044c48e3e8a51))
+* **bot/BackgroundService:** replace cache lookups with REST API calls for reliable guild member verification and syncing ([0708054](https://github.com/thebentobot/dotBento/commit/0708054961dbbc78a7ce5cbe973ee284219a5a92))
+* **bot/GuildService:** fallback to display avatar URL when guild avatar is unavailable ([6a2c4b7](https://github.com/thebentobot/dotBento/commit/6a2c4b75f4bfe9a393b524dc78cde0d711c233be))
+* Delete src/dotBento.sln.DotSettings ([6d41740](https://github.com/thebentobot/dotBento/commit/6d417404fa047b31b2f4d87cb552d9e11410f5c9))
+* Delete src/dotBento.sln.DotSettings.user ([9ce465a](https://github.com/thebentobot/dotBento/commit/9ce465a1b5c6ee6d2deff62453236f7837360c76))
+* update `.gitignore` to exclude user-specific and solution-related settings files ([0dfd8ac](https://github.com/thebentobot/dotBento/commit/0dfd8ac86c0686b382b0b085558c95818ee9cbae))
+
 ## [1.14.0](https://github.com/thebentobot/dotBento/compare/v1.13.1...v1.14.0) (2026-01-23)
 
 
