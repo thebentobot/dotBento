@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using DotNetEnv;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Handlers;
+using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.EntityFramework.Context;
@@ -119,6 +120,16 @@ public sealed class Startup
         if (!string.IsNullOrEmpty(discordWebhookId) && !string.IsNullOrEmpty(discordWebhookToken))
         {
             loggerConfig.WriteTo.Discord(Convert.ToUInt64(discordWebhookId), discordWebhookToken);
+        }
+
+        // Add Discord channel sink when configured (deferred until client is ready)
+        // Uses the same log level as the rest of the configuration
+        var logChannelId = Configuration.GetValue<ulong>("Bot:LogChannelId");
+        Console.WriteLine($"[Startup] Bot:LogChannelId = {logChannelId}");
+        if (logChannelId != 0)
+        {
+            loggerConfig.WriteTo.DiscordChannel(logChannelId, logLevel);
+            Console.WriteLine($"[Startup] Discord channel sink configured for channel {logChannelId} at level {logLevel}");
         }
 
         Log.Logger = loggerConfig.CreateLogger();

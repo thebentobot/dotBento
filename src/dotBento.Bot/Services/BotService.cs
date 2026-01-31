@@ -3,6 +3,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
@@ -74,6 +75,10 @@ public sealed class BotService(DiscordSocketClient client,
         client.Ready += async () =>
         {
             Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
+
+            // Activate Discord channel logging sink now that client is ready
+            DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+
             await RegisterSlashCommands();
             await CacheSlashCommandIds();
         };

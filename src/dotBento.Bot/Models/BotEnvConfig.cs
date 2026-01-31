@@ -59,6 +59,12 @@ public sealed class BotConfig
     public ulong AnnouncementChannelId { get; set; }
 
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Discord channel ID for sending bot logs. Set to 0 to disable.
+    /// Environment variable: Bot__LogChannelId
+    /// </summary>
+    public ulong LogChannelId { get; set; }
 }
 
 public sealed class BotListConfig
