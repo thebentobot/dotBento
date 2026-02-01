@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.0](https://github.com/thebentobot/dotBento/compare/v1.14.1...v1.15.0) (2026-02-01)
+
+
+### Features
+
+* **bot/Logging:** add Discord channel logging sink ([49af92c](https://github.com/thebentobot/dotBento/commit/49af92cd8bbd29f9e8de7d4ea145254ac4333429))
+* **bot/Logging:** add Discord channel logging sink ([1bf8c2d](https://github.com/thebentobot/dotBento/commit/1bf8c2d093a56ef6a81eb474fedacaac921802e7)), closes [#365](https://github.com/thebentobot/dotBento/issues/365)
+
 ## [1.14.1](https://github.com/thebentobot/dotBento/compare/v1.14.0...v1.14.1) (2026-01-24)
 
 
