@@ -118,23 +118,24 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
 
     private static bool IsDiscordRelatedLog(LogEvent logEvent)
     {
-        // Check source context for Discord-related namespaces
+        // Check source context for Discord-related namespaces to avoid infinite loops
         if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext))
         {
             var source = sourceContext.ToString().Trim('"');
-            if (source.Contains("Discord", StringComparison.OrdinalIgnoreCase) ||
+
+            // Known Discord library namespaces
+            if (source.StartsWith("Discord.", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Net", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.WebSocket", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Rest", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Commands", StringComparison.OrdinalIgnoreCase) ||
                 source.Contains("DiscordChannelSink", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
         }
 
-        // Also check the message itself
-        var message = RenderMessage(logEvent);
-        return message.Contains("Discord", StringComparison.OrdinalIgnoreCase) &&
-               (message.Contains("Gateway", StringComparison.OrdinalIgnoreCase) ||
-                message.Contains("WebSocket", StringComparison.OrdinalIgnoreCase) ||
-                message.Contains("REST", StringComparison.OrdinalIgnoreCase));
+        return false;
     }
 
     private async Task FlushAsync()
