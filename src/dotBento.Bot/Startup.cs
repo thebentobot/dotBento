@@ -123,11 +123,11 @@ public sealed class Startup
         }
 
         // Add Discord channel sink when configured (deferred until client is ready)
-        // Uses the same log level as the rest of the configuration
+        // Uses the same log level as the console (Warning in production, Verbose locally)
         var logChannelId = Configuration.GetValue<ulong>("Bot:LogChannelId");
         if (logChannelId != 0)
         {
-            loggerConfig.WriteTo.DiscordChannel(logChannelId, logLevel);
+            loggerConfig.WriteTo.DiscordChannel(logChannelId, consoleLevel);
         }
 
         Log.Logger = loggerConfig.CreateLogger();
