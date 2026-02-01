@@ -241,11 +241,10 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
         return builder.Build();
     }
 
-    private static string RenderMessage(LogEvent logEvent)
+    private string RenderMessage(LogEvent logEvent)
     {
         using var writer = new StringWriter();
-        var formatter = new MessageTemplateTextFormatter("{Message:lj}");
-        formatter.Format(logEvent, writer);
+        _formatter.Format(logEvent, writer);
         return writer.ToString();
     }
 
