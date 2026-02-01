@@ -47,22 +47,14 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
     /// </summary>
     public void Activate(DiscordSocketClient client)
     {
-        Console.WriteLine($"[DiscordChannelSink] Activate called. ChannelId={_channelId}, IsActivated={_isActivated}, IsDisabled={_isDisabled}");
-
         if (_isActivated || _isDisabled || _channelId == 0)
-        {
-            Console.WriteLine("[DiscordChannelSink] Skipping activation (already activated, disabled, or no channel configured)");
             return;
-        }
 
         try
         {
             var channel = client.GetChannel(_channelId);
-            Console.WriteLine($"[DiscordChannelSink] GetChannel returned: {channel?.GetType().Name ?? "null"}");
-
             if (channel is not ITextChannel textChannel)
             {
-                Console.WriteLine($"[DiscordChannelSink] Channel {_channelId} is not a text channel or not accessible. Sink disabled.");
                 _isDisabled = true;
                 return;
             }
@@ -73,14 +65,11 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
             // Start the flush timer
             _flushTimer.Change(FlushIntervalMs, FlushIntervalMs);
 
-            Console.WriteLine($"[DiscordChannelSink] Activated successfully! Channel: #{textChannel.Name} in {textChannel.Guild.Name}. Queued events: {_pendingEvents.Count}");
-
             // Trigger initial flush for queued events
             _ = FlushAsync();
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[DiscordChannelSink] Failed to activate: {ex.Message}. Sink disabled.");
             _isDisabled = true;
         }
     }
@@ -159,15 +148,12 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
 
             if (embeds.Count > 0)
             {
-                Console.WriteLine($"[DiscordChannelSink] Sending {embeds.Count} log(s) to Discord channel...");
                 await _channel.SendMessageAsync(embeds: embeds.ToArray());
-                Console.WriteLine($"[DiscordChannelSink] Successfully sent {embeds.Count} log(s)");
             }
         }
-        catch (Exception ex)
+        catch
         {
             // If we fail to send, disable the sink to prevent further issues
-            Console.WriteLine($"[DiscordChannelSink] Failed to send logs: {ex.Message}. Sink disabled.");
             _isDisabled = true;
             _flushTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }

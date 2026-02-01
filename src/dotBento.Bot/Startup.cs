@@ -125,11 +125,9 @@ public sealed class Startup
         // Add Discord channel sink when configured (deferred until client is ready)
         // Uses the same log level as the rest of the configuration
         var logChannelId = Configuration.GetValue<ulong>("Bot:LogChannelId");
-        Log.Debug("[Startup] Bot:LogChannelId = {LogChannelId}", logChannelId);
         if (logChannelId != 0)
         {
             loggerConfig.WriteTo.DiscordChannel(logChannelId, logLevel);
-            Log.Debug("[Startup] Discord channel sink configured for channel {LogChannelId} at level {LogLevel}", logChannelId, logLevel);
         }
 
         Log.Logger = loggerConfig.CreateLogger();
