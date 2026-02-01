@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/thebentobot/dotBento/compare/v1.15.0...v1.15.1) (2026-02-01)
+
+
+### Bug Fixes
+
+* **bot/Logging:** use console log level for Discord channel sink ([ca17bc9](https://github.com/thebentobot/dotBento/commit/ca17bc963e3ea2fc72372485ecf7f51272e47430))
+
 ## [1.15.0](https://github.com/thebentobot/dotBento/compare/v1.14.1...v1.15.0) (2026-02-01)
 
 
