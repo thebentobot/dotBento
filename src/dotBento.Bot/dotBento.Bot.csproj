@@ -21,7 +21,7 @@
       <PackageReference Include="Discord.Net" Version="3.18.0" />
       <PackageReference Include="DotNetEnv" Version="3.1.1" />
       <PackageReference Include="Fergun.Interactive" Version="1.9.1" />
-      <PackageReference Include="Hangfire.Core" Version="1.8.22" />
+      <PackageReference Include="Hangfire.Core" Version="1.8.23" />
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
       <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
       <PackageReference Include="Humanizer" Version="3.0.1" />
