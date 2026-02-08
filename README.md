@@ -23,7 +23,7 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 
 ## Getting started
 
-TBD soon™️.
+TBD soon™️
 
 ## Relevant links
 - The commit linting rules follows Conventional Commits. You can read about the linting rules specifically [here](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional)
