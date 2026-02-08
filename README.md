@@ -15,7 +15,7 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 - Separate Web API for public endpoints
 
 ## Tech stack
-- .NET 9
+- .NET 10
 - [Discord.NET](https://docs.discordnet.dev/)
 - ASP.NET Core + EF Core (PostgreSQL)
 - Serilog (with Grafana Loki sink) and optional Discord webhook logging
