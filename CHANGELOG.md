@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.16.0](https://github.com/thebentobot/dotBento/compare/v1.15.1...v1.16.0) (2026-02-08)
+
+
+### Features
+
+* **webapi:** add staging environment for WebAPI ([c20052b](https://github.com/thebentobot/dotBento/commit/c20052b4387ee7c7e255d9a8998f1e3495a8aada))
+* **webapi:** add staging environment for WebAPI ([c3fd3b3](https://github.com/thebentobot/dotBento/commit/c3fd3b34c3dd0755e61207f94bc2030ebfd098e6))
+
+
+### Bug Fixes
+
+* **docs:** change .net version in readme ([51b5bdb](https://github.com/thebentobot/dotBento/commit/51b5bdbc7b8314977c54788bb58792271ca436dd))
+
 ## [1.15.1](https://github.com/thebentobot/dotBento/compare/v1.15.0...v1.15.1) (2026-02-01)
 
 
