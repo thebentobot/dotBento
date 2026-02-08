@@ -104,13 +104,13 @@ jobs:
             # Only update the bot-sta service, NOT bot-prod
             sed -i '/bot-sta:/,/image:/s|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
 
-            # Only update the WebAPI service
-            sed -i '/webapi:/,/image:/s|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
-            
-            # Stop and remove any existing instance of bot-sta to prevent name conflicts
-            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta webapi || true
-            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-sta webapi || true
+            # Only update the staging WebAPI service
+            sed -i '/webapi-sta:/,/image:/s|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+
+            # Stop and remove any existing instance of bot-sta and webapi-sta to prevent name conflicts
+            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta webapi-sta || true
+            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-sta webapi-sta || true
 
             # Pull the new image and redeploy the service
-            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta webapi
-            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta webapi
+            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta webapi-sta
+            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta webapi-sta

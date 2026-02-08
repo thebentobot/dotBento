@@ -136,7 +136,7 @@ services:
 #      - bento_net
 #      - web
 
-  # WebAPI
+  # WebAPI - Production
   webapi:
     image: ghcr.io/thebentobot/dotbento-webapi
     container_name: webapi
@@ -145,6 +145,19 @@ services:
       - .env-webapi
     ports:
       - "8080:8080"
+    networks:
+      - bento_net
+      - web
+
+  # WebAPI - Staging
+  webapi-sta:
+    image: ghcr.io/thebentobot/dotbento-webapi
+    container_name: webapi-sta
+    restart: unless-stopped
+    env_file:
+      - .env-webapi-sta
+    ports:
+      - "8081:8080"
     networks:
       - bento_net
       - web
