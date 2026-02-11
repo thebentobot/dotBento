@@ -25,8 +25,8 @@
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
       <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
       <PackageReference Include="Humanizer" Version="3.0.1" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
       <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.2" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
       <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.2" />
