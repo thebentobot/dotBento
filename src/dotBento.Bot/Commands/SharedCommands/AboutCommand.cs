@@ -35,7 +35,7 @@ public static class AboutCommand
             .WithThumbnailUrl(botPfp)
             .WithTitle("About Bento Bot 🍱")
             .WithDescription("A Discord bot for chat moderation and fun features you did not know you needed on Discord.")
-            .AddField("Get a full list and more details for each command", "https://www.bentobot.xyz/commands")
+            .AddField("Get a full list and more details for each command", $"{DiscordConstants.WebsiteUrl}/commands")
             .AddField("Want additional benefits when using Bento 🍱?", "https://www.patreon.com/bentobot")
             .AddField("Get a Bento 🍱 for each tip", "https://ko-fi.com/bentobot")
             .AddField("Vote on top.gg and receive 5 Bento 🍱", "https://top.gg/bot/787041583580184609/vote")

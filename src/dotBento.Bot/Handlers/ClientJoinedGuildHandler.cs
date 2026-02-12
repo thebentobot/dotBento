@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using Serilog;
@@ -64,12 +65,12 @@ public sealed class ClientJoinedGuildHandler
         };
         responseToGuildOwner.EmbedAuthor
             .WithName(_client.CurrentUser.GlobalName)
-            .WithUrl("https://www.bentobot.xyz/")
+            .WithUrl(DiscordConstants.WebsiteUrl)
             .WithIconUrl(_client.CurrentUser.GetAvatarUrl());
         responseToGuildOwner.Embed.WithTitle("Hello! My name is Bento \ud83c\udf71");
         responseToGuildOwner.Embed.WithDescription("Thank you for choosing me to service your server!");
         responseToGuildOwner.Embed.AddField("Check out the website for more information and help with all commands and settings",
-            "https://www.bentobot.xyz/");
+            DiscordConstants.WebsiteUrl);
         responseToGuildOwner.Embed.AddField("Need help? Or do you have some ideas or feedback to Bento \ud83c\udf71? Feel free to join the support server!",
             "https://discord.gg/dd68WwP");
         responseToGuildOwner.Embed.AddField("Want to check out the code for Bento?",

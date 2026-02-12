@@ -1,4 +1,5 @@
 using dotBento.EntityFramework.Context;
+using dotBento.Infrastructure.Services;
 using dotBento.WebApi.Dtos;
 using dotBento.WebApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,10 @@ namespace dotBento.WebApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class InformationController(ILogger<InformationController> logger, BotDbContext dbContext) : ControllerBase
+public class InformationController(
+    ILogger<InformationController> logger,
+    BotDbContext dbContext,
+    LeaderboardService leaderboardService) : ControllerBase
 {
     [HttpGet("UsageStats")]
     public async Task<ActionResult<UsageStatsDto>> GetUsageStats()
@@ -22,20 +26,26 @@ public class InformationController(ILogger<InformationController> logger, BotDbC
         var result = new UsageStatsDto(memberCount, serverCount);
         return Ok(result);
     }
-    
+
     [HttpGet("Patreon")]
-    public async Task<ActionResult<IEnumerable<PatreonUserDto>>> GetPatreon() => 
+    public async Task<ActionResult<IEnumerable<PatreonUserDto>>> GetPatreon() =>
         Ok(await dbContext.Patreons.Select(p => p.ToPatreonUserDto()).ToListAsync());
 
     [HttpGet($"Leaderboard/{{guildId?}}")]
-    public async Task<ActionResult<IEnumerable<LeaderboardUserDto>>> GetLeaderboard(string? guildId)
+    public async Task<ActionResult<LeaderboardResponseDto>> GetLeaderboard(string? guildId)
     {
         if (string.IsNullOrEmpty(guildId))
         {
+            var globalResult = await leaderboardService.GetGlobalXpLeaderboardAsync();
+            if (globalResult.IsFailure)
+                return StatusCode(500, globalResult.Error);
+
             return Ok(new LeaderboardResponseDto(
                 GuildName: null,
                 Icon: null,
-                Users: await GetGlobalLeaderboardAsync()
+                Users: globalResult.Value.Select(e => new LeaderboardUserDto(
+                    e.Rank, e.UserId, e.Level, e.Xp,
+                    e.Username ?? "", e.Discriminator ?? "", e.AvatarUrl ?? "")).ToList()
             ));
         }
 
@@ -43,41 +53,23 @@ public class InformationController(ILogger<InformationController> logger, BotDbC
         {
             return BadRequest("Invalid guild ID");
         }
-        
+
         var guild = await dbContext.Guilds.FindAsync(guildIdLong);
         if (guild == null)
         {
             return NotFound("Guild not found");
         }
 
+        var serverResult = await leaderboardService.GetServerXpLeaderboardAsync(guildIdLong);
+        if (serverResult.IsFailure)
+            return StatusCode(500, serverResult.Error);
+
         return Ok(new LeaderboardResponseDto(
             GuildName: guild.GuildName,
             Icon: guild.Icon,
-            Users: await GetGuildLeaderboardAsync(guildIdLong)
+            Users: serverResult.Value.Select(e => new LeaderboardUserDto(
+                e.Rank, e.UserId, e.Level, e.Xp,
+                e.Username ?? "", e.Discriminator ?? "", e.AvatarUrl ?? "")).ToList()
         ));
-    }
-    
-    private async Task<List<LeaderboardUserDto>> GetGlobalLeaderboardAsync()
-    {
-        var users = await dbContext.Users
-            .OrderByDescending(u => u.Level)
-            .ThenByDescending(u => u.Xp)
-            .Take(50)
-            .ToListAsync();
-
-        return users.Select((u, i) => u.ToLeaderboardUserDto(i)).ToList();
-    }
-
-    private async Task<List<LeaderboardUserDto>> GetGuildLeaderboardAsync(long guildId)
-    {
-        var members = await dbContext.GuildMembers
-            .Where(gm => gm.GuildId == guildId)
-            .Include(gm => gm.User)
-            .OrderByDescending(gm => gm.Level)
-            .ThenByDescending(gm => gm.Xp)
-            .Take(50)
-            .ToListAsync();
-
-        return members.Select((gm, i) => gm.ToLeaderboardUserDto(i)).ToList();
     }
 }

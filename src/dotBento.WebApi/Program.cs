@@ -64,6 +64,7 @@ else
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();
+builder.Services.AddScoped<dotBento.Infrastructure.Services.LeaderboardService>();
 
 var connectionString = configuration["DatabaseConnectionString"];
 if (string.IsNullOrEmpty(connectionString))
