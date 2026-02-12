@@ -230,6 +230,8 @@ public sealed class Startup
             .AddSingleton<SpotifyApiService>()
             .AddSingleton<ImageCommands>()
             .AddSingleton<ToolsCommand>()
+            .AddSingleton<LeaderboardService>()
+            .AddSingleton<LeaderboardCommand>()
             .AddSingleton<HtmlSanitizer>()
             .AddSingleton(Configuration);
 

@@ -1,7 +1,11 @@
-﻿using dotBento.EntityFramework.Entities;
+using dotBento.EntityFramework.Context;
+using dotBento.EntityFramework.Entities;
+using dotBento.Infrastructure.Services;
 using dotBento.WebApi.Controllers;
 using dotBento.WebApi.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -9,6 +13,35 @@ namespace dotBento.WebApi.Tests.Controllers;
 
 public class InformationControllerTests
 {
+    private sealed class SingleContextFactory(BotDbContext ctx) : IDbContextFactory<BotDbContext>
+    {
+        public BotDbContext CreateDbContext() => CreateNewContextSharingStore();
+
+        public Task<BotDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(CreateNewContextSharingStore());
+
+        private BotDbContext CreateNewContextSharingStore()
+        {
+            if (ctx is TestBotDbContext tctx)
+            {
+                var configuration = new ConfigurationBuilder().Build();
+                var newOptions = new DbContextOptionsBuilder<BotDbContext>()
+                    .UseInMemoryDatabase(tctx.DatabaseName, tctx.Root)
+                    .Options;
+                return new BotDbContext(configuration, newOptions);
+            }
+
+            throw new InvalidOperationException("Expected TestBotDbContext for in-memory testing.");
+        }
+    }
+
+    private static InformationController CreateController(BotDbContext context)
+    {
+        var factory = new SingleContextFactory(context);
+        var leaderboardService = new LeaderboardService(factory);
+        return new InformationController(Mock.Of<ILogger<InformationController>>(), context, leaderboardService);
+    }
+
     [Fact]
     public async Task GetUsageStats_ReturnsCorrectStats()
     {
@@ -38,8 +71,7 @@ public class InformationControllerTests
         );
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var logger = new Mock<ILogger<InformationController>>();
-        var controller = new InformationController(logger.Object, context);
+        var controller = CreateController(context);
 
         // Act
         var result = await controller.GetUsageStats();
@@ -61,7 +93,7 @@ public class InformationControllerTests
         );
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
+        var controller = CreateController(context);
 
         var result = await controller.GetPatreon();
 
@@ -78,7 +110,7 @@ public class InformationControllerTests
     public async Task GetPatreon_WhenEmpty_ReturnsEmptyList()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
+        var controller = CreateController(context);
 
         var result = await controller.GetPatreon();
 
@@ -104,7 +136,7 @@ public class InformationControllerTests
         }
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
+        var controller = CreateController(context);
 
         var result = await controller.GetLeaderboard(null);
 
@@ -154,7 +186,7 @@ public class InformationControllerTests
         }
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
+        var controller = CreateController(context);
 
         var result = await controller.GetLeaderboard("1");
 
@@ -173,7 +205,7 @@ public class InformationControllerTests
     public async Task GetLeaderboard_InvalidGuildId_ReturnsBadRequest()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();
-        var controller = new InformationController(Mock.Of<ILogger<InformationController>>(), context);
+        var controller = CreateController(context);
 
         var result = await controller.GetLeaderboard("invalid_id");
 

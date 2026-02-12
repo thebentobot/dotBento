@@ -27,6 +27,8 @@ public sealed class DiscordConstants
         { Emote.Parse("<:pages_last:883825508482183258>"), PaginatorAction.SkipToEnd}
     };
 
+    public const string WebsiteUrl = "https://bentobot.xyz";
+
     public const int PaginationTimeoutInSeconds = 120;
 
     public const string FiveOrMoreUp = "<:5_or_more_up:912380324841918504>";
