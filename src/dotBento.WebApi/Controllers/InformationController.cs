@@ -53,10 +53,10 @@ public class InformationController(
     public async Task<ActionResult<LeaderboardResponseDto>> GetLeaderboardWithAccess(
         string guildId, string userId)
     {
-        if (!long.TryParse(guildId, out var guildIdLong))
+        if (!long.TryParse(guildId, out var guildIdLong) || guildIdLong < 0)
             return BadRequest("Invalid guild ID");
 
-        if (!long.TryParse(userId, out var userIdLong))
+        if (!long.TryParse(userId, out var userIdLong) || userIdLong < 0)
             return BadRequest("Invalid user ID");
 
         var guild = await dbContext.Guilds.FindAsync(guildIdLong);

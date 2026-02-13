@@ -9,7 +9,7 @@ public class DiscordApiService(HttpClient httpClient)
     {
         try
         {
-            var response = await httpClient.GetAsync($"guilds/{guildId}/members/{userId}");
+            using var response = await httpClient.GetAsync($"guilds/{guildId}/members/{userId}");
 
             if (response.IsSuccessStatusCode)
                 return Result.Success(true);
