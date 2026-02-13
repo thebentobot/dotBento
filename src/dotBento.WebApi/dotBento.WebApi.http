@@ -18,8 +18,8 @@ Accept: application/json
 
 ###
 
-### Get server leaderboard by guildId (replace 123 with a real one)
-GET {{dotBento_WebApi_HostAddress}}/Information/Leaderboard/123
+### Get server leaderboard with access check (replace guildId and userId with real values)
+GET {{dotBento_WebApi_HostAddress}}/Information/Leaderboard/123/456
 Accept: application/json
 
 ###

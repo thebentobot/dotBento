@@ -66,6 +66,18 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();
 builder.Services.AddScoped<dotBento.Infrastructure.Services.LeaderboardService>();
 
+var discordToken = configuration["Discord:Token"]
+    ?? throw new InvalidOperationException(
+        "Discord:Token is not configured. Set Discord__Token environment variable.");
+
+builder.Services.AddHttpClient<dotBento.Infrastructure.Services.Api.DiscordApiService>(client =>
+{
+    client.BaseAddress = new Uri("https://discord.com/api/v10/");
+    client.DefaultRequestHeaders.Authorization =
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", discordToken);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 var connectionString = configuration["DatabaseConnectionString"];
 if (string.IsNullOrEmpty(connectionString))
 {
