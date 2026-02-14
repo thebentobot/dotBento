@@ -8,7 +8,9 @@ using dotBento.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
+using Moq;
 
 namespace dotBento.Bot.Tests.Commands.SharedCommands;
 
@@ -33,6 +35,9 @@ public class LeaderboardCommandTests
             => Task.FromResult(CreateDbContext());
     }
 
+    private static LeaderboardCommand CreateLeaderboardCommand(InMemoryDbFactory factory) =>
+        new(new LeaderboardService(factory), new UserSettingService(factory, Mock.Of<IDistributedCache>()));
+
     private static async Task<(LeaderboardCommand Command, InMemoryDbFactory Factory)> CreateCommandWithUsersAsync(int userCount)
     {
         var factory = new InMemoryDbFactory();
@@ -50,8 +55,7 @@ public class LeaderboardCommandTests
         }
         await db.SaveChangesAsync();
 
-        var service = new LeaderboardService(factory);
-        var command = new LeaderboardCommand(service);
+        var command = CreateLeaderboardCommand(factory);
         return (command, factory);
     }
 
@@ -87,7 +91,7 @@ public class LeaderboardCommandTests
         }
         await db.SaveChangesAsync();
 
-        return new LeaderboardCommand(new LeaderboardService(factory));
+        return CreateLeaderboardCommand(factory);
     }
 
     // --- Server XP Leaderboard ---
@@ -123,8 +127,7 @@ public class LeaderboardCommandTests
     public async Task GetServerXpLeaderboardAsync_EmptyResult_ReturnsErrorEmbed()
     {
         var factory = new InMemoryDbFactory();
-        var service = new LeaderboardService(factory);
-        var command = new LeaderboardCommand(service);
+        var command = CreateLeaderboardCommand(factory);
 
         var result = await command.GetServerXpLeaderboardAsync(999, "TestServer", null);
 
@@ -177,7 +180,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetServerBentoLeaderboardAsync(1, "BentoServer", "https://icon.url");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
@@ -202,7 +205,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalBentoLeaderboardAsync("https://bot.avatar");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
@@ -229,7 +232,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetServerRpsLeaderboardAsync(1, "RpsServer", null, RpsLeaderboardType.All, RpsLeaderboardOrder.Wins);
 
         var pages = result.StaticPaginator!.Pages.ToList();
@@ -253,7 +256,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetServerRpsLeaderboardAsync(1, "RpsServer", null, RpsLeaderboardType.Rock, RpsLeaderboardOrder.Wins);
 
         var pages = result.StaticPaginator!.Pages.ToList();
@@ -277,7 +280,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, RpsLeaderboardOrder.Wins, "https://bot.avatar");
 
         var pages = result.StaticPaginator!.Pages.ToList();
@@ -300,7 +303,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetUserSummaryAsync(1, 1, "TestUser", "https://avatar.url", "TestGuild");
 
         Assert.Equal(ResponseType.Embed, result.ResponseType);
@@ -327,7 +330,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         // User 2 is rank #2 in the guild
         var result = await command.GetUserSummaryAsync(2, 1, "TestUser", "https://avatar.url", "CoolGuild");
 
@@ -348,7 +351,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetUserSummaryAsync(1, 999, "TestUser", "https://avatar.url", "TestGuild");
 
         var builtEmbed = result.Embed.Build();
@@ -361,7 +364,7 @@ public class LeaderboardCommandTests
     public async Task GetUserSummaryAsync_Failure_ReturnsErrorEmbed()
     {
         var factory = new InMemoryDbFactory();
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
 
         var result = await command.GetUserSummaryAsync(999, 1, "Nobody", "https://avatar.url", "TestGuild");
 
@@ -407,7 +410,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalXpLeaderboardAsync(null);
 
         var embed = result.StaticPaginator!.Pages.First().GetEmbedArray()[0];
@@ -427,7 +430,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalBentoLeaderboardAsync(null);
 
         var embed = result.StaticPaginator!.Pages.First().GetEmbedArray()[0];
@@ -452,7 +455,7 @@ public class LeaderboardCommandTests
             await db.SaveChangesAsync();
         }
 
-        var command = new LeaderboardCommand(new LeaderboardService(factory));
+        var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, RpsLeaderboardOrder.Wins, null);
 
         var embed = result.StaticPaginator!.Pages.First().GetEmbedArray()[0];

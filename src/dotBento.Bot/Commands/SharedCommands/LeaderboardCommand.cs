@@ -11,7 +11,7 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public sealed class LeaderboardCommand(LeaderboardService leaderboardService)
+public sealed class LeaderboardCommand(LeaderboardService leaderboardService, UserSettingService userSettingService)
 {
     public async Task<ResponseModel> GetServerXpLeaderboardAsync(long guildId, string guildName, string? guildIconUrl)
     {
@@ -35,8 +35,13 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService)
         if (result.Value.Count == 0)
             return ErrorEmbed("No users found on the global leaderboard.");
 
+        var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
+        var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
+            ? e with { Username = "Private" }
+            : e).ToList();
+
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard";
-        return BuildXpPaginator(result.Value, "Global Leaderboard", botAvatarUrl, leaderboardUrl);
+        return BuildXpPaginator(anonymized, "Global Leaderboard", botAvatarUrl, leaderboardUrl);
     }
 
     public async Task<ResponseModel> GetServerBentoLeaderboardAsync(long guildId, string guildName, string? guildIconUrl)
@@ -61,8 +66,13 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService)
         if (result.Value.Count == 0)
             return ErrorEmbed("No users found on the global bento leaderboard.");
 
+        var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
+        var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
+            ? e with { Username = "Private" }
+            : e).ToList();
+
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard";
-        return BuildBentoPaginator(result.Value, "Global Bento Leaderboard", botAvatarUrl, leaderboardUrl);
+        return BuildBentoPaginator(anonymized, "Global Bento Leaderboard", botAvatarUrl, leaderboardUrl);
     }
 
     public async Task<ResponseModel> GetServerRpsLeaderboardAsync(
@@ -91,9 +101,14 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService)
         if (result.Value.Count == 0)
             return ErrorEmbed("No users found on the global RPS leaderboard.");
 
+        var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
+        var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
+            ? e with { Username = "Private" }
+            : e).ToList();
+
         var typeLabel = type == RpsLeaderboardType.All ? "" : $" ({type})";
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard";
-        return BuildRpsPaginator(result.Value, $"Global RPS Leaderboard{typeLabel}", botAvatarUrl, order, leaderboardUrl);
+        return BuildRpsPaginator(anonymized, $"Global RPS Leaderboard{typeLabel}", botAvatarUrl, order, leaderboardUrl);
     }
 
     public async Task<ResponseModel> GetUserSummaryAsync(
