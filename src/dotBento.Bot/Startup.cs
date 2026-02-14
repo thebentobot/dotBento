@@ -232,6 +232,9 @@ public sealed class Startup
             .AddSingleton<ToolsCommand>()
             .AddSingleton<LeaderboardService>()
             .AddSingleton<LeaderboardCommand>()
+            .AddSingleton<GuildSettingService>()
+            .AddSingleton<UserSettingService>()
+            .AddSingleton<SettingsCommand>()
             .AddSingleton<HtmlSanitizer>()
             .AddSingleton(Configuration);
 

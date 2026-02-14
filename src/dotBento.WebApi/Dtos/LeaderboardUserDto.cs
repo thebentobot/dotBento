@@ -7,5 +7,6 @@ public record LeaderboardUserDto(
     int Xp,
     string Username,
     string Discriminator,
-    string AvatarUrl
+    string AvatarUrl,
+    bool Private = false
 );

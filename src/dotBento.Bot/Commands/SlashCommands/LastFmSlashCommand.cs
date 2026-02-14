@@ -3,13 +3,14 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
+using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("lastfm", "Commands for Discord Users")]
-public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand)
+public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("nowplaying", "Show what you're currently listening to")]
@@ -17,7 +18,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("user", "For a user who has saved lastfm")]
         SocketUser? user = null,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         user ??= Context.User;
         var username = Context.Guild is null
@@ -34,7 +35,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             await lastFmCommand.GetNowPlaying((long)user.Id,
                 username,
                 userAvatar),
-            hide ?? false);
+            hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
     [SlashCommand("topartists", "Show top artists for a user")]
@@ -52,7 +53,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("collage", "Show a collage of your top artists")]
         bool? collage = false,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         _ = DeferAsync();
         user ??= Context.User;
@@ -75,7 +76,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
                         username,
                         userAvatar,
                         period),
-                hide ?? false);
+                hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         }
         catch (Exception e)
         {
@@ -98,7 +99,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("collage", "Show a collage of your top artists")]
         bool? collage = false,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         _ = DeferAsync();
         user ??= Context.User;
@@ -121,7 +122,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
                         username,
                         userAvatar,
                         period),
-                hide ?? false);
+                hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         }
         catch (Exception e)
         {
@@ -144,7 +145,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("collage", "Show a collage of your top artists")]
         bool? collage = false,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         _ = DeferAsync();
         user ??= Context.User;
@@ -167,7 +168,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
                         username,
                         userAvatar,
                         period),
-                hide ?? false);
+                hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         }
         catch (Exception e)
         {
@@ -180,7 +181,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("user", "For a user who has saved lastfm")]
         SocketUser? user = null,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         user ??= Context.User;
         var username = Context.Guild is null
@@ -190,7 +191,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             ? user.GetAvatarUrl()
             : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
         await Context.SendResponse(interactiveService,
-            await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? false);
+            await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
     [SlashCommand("recenttracks", "Show user info for a user")]
@@ -198,7 +199,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("user", "For a user who has saved lastfm")]
         SocketUser? user = null,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         user ??= Context.User;
         var username = Context.Guild is null
@@ -208,7 +209,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             ? user.GetAvatarUrl()
             : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
         await Context.SendResponse(interactiveService,
-            await lastFmCommand.GetRecentTracks((long)user.Id, username, userAvatar), hide ?? false);
+            await lastFmCommand.GetRecentTracks((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
     [SlashCommand("save", "Set your lastfm username")]
@@ -249,7 +250,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("user", "For a user who has saved lastfm")]
         SocketUser? user = null,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         _ = DeferAsync();
         user ??= Context.User;
@@ -269,7 +270,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         };
         try
         {
-            await Context.SendFollowUpResponse(interactiveService, collage, hide ?? false);
+            await Context.SendFollowUpResponse(interactiveService, collage, hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         }
         catch (Exception e)
         {

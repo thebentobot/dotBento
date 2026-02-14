@@ -30,5 +30,7 @@ public partial class User
 
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
 
+    public virtual UserSetting? UserSetting { get; set; }
+
     public virtual Weather? Weather { get; set; }
 }

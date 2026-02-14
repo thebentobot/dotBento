@@ -65,6 +65,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();
 builder.Services.AddScoped<dotBento.Infrastructure.Services.LeaderboardService>();
+builder.Services.AddScoped<dotBento.Infrastructure.Services.GuildSettingService>();
+builder.Services.AddScoped<dotBento.Infrastructure.Services.UserSettingService>();
 
 var discordToken = configuration["Discord:Token"]
     ?? throw new InvalidOperationException(
