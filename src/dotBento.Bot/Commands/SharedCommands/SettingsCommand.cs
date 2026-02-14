@@ -19,9 +19,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithColor(DiscordConstants.BentoYellow)
             .AddField("Website Leaderboard",
                 setting.LeaderboardPublic
-                    ? "Public - Anyone can view the server leaderboard on the website"
-                    : "Private - Only server members can view the leaderboard on the website",
-                false);
+                    ? $"**Public** - Anyone can view the server leaderboard on the [website](https://bentobot.xyz/leaderboard{guildId})."
+                    : $"**Private** - Only server members can view the leaderboard on the [website](https://bentobot.xyz/leaderboard{guildId}).");
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
@@ -46,16 +45,14 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         response.Embed
             .WithTitle("Your Settings")
             .WithColor(DiscordConstants.BentoYellow)
-            .AddField("Hide Slash Commands",
+            .AddField("Hide Slash Command responses",
                 setting.HideSlashCommandCalls
-                    ? "Enabled - Your command responses are ephemeral (only visible to you) by default"
-                    : "Disabled - Your command responses are visible to everyone by default",
-                false)
+                    ? "**Enabled ✔** - Your command responses are ephemeral (only visible to you) by default. When using a command, you can still choose the option to show the response to everyone."
+                    : "**Disabled ⨯** - Your command responses are visible to everyone by default. When using a command, you can choose to hide the response.")
             .AddField("Global Leaderboard",
                 setting.ShowOnGlobalLeaderboard
-                    ? "Visible - You appear on the global leaderboard"
-                    : "Hidden - You are hidden from the global leaderboard",
-                false);
+                    ? "**Enabled ✔** - You appear on the global leaderboard, which is the command and [website](https://bentobot.xyz/leaderboard)"
+                    : "**Disabled ⨯** - You are hidden from the global leaderboard, so your user is shown as private in the command and [website](https://bentobot.xyz/leaderboard)");
 
         var hideCommandsButton = new ButtonBuilder()
             .WithLabel(setting.HideSlashCommandCalls ? "Show Commands" : "Hide Commands")
