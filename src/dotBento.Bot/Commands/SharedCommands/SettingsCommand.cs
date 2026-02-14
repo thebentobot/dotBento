@@ -19,8 +19,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithColor(DiscordConstants.BentoYellow)
             .AddField("Website Leaderboard",
                 setting.LeaderboardPublic
-                    ? $"**Public** - Anyone can view the server leaderboard on the [website](https://bentobot.xyz/leaderboard{guildId})."
-                    : $"**Private** - Only server members can view the leaderboard on the [website](https://bentobot.xyz/leaderboard{guildId}).");
+                    ? $"**Public** - Anyone can view the server leaderboard on the [website](https://bentobot.xyz/leaderboard/{guildId})."
+                    : $"**Private** - Only server members can view the leaderboard on the [website](https://bentobot.xyz/leaderboard/{guildId}).");
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
