@@ -7,6 +7,8 @@ using dotBento.WebApi.Controllers;
 using dotBento.WebApi.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -45,11 +47,15 @@ public class InformationControllerTests
     {
         var factory = new SingleContextFactory(context);
         var leaderboardService = new LeaderboardService(factory);
+        var guildSettingService = new GuildSettingService(factory, new MemoryCache(new MemoryCacheOptions()));
+        var userSettingService = new UserSettingService(factory, Mock.Of<IDistributedCache>());
         return new InformationController(
             Mock.Of<ILogger<InformationController>>(),
             context,
             leaderboardService,
-            discordApiService);
+            discordApiService,
+            guildSettingService,
+            userSettingService);
     }
 
     private static Mock<DiscordApiService> CreateMockDiscordApiService(

@@ -20,5 +20,7 @@ public partial class Guild
 
     public virtual ICollection<GuildMember> GuildMembers { get; set; } = new List<GuildMember>();
 
+    public virtual GuildSetting? GuildSetting { get; set; }
+
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
 }

@@ -14,7 +14,9 @@ public class InformationController(
     ILogger<InformationController> logger,
     BotDbContext dbContext,
     LeaderboardService leaderboardService,
-    DiscordApiService discordApiService) : ControllerBase
+    DiscordApiService discordApiService,
+    GuildSettingService guildSettingService,
+    UserSettingService userSettingService) : ControllerBase
 {
     [HttpGet("UsageStats")]
     public async Task<ActionResult<UsageStatsDto>> GetUsageStats()
@@ -36,6 +38,7 @@ public class InformationController(
     [HttpGet("Leaderboard")]
     public async Task<ActionResult<LeaderboardResponseDto>> GetLeaderboard()
     {
+        var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
         var globalResult = await leaderboardService.GetGlobalXpLeaderboardAsync();
         if (globalResult.IsFailure)
             return StatusCode(500, globalResult.Error);
@@ -43,7 +46,44 @@ public class InformationController(
         return Ok(new LeaderboardResponseDto(
             GuildName: null,
             Icon: null,
-            Users: globalResult.Value.Select(e => new LeaderboardUserDto(
+            Users: globalResult.Value.Select(e =>
+            {
+                var isPrivate = hiddenUserIds.Contains(e.UserId);
+                return new LeaderboardUserDto(
+                    e.Rank,
+                    isPrivate ? -e.Rank : e.UserId,
+                    e.Level,
+                    e.Xp,
+                    isPrivate ? "Private" : e.Username ?? "",
+                    isPrivate ? "0000" : e.Discriminator ?? "",
+                    isPrivate ? "" : e.AvatarUrl ?? "",
+                    isPrivate);
+            }).ToList()
+        ));
+    }
+
+    [HttpGet("Leaderboard/{guildId}")]
+    public async Task<ActionResult<LeaderboardResponseDto>> GetPublicLeaderboard(string guildId)
+    {
+        if (!long.TryParse(guildId, out var guildIdLong) || guildIdLong < 0)
+            return BadRequest("Invalid guild ID");
+
+        var guild = await dbContext.Guilds.FindAsync(guildIdLong);
+        if (guild == null)
+            return NotFound("Guild not found");
+
+        var isPublic = await guildSettingService.IsLeaderboardPublicAsync(guildIdLong);
+        if (!isPublic)
+            return StatusCode(403, new LeaderboardAccessDeniedDto("not_public"));
+
+        var serverResult = await leaderboardService.GetServerXpLeaderboardAsync(guildIdLong);
+        if (serverResult.IsFailure)
+            return StatusCode(500, serverResult.Error);
+
+        return Ok(new LeaderboardResponseDto(
+            GuildName: guild.GuildName,
+            Icon: guild.Icon,
+            Users: serverResult.Value.Select(e => new LeaderboardUserDto(
                 e.Rank, e.UserId, e.Level, e.Xp,
                 e.Username ?? "", e.Discriminator ?? "", e.AvatarUrl ?? "")).ToList()
         ));
@@ -62,6 +102,23 @@ public class InformationController(
         var guild = await dbContext.Guilds.FindAsync(guildIdLong);
         if (guild == null)
             return NotFound("Guild not found");
+
+        // If the leaderboard is public, skip auth and return data
+        var isPublic = await guildSettingService.IsLeaderboardPublicAsync(guildIdLong);
+        if (isPublic)
+        {
+            var publicResult = await leaderboardService.GetServerXpLeaderboardAsync(guildIdLong);
+            if (publicResult.IsFailure)
+                return StatusCode(500, publicResult.Error);
+
+            return Ok(new LeaderboardResponseDto(
+                GuildName: guild.GuildName,
+                Icon: guild.Icon,
+                Users: publicResult.Value.Select(e => new LeaderboardUserDto(
+                    e.Rank, e.UserId, e.Level, e.Xp,
+                    e.Username ?? "", e.Discriminator ?? "", e.AvatarUrl ?? "")).ToList()
+            ));
+        }
 
         // Step 1: Check if user is a guild member in the database
         var isGuildMember = await dbContext.GuildMembers

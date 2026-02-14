@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
+using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
@@ -12,13 +13,14 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class ProfileSlashCommand(
     InteractiveService interactiveService,
     ProfileEditCommand profileEditCommand,
-    UserCommand userCommand)
+    UserCommand userCommand,
+    UserSettingService userSettingService)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("user", "Show a user's Bento profile")]
     public async Task ShowProfile([Summary("user", "Pick a User")] SocketUser? user = null,
         [Summary("hide", "Only show user info for you")]
-        bool? hide = false)
+        bool? hide = null)
     {
         _ = DeferAsync();
         user ??= Context.User;
@@ -31,7 +33,7 @@ public sealed class ProfileSlashCommand(
                 guildMember,
                 Context.Guild.MemberCount,
                 botPfp),
-            hide ?? false);
+            hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
     [Group("background", "Background settings for your profile")]

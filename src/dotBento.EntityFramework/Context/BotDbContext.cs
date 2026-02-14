@@ -12,6 +12,8 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<GuildMember> GuildMembers { get; set; }
 
+    public virtual DbSet<GuildSetting> GuildSettings { get; set; }
+
     public virtual DbSet<Lastfm> Lastfms { get; set; }
 
     public virtual DbSet<Patreon> Patreons { get; set; }
@@ -25,7 +27,9 @@ public partial class BotDbContext : DbContext
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-    
+
+    public virtual DbSet<UserSetting> UserSettings { get; set; }
+
     public virtual DbSet<Weather> Weathers { get; set; }
     
     private readonly IConfiguration _configuration;
@@ -97,6 +101,26 @@ public partial class BotDbContext : DbContext
                 .HasMaxLength(16)
                 .HasColumnName("prefix");
             entity.Property(e => e.Tiktok).HasColumnName("tiktok");
+        });
+
+        modelBuilder.Entity<GuildSetting>(entity =>
+        {
+            entity.HasKey(e => e.GuildId).HasName("guildsetting_pk");
+
+            entity.ToTable("guildSetting");
+
+            entity.HasIndex(e => e.GuildId, "guildsetting_guildid_uindex").IsUnique();
+
+            entity.Property(e => e.GuildId)
+                .ValueGeneratedNever()
+                .HasColumnName("guildID");
+            entity.Property(e => e.LeaderboardPublic)
+                .HasDefaultValue(false)
+                .HasColumnName("leaderboardPublic");
+
+            entity.HasOne(d => d.Guild).WithOne(p => p.GuildSetting)
+                .HasForeignKey<GuildSetting>(d => d.GuildId)
+                .HasConstraintName("guildsetting_guild_guildid_fk");
         });
 
         modelBuilder.Entity<GuildMember>(entity =>
@@ -418,6 +442,29 @@ public partial class BotDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("username");
             entity.Property(e => e.Xp).HasColumnName("xp");
+        });
+
+        modelBuilder.Entity<UserSetting>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("usersetting_pk");
+
+            entity.ToTable("userSetting");
+
+            entity.HasIndex(e => e.UserId, "usersetting_userid_uindex").IsUnique();
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("userID");
+            entity.Property(e => e.HideSlashCommandCalls)
+                .HasDefaultValue(false)
+                .HasColumnName("hideSlashCommandCalls");
+            entity.Property(e => e.ShowOnGlobalLeaderboard)
+                .HasDefaultValue(true)
+                .HasColumnName("showOnGlobalLeaderboard");
+
+            entity.HasOne(d => d.User).WithOne(p => p.UserSetting)
+                .HasForeignKey<UserSetting>(d => d.UserId)
+                .HasConstraintName("usersetting_user_userid_fk");
         });
 
         modelBuilder.Entity<Weather>(entity =>
