@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.17.0](https://github.com/thebentobot/dotBento/compare/v1.16.0...v1.17.0) (2026-02-14)
+
+
+### Features
+
+* add access-controlled guild leaderboard endpoint ([c02857e](https://github.com/thebentobot/dotBento/commit/c02857e662ec345c1e80a1239285155ec0b3517c))
+* add access-controlled guild leaderboard endpoint ([403804f](https://github.com/thebentobot/dotBento/commit/403804fa1aa697aa0dc88b2859d64f2d800ddce7))
+* add DiscordApiService, LeaderboardAccessDeniedDto, and DI registration ([438e380](https://github.com/thebentobot/dotBento/commit/438e380b674642ca9963393cba9d8db32d41c491))
+* add guild and user settings with privacy controls ([c020ace](https://github.com/thebentobot/dotBento/commit/c020acebfe57ddfa440557dc8f03de2590df05dc))
+* add guild and user settings with privacy controls ([4c1ee24](https://github.com/thebentobot/dotBento/commit/4c1ee24df8e74122374923e201d537ca27b01642))
+* add leaderboard command group ([ac84aea](https://github.com/thebentobot/dotBento/commit/ac84aea7e3c083c502f4df2c2717c8202ccfc63e))
+* add leaderboard command group with server, global, bento, RPS, and user subcommands ([2f515d2](https://github.com/thebentobot/dotBento/commit/2f515d2bd04707e2bfe9c176974dcef0899db42d))
+* improve settings display with enhanced formatting and contextual links ([9c84df0](https://github.com/thebentobot/dotBento/commit/9c84df049d5b940d5c4c8c260563024b94a23b81))
+
+
+### Bug Fixes
+
+* address code review findings for leaderboard access endpoint ([3de6f2b](https://github.com/thebentobot/dotBento/commit/3de6f2b15f61d75417c04dc75d5b47a87bfee3e3))
+* anonymize private users on bot global leaderboard commands ([3d2ea87](https://github.com/thebentobot/dotBento/commit/3d2ea87e111f979064ac0cc2c80ff07cdb681f53))
+* anonymize private users on bot global leaderboard commands ([37f36bc](https://github.com/thebentobot/dotBento/commit/37f36bcde20433b6ff45d9712cd52904e92bc381))
+* correct leaderboard URL formatting by adding missing slash ([674f937](https://github.com/thebentobot/dotBento/commit/674f937564ad814a80b5f157f9fb2416d15b2829))
+
 ## [1.16.0](https://github.com/thebentobot/dotBento/compare/v1.15.1...v1.16.0) (2026-02-08)
 
 
