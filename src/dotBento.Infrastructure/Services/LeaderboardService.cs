@@ -223,7 +223,7 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
                     (g.RockLosses ?? 0) + (g.PaperLosses ?? 0) + (g.ScissorsLosses ?? 0))
             };
 
-            return new { g.UserId, Wins = wins, Ties = ties, Losses = losses, g.User.Username, g.User.Discriminator };
+            return new { g.UserId, Wins = wins, Ties = ties, Losses = losses, Username = g.User?.Username, Discriminator = g.User?.Discriminator };
         });
 
         var ordered = order switch

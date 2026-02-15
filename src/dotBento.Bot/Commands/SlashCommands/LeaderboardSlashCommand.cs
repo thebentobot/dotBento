@@ -87,8 +87,8 @@ public sealed class LeaderboardSlashCommand(
     {
         [SlashCommand("server", "Server RPS leaderboard")]
         public async Task ServerCommand(
-            [Summary("type", "RPS weapon type filter")] RpsLeaderboardType? type = RpsLeaderboardType.All,
-            [Summary("order", "Order by wins, ties, or losses")] RpsLeaderboardOrder? order = RpsLeaderboardOrder.Wins,
+            [Summary("type", "RPS weapon type filter")] RpsLeaderboardType? type = null,
+            [Summary("order", "Order by wins, ties, or losses")] RpsLeaderboardOrder? order = null,
             [Summary("hide", "Only show the result for you")] bool? hide = null)
         {
             var guild = Context.Guild;
@@ -102,8 +102,8 @@ public sealed class LeaderboardSlashCommand(
 
         [SlashCommand("global", "Global RPS leaderboard")]
         public async Task GlobalCommand(
-            [Summary("type", "RPS weapon type filter")] RpsLeaderboardType? type = RpsLeaderboardType.All,
-            [Summary("order", "Order by wins, ties, or losses")] RpsLeaderboardOrder? order = RpsLeaderboardOrder.Wins,
+            [Summary("type", "RPS weapon type filter")] RpsLeaderboardType? type = null,
+            [Summary("order", "Order by wins, ties, or losses")] RpsLeaderboardOrder? order = null,
             [Summary("hide", "Only show the result for you")] bool? hide = null) =>
             await Context.SendResponse(interactiveService,
                 await leaderboardCommand.GetGlobalRpsLeaderboardAsync(

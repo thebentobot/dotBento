@@ -24,33 +24,33 @@ public sealed class GameService(IDbContextFactory<BotDbContext> contextFactory)
         switch (choice)
         {
             case RpsGameChoice.Rock when result == RpsGameResult.Win:
-                userGame.RockWins++;
+                userGame.RockWins = (userGame.RockWins ?? 0) + 1;
                 break;
             case RpsGameChoice.Rock when result == RpsGameResult.Loss:
-                userGame.RockLosses++;
+                userGame.RockLosses = (userGame.RockLosses ?? 0) + 1;
                 break;
             case RpsGameChoice.Rock:
-                userGame.RockTies++;
+                userGame.RockTies = (userGame.RockTies ?? 0) + 1;
                 break;
 
             case RpsGameChoice.Paper when result == RpsGameResult.Win:
-                userGame.PaperWins++;
+                userGame.PaperWins = (userGame.PaperWins ?? 0) + 1;
                 break;
             case RpsGameChoice.Paper when result == RpsGameResult.Loss:
-                userGame.PaperLosses++;
+                userGame.PaperLosses = (userGame.PaperLosses ?? 0) + 1;
                 break;
             case RpsGameChoice.Paper:
-                userGame.PaperTies++;
+                userGame.PaperTies = (userGame.PaperTies ?? 0) + 1;
                 break;
 
             case RpsGameChoice.Scissors when result == RpsGameResult.Win:
-                userGame.ScissorWins++;
+                userGame.ScissorWins = (userGame.ScissorWins ?? 0) + 1;
                 break;
             case RpsGameChoice.Scissors when result == RpsGameResult.Loss:
-                userGame.ScissorsLosses++;
+                userGame.ScissorsLosses = (userGame.ScissorsLosses ?? 0) + 1;
                 break;
             case RpsGameChoice.Scissors:
-                userGame.ScissorsTies++;
+                userGame.ScissorsTies = (userGame.ScissorsTies ?? 0) + 1;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(choice), choice, null);
