@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/thebentobot/dotBento/compare/v1.17.0...v1.17.1) (2026-02-15)
+
+
+### Bug Fixes
+
+* make leaderboard filters nullable and prevent null reference errors ([fc3e8f4](https://github.com/thebentobot/dotBento/commit/fc3e8f4777a151a659c9c313ba7a762ed307bfa6))
+
 ## [1.17.0](https://github.com/thebentobot/dotBento/compare/v1.16.0...v1.17.0) (2026-02-14)
 
 
