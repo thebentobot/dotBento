@@ -40,8 +40,8 @@
       <PackageReference Include="Serilog.Sinks.Discord" Version="1.2.1" />
       <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
       <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
-      <PackageReference Include="SpotifyAPI.Web" Version="7.3.0" />
-      <PackageReference Include="SpotifyAPI.Web.Auth" Version="7.3.0" />
+      <PackageReference Include="SpotifyAPI.Web" Version="7.4.0" />
+      <PackageReference Include="SpotifyAPI.Web.Auth" Version="7.4.0" />
     </ItemGroup>
 
     <ItemGroup>
