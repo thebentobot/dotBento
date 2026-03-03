@@ -6,6 +6,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 
@@ -51,6 +52,41 @@ public sealed class ToolsTextCommand(
         await Context.SendResponse(interactiveService, await toolsCommand.GetDominantColour(url));
     }
     
+    [Command("timezone", RunMode = RunMode.Async)]
+    [Summary("Show the current time in a timezone. Optionally provide a second timezone to compare against.")]
+    [Alias("tz", "time")]
+    [Examples(
+        "timezone Europe/Copenhagen",
+        "timezone Europe/Copenhagen America/New_York",
+        "tz Asia/Tokyo Europe/London"
+    )]
+    public async Task GetTimezoneCommand([Remainder] string input)
+    {
+        var parts = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        // Try to find a split point where both halves are valid timezone IDs.
+        // IANA IDs never contain spaces so a two-token split covers most cases;
+        // multi-word Windows IDs are tried by walking the split point.
+        string timezoneId = input.Trim();
+        string? compareId = null;
+
+        for (var i = parts.Length - 1; i >= 1; i--)
+        {
+            var candidate = string.Join(' ', parts[i..]);
+            var main = string.Join(' ', parts[..i]);
+            if (ProfileValidationUtilities.TryValidateTimezone(main) &&
+                ProfileValidationUtilities.TryValidateTimezone(candidate))
+            {
+                timezoneId = main;
+                compareId = candidate;
+                break;
+            }
+        }
+
+        await Context.SendResponse(interactiveService,
+            await toolsCommand.GetTimezone(timezoneId, compareId, Context.User.Id));
+    }
+
     private static ResponseModel ErrorEmbed(string error)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
