@@ -13,6 +13,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/src/dotBento.WebApi"
@@ -22,6 +25,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/src/dotBento.Domain"
@@ -31,6 +37,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/src/dotBento.Infrastructure"
@@ -40,6 +49,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/src/dotBento.EntityFramework"
@@ -49,6 +61,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   # (Optional) Test projects
   - package-ecosystem: "nuget"
@@ -59,6 +74,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/tests/dotBento.WebApi.Tests"
@@ -68,6 +86,9 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "nuget"
     directory: "/tests/dotBento.Infrastructure.Tests"
@@ -77,6 +98,10 @@ updates:
       timezone: "Europe/Copenhagen"
     assignees:
       - "banner4422"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -85,6 +110,10 @@ updates:
       timezone: 'Europe/Copenhagen'
     assignees:
       - 'banner4422'
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   - package-ecosystem: "docker"
     directory: "src/" # Location of package manifests
     schedule:
@@ -93,3 +122,6 @@ updates:
       timezone: 'Europe/Copenhagen'
     assignees:
       - 'banner4422'
+    commit-message:
+      prefix: "chore"
+      include: "scope"
