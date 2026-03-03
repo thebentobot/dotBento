@@ -2,7 +2,9 @@ using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
 using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp.ColorSpaces.Conversion;
@@ -10,7 +12,7 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
-public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities)
+public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities, ProfileService profileService)
 {
     public async Task<ResponseModel> GetColour(string colour)
     {
@@ -95,6 +97,71 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
             .WithImageUrl($"attachment://colour.png")
             .WithColor(dominantColor);
         
+        return embed;
+    }
+
+    public async Task<ResponseModel> GetTimezone(string timezoneId, string? compareTimezoneId = null, ulong? userId = null)
+    {
+        var embed = new ResponseModel { ResponseType = ResponseType.Embed };
+
+        if (!ProfileValidationUtilities.TryValidateTimezone(timezoneId))
+        {
+            embed.Embed
+                .WithColor(Color.Red)
+                .WithTitle("Invalid timezone")
+                .WithDescription($"The timezone `{timezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
+            return embed;
+        }
+
+        if (compareTimezoneId != null && !ProfileValidationUtilities.TryValidateTimezone(compareTimezoneId))
+        {
+            embed.Embed
+                .WithColor(Color.Red)
+                .WithTitle("Invalid comparison timezone")
+                .WithDescription($"The timezone `{compareTimezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
+            return embed;
+        }
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        var nowUtc = DateTimeOffset.UtcNow;
+        var localTime = TimeZoneInfo.ConvertTime(nowUtc, zone);
+        var offset = zone.GetUtcOffset(nowUtc);
+        var sign = offset < TimeSpan.Zero ? "-" : "+";
+        var offsetStr = $"UTC{sign}{offset.Duration():hh\\:mm}";
+
+        embed.Embed
+            .WithColor(DiscordConstants.BentoYellow)
+            .WithTitle($"Current time in {zone.Id}")
+            .WithDescription($"**{localTime:dddd, MMMM d yyyy}**\n**{localTime:HH:mm:ss}** ({offsetStr})");
+
+        // Resolve comparison timezone: explicit parameter takes priority, then profile fallback
+        var resolvedCompareId = compareTimezoneId;
+        if (resolvedCompareId == null && userId.HasValue)
+        {
+            var profile = await profileService.GetProfileAsync((long)userId.Value);
+            if (profile.HasValue && !string.IsNullOrEmpty(profile.Value.Timezone)
+                && ProfileValidationUtilities.TryValidateTimezone(profile.Value.Timezone))
+            {
+                resolvedCompareId = profile.Value.Timezone;
+            }
+        }
+
+        if (resolvedCompareId != null)
+        {
+            var compareZone = TimeZoneInfo.FindSystemTimeZoneById(resolvedCompareId);
+            var compareOffset = compareZone.GetUtcOffset(nowUtc);
+            var diff = (offset - compareOffset).TotalHours;
+            var absHours = Math.Abs(diff);
+            var hourWord = absHours == 1 ? "hour" : "hours";
+            var diffStr = diff switch
+            {
+                0 => $"same time as {compareZone.Id}",
+                > 0 => $"{absHours:0.#} {hourWord} ahead of {compareZone.Id}",
+                _ => $"{absHours:0.#} {hourWord} behind {compareZone.Id}"
+            };
+            embed.Embed.WithFooter(diffStr);
+        }
+
         return embed;
     }
 

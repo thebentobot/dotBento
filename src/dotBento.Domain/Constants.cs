@@ -35,6 +35,7 @@ public static class Constants
         "Reminder",
         "Colour",
         "DominantColour",
+        "Timezone",
     };
 
     public static readonly IReadOnlyCollection<string> AliasNames = new List<string>
@@ -54,5 +55,7 @@ public static class Constants
         "hex",
         "rgb",
         "dominantColor",
+        "tz",
+        "time",
     };
 }

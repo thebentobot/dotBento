@@ -1,5 +1,6 @@
 using Discord;
 using Discord.Interactions;
+using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
@@ -38,6 +39,21 @@ public sealed class ToolsSlashCommand(InteractiveService interactiveService, Too
 
         await Context.SendResponse(interactiveService, await toolsCommand.GetDominantColour(url), effectiveHide);
     }
+
+    [SlashCommand("timezone", "Show the current time in a timezone")]
+    public async Task GetTimezoneCommand(
+        [Summary("timezone", "Timezone to look up, e.g. Europe/Copenhagen")]
+        [Autocomplete(typeof(TimezoneAutoComplete))]
+        string timezone,
+        [Summary("compare", "Timezone to compare against (defaults to your profile timezone if set)")]
+        [Autocomplete(typeof(TimezoneAutoComplete))]
+        string? compare = null,
+        [Summary("hide", "Only show this result for you")]
+        bool? hide = null) =>
+        await Context.SendResponse(
+            interactiveService,
+            await toolsCommand.GetTimezone(timezone, compare, Context.User.Id),
+            hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 
     private static ResponseModel ErrorEmbed(string error)
     {
