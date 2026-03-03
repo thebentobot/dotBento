@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.18.0](https://github.com/thebentobot/dotBento/compare/v1.17.1...v1.18.0) (2026-03-03)
+
+
+### Features
+
+* add timezone command to tools ([407afd7](https://github.com/thebentobot/dotBento/commit/407afd7d663069a541164f64687c30e3806e6611))
+* add timezone command to tools ([ba7c486](https://github.com/thebentobot/dotBento/commit/ba7c486d6d9142e2181e5804a979e22c17a56542))
+
+
+### Bug Fixes
+
+* **release-please:** create PR's from dependabot merges ([41f7a91](https://github.com/thebentobot/dotBento/commit/41f7a91a9480391e32d7f2bbf796e28532766825))
+
 ## [1.17.1](https://github.com/thebentobot/dotBento/compare/v1.17.0...v1.17.1) (2026-02-15)
 
 
