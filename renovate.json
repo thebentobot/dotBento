@@ -7,5 +7,6 @@
   "timezone": "Europe/Copenhagen",
   "assignees": ["banner4422"],
   "semanticCommits": "enabled",
-  "semanticCommitType": "chore"
+  "semanticCommitType": "chore",
+  "rangeStrategy": "bump"
 }
