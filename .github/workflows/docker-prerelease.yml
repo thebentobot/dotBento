@@ -72,7 +72,7 @@ jobs:
 
       - name: Build and push bot image
         if: env.SKIP_PRERELEASE == 'false'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: src/Dockerfile
           platforms: linux/amd64
@@ -82,7 +82,7 @@ jobs:
       
       - name: Build and push Web API Image
         if: env.SKIP_PRERELEASE == 'false'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: src/dotBento.WebApi/Dockerfile  # <-- new path!
           platforms: linux/amd64
