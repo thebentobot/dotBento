@@ -7,7 +7,6 @@ using dotBento.Bot.Resources;
 using dotBento.Infrastructure.Models.BentoMedia;
 using dotBento.Infrastructure.Services.Api;
 using Fergun.Interactive;
-using Fergun.Interactive.Pagination;
 using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.SharedCommands;
@@ -149,7 +148,7 @@ public sealed class MediaCommand(
             ? $"{baseUrl}/proxy?url={Uri.EscapeDataString(attachment.Url)}"
             : attachment.Url;
 
-    public static ResponseModel ErrorResponse(string error)
+    private static ResponseModel ErrorResponse(string error)
     {
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
         if (error == "not_configured")
@@ -187,7 +186,7 @@ public sealed class MediaCommand(
         return await bentoMediaServerService.ProxyAsync(baseUrl, mediaUrl, GetApiKey());
     }
 
-    public string? GetBaseUrl() =>
+    private string? GetBaseUrl() =>
         string.IsNullOrEmpty(config.Value.MediaServer.Url) ? null : config.Value.MediaServer.Url;
 
     private string? GetApiKey() =>
