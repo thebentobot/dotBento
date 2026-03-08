@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.0](https://github.com/thebentobot/dotBento/compare/v1.18.0...v1.19.0) (2026-03-08)
+
+
+### Features
+
+* add media commands for Twitter/X and TikTok ([1d9178c](https://github.com/thebentobot/dotBento/commit/1d9178c721ecca9993bf33a464ad16383f790425))
+* add media commands for Twitter/X and TikTok ([fbc5ef5](https://github.com/thebentobot/dotBento/commit/fbc5ef5b449873d30139a80436d05809073b1a22))
+
 ## [1.18.0](https://github.com/thebentobot/dotBento/compare/v1.17.1...v1.18.0) (2026-03-03)
 
 
