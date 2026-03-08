@@ -246,6 +246,13 @@ public sealed class Startup
         services.AddHttpClient<WeatherApiService>();
         services.AddHttpClient<LastFmApiService>();
         services.AddHttpClient<SushiiImageServerService>();
+        services.AddHttpClient<BentoMediaServerService>(client =>
+        {
+            // Resolve calls are fast; proxy calls stream video so we allow more time
+            client.Timeout = TimeSpan.FromSeconds(90);
+        });
+        services.AddSingleton<MediaCommand>()
+            .AddSingleton<MediaRateLimitService>();
         
         services.AddHttpClient<SpotifyApiService>(client =>
         {

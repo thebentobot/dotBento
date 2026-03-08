@@ -98,6 +98,15 @@ public static class InteractionContextExtensions
                     ephemeral: ephemeral);
                 await response.Stream.DisposeAsync();
                 break;
+            case ResponseType.FileWithEmbed:
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler ? "SPOILER_" : "") + response.FileName,
+                    null,
+                    [response.Embed.Build()],
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -114,10 +123,10 @@ public static class InteractionContextExtensions
                 await context.Interaction.FollowupAsync(null, new[] { response.Embed.Build() }, ephemeral: ephemeral, components: response.Components?.Build());
                 break;
             case ResponseType.Paginator:
-                _ = interactiveService.SendPaginatorAsync(
+                await interactiveService.SendPaginatorAsync(
                     response.StaticPaginator ?? throw new InvalidOperationException(),
                     (SocketInteraction)context.Interaction,
-                    TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
+                    response.PaginatorTimeout ?? TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
                     InteractionResponseType.DeferredChannelMessageWithSource,
                     ephemeral: ephemeral);
                 break;
@@ -144,6 +153,17 @@ public static class InteractionContextExtensions
                 imageName,
                 ephemeral: ephemeral);
                 await response.Stream.DisposeAsync();
+                break;
+            case ResponseType.FileWithEmbed:
+                var fileEmbedFilename = response.FileName ?? throw new InvalidOperationException();
+                await context.Interaction.FollowupWithFileAsync(
+                    response.Stream,
+                    (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,
+                    null,
+                    new[] { response.Embed.Build() },
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

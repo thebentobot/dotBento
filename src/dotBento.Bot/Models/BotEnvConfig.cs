@@ -20,7 +20,9 @@ public sealed class BotEnvConfig
     public SpotifyConfig Spotify { get; set; } = new SpotifyConfig();
     
     public ImageServerConfig ImageServer { get; set; } = new ImageServerConfig();
-    
+
+    public MediaServerConfig MediaServer { get; set; } = new MediaServerConfig();
+
     public string LokiUrl { get; set; } = string.Empty;
 }
 
@@ -77,4 +79,10 @@ public sealed class BotListConfig
 public sealed class ImageServerConfig
 {
     public string Url { get; set; } = string.Empty;
+}
+
+public sealed class MediaServerConfig
+{
+    public string Url { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
 }
