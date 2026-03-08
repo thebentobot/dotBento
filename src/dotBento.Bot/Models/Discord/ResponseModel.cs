@@ -89,5 +89,6 @@ public sealed class ResponseModel
     /// For <see cref="ResponseType.Paginator"/>, this property should not be null.
     /// </remarks>
     public StaticPaginator? StaticPaginator { get; set; }
+    public TimeSpan? PaginatorTimeout { get; set; }
     public CommandResponse CommandResponse { get; set; } = CommandResponse.Ok;
 }
