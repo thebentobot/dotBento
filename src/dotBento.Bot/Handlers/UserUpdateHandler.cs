@@ -1,41 +1,48 @@
-using Discord.WebSocket;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
+using NetCord;
+using NetCord.Gateway;
 
 namespace dotBento.Bot.Handlers;
 
 public sealed class UserUpdateHandler
 {
-    private readonly DiscordSocketClient _client;
+    private readonly GatewayClient _client;
     private readonly UserService _userService;
-    
-    public UserUpdateHandler(DiscordSocketClient client, UserService userService)
+
+    public UserUpdateHandler(GatewayClient client, UserService userService)
     {
         _userService = userService;
         _client = client;
-        _client.UserUpdated += UserUpdateEvent;
+        _client.GuildUserUpdate += UserUpdateEvent;
     }
 
-    private Task UserUpdateEvent(SocketUser socketUser, SocketUser newUser)
+    private ValueTask UserUpdateEvent(GuildUser user)
     {
-        _ = Task.Run(() => UserUpdated(socketUser, newUser));
-        return Task.CompletedTask;
+        _ = Task.Run(() => UserUpdated(user));
+        return ValueTask.CompletedTask;
     }
-    
-    private async Task UserUpdated(SocketUser oldUser, SocketUser newUser)
+
+    private async Task UserUpdated(GuildUser user)
     {
-        if (newUser.IsBot) return;
-        var getUserFromDatabaseAsync = await _userService.GetUserFromDatabaseAsync(newUser.Id);
+        if (user.IsBot) return;
+        var getUserFromDatabaseAsync = await _userService.GetUserFromDatabaseAsync(user.Id);
         if (getUserFromDatabaseAsync.HasNoValue) return;
-        if (oldUser.GetAvatarUrl() != newUser.GetAvatarUrl())
+
+        var dbUser = getUserFromDatabaseAsync.Value;
+        var currentAvatarUrl = user.AvatarHash != null
+            ? $"https://cdn.discordapp.com/avatars/{user.Id}/{user.AvatarHash}.png?size=1024"
+            : null;
+
+        if (dbUser.AvatarUrl != currentAvatarUrl)
         {
             Statistics.DiscordEvents.WithLabels(nameof(UserUpdated)).Inc();
-            await _userService.UpdateUserAvatarAsync(newUser);
+            await _userService.UpdateUserAvatarAsync(user);
         }
-        if (oldUser.Username != newUser.Username)
+        if (dbUser.Username != user.Username)
         {
             Statistics.DiscordEvents.WithLabels(nameof(UserUpdated)).Inc();
-            await _userService.UpdateUserUsernameAsync(newUser);
+            await _userService.UpdateUserUsernameAsync(user);
         }
     }
 }

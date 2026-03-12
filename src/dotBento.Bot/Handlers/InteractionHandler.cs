@@ -1,12 +1,15 @@
-using Discord;
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Rest;
+using NetCord.Services;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.ComponentInteractions;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
-using dotBento.Bot.Models.Discord;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 using Prometheus;
@@ -16,228 +19,181 @@ namespace dotBento.Bot.Handlers;
 
 public sealed class InteractionHandler
 {
-    private readonly DiscordSocketClient _client;
-    private readonly InteractionService _interactionService;
+    private readonly GatewayClient _client;
+    private readonly ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> _appCommands;
+    private readonly ComponentInteractionService<ComponentInteractionContext> _componentCommands;
+    private readonly ComponentInteractionService<ModalInteractionContext> _modalCommands;
     private readonly InteractiveService _fergunInteractiveService;
     private readonly IServiceProvider _provider;
     private readonly UserService _userService;
     private readonly GuildService _guildService;
+    private readonly GuildMemberLookupService _memberLookup;
 
-    public InteractionHandler(DiscordSocketClient client,
-        InteractionService interactionService,
+    public InteractionHandler(GatewayClient client,
+        ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> appCommands,
+        ComponentInteractionService<ComponentInteractionContext> componentCommands,
+        ComponentInteractionService<ModalInteractionContext> modalCommands,
         IServiceProvider provider,
         InteractiveService fergunInteractiveService,
         UserService userService,
-        GuildService guildService)
+        GuildService guildService,
+        GuildMemberLookupService memberLookup)
     {
         _client = client;
-        _interactionService = interactionService;
+        _appCommands = appCommands;
+        _componentCommands = componentCommands;
+        _modalCommands = modalCommands;
         _provider = provider;
         _fergunInteractiveService = fergunInteractiveService;
         _userService = userService;
         _guildService = guildService;
-        _client.SlashCommandExecuted += SlashCommandExecuted;
-        _client.AutocompleteExecuted += AutoCompleteExecuted;
-        _client.SelectMenuExecuted += SelectMenuExecuted;
-        _client.ModalSubmitted += ModalSubmitted;
-        _client.UserCommandExecuted += UserCommandExecuted;
-        _client.ButtonExecuted += ButtonExecuted;
+        _memberLookup = memberLookup;
+        _client.InteractionCreate += InteractionCreated;
     }
 
-    private async Task SlashCommandExecuted(SocketInteraction socketInteraction)
+    private ValueTask InteractionCreated(Interaction interaction)
     {
-        Statistics.DiscordEvents.WithLabels(nameof(SlashCommandExecuted)).Inc();
-
-        if (socketInteraction is not SocketSlashCommand socketSlashCommand)
+        switch (interaction)
         {
-            return;
+            case SlashCommandInteraction slashCommand:
+                _ = Task.Run(() => ExecuteSlashCommand(slashCommand, _client));
+                break;
+            case UserCommandInteraction userCommand:
+                _ = Task.Run(() => ExecuteUserCommand(userCommand, _client));
+                break;
+            case AutocompleteInteraction autocomplete:
+                _ = Task.Run(() => ExecuteAutocomplete(autocomplete, _client));
+                break;
+            case ModalInteraction modal:
+                _ = Task.Run(() => ExecuteModal(modal, _client));
+                break;
+            case MessageComponentInteraction component:
+                _ = Task.Run(() => ExecuteComponent(component, _client));
+                break;
         }
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task ExecuteSlashCommand(SlashCommandInteraction slashCommand, GatewayClient client)
+    {
+        Statistics.DiscordEvents.WithLabels("SlashCommandExecuted").Inc();
 
         using (Statistics.SlashCommandHandlerDuration.NewTimer())
         {
-            var context = new SocketInteractionContext(_client, socketInteraction);
-
-            var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
-
-            if (!commandSearch.IsSuccess)
-            {
-                Log.Error("Someone tried to execute a non-existent slash command! {SlashCommand}",
-                    socketSlashCommand.CommandName);
-                return;
-            }
-
-            var command = commandSearch.Command;
+            var context = new ApplicationCommandContext(slashCommand, client);
 
             await EnsureGuildAndUserExists(context);
 
-            var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
+            var keepGoing = await CheckAttributes(context, slashCommand.Data.Options?.GetType().GetCustomAttributes(true).OfType<Attribute>().ToList());
 
             if (!keepGoing)
             {
                 return;
             }
 
-            var result = await _interactionService.ExecuteCommandAsync(context, _provider);
-            
-            if (result.IsSuccess)
+            var result = await _appCommands.ExecuteAsync(context, _provider);
+
+            if (result is not IFailResult failResult)
             {
-                Statistics.SlashCommandsExecuted.WithLabels(command.Name).Inc();
-                // TODO _ = Task.Run(() => _userService.AddUserSlashCommandInteraction(context, command.Name));
-            } else switch (result.Error)
+                Statistics.SlashCommandsExecuted.WithLabels(slashCommand.Data.Name).Inc();
+                // TODO _ = Task.Run(() => _userService.AddUserSlashCommandInteraction(context, slashCommand.Data.Name));
+            }
+            else
             {
-                case InteractionCommandError.ParseFailed:
+                Statistics.SlashCommandsFailed.WithLabels(slashCommand.Data.Name).Inc();
+                Log.Error("Slash command error: {Error}. Command: {CommandName}", failResult.Message, slashCommand.Data.Name);
+                try
                 {
-                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                    embed.Embed.WithTitle("Error: Invalid input")
-                        .WithDescription($"{result.ErrorReason}")
-                        .WithColor(Color.Red);
-                    await context.SendResponse(_fergunInteractiveService, embed);
-                    break;
+                    await context.Interaction.SendResponseAsync(InteractionCallback.Message(
+                        new InteractionMessageProperties()
+                            .WithContent($"An error occurred while executing the command: {failResult.Message}")
+                            .WithFlags(MessageFlags.Ephemeral)));
                 }
-                case InteractionCommandError.BadArgs:
+                catch (Exception ex)
                 {
-                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                    embed.Embed.WithTitle("Error: Bad argument count")
-                        .WithDescription($"You have provided too many or too few arguments for the command `{command.Name}`")
-                        .WithColor(Color.Red);
-                    await context.SendResponse(_fergunInteractiveService, embed);
-                    break;
+                    Log.Error(ex, "Failed to send error response for slash command {CommandName}", slashCommand.Data.Name);
                 }
-                case InteractionCommandError.Exception:
-                {
-                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                    embed.Embed.WithTitle("Error: Exception")
-                        .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
-                        .WithColor(Color.Red);
-                    await context.SendResponse(_fergunInteractiveService, embed);
-                    break;
-                }
-                case InteractionCommandError.Unsuccessful:
-                {
-                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                    embed.Embed.WithTitle("Error: Unsuccessful")
-                        .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
-                        .WithColor(Color.Red);
-                    await context.SendResponse(_fergunInteractiveService, embed);
-                    break;
-                }
-                // TODO would be nice to log when one of these errors below gets hit
-                // ReSharper disable once RedundantCaseLabel
-                case null:
-                // ReSharper disable once RedundantCaseLabel
-                case InteractionCommandError.UnknownCommand:
-                // ReSharper disable once RedundantCaseLabel
-                case InteractionCommandError.ConvertFailed:
-                // ReSharper disable once RedundantCaseLabel
-                case InteractionCommandError.UnmetPrecondition:
-                default:
-                    Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction);
-                    Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    break;
             }
         }
     }
 
-    private async Task UserCommandExecuted(SocketInteraction socketInteraction)
+    private async Task ExecuteUserCommand(UserCommandInteraction userCommand, GatewayClient client)
     {
-        Statistics.DiscordEvents.WithLabels(nameof(UserCommandExecuted)).Inc();
+        Statistics.DiscordEvents.WithLabels("UserCommandExecuted").Inc();
 
-        if (socketInteraction is not SocketUserCommand socketUserCommand)
-        {
-            return;
-        }
-
-        var context = new SocketInteractionContext(_client, socketInteraction);
-        var commandSearch = _interactionService.SearchUserCommand(socketUserCommand);
-
-        if (!commandSearch.IsSuccess)
-        {
-            return;
-        }
+        var context = new ApplicationCommandContext(userCommand, client);
 
         await EnsureGuildAndUserExists(context);
 
-        var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
+        var keepGoing = await CheckAttributes(context, null);
 
         if (!keepGoing)
         {
             return;
         }
 
-        var result = await _interactionService.ExecuteCommandAsync(context, _provider);
+        var result = await _appCommands.ExecuteAsync(context, _provider);
 
-        if (result.IsSuccess)
+        if (result is not IFailResult failResult)
         {
             Statistics.UserCommandsExecuted.Inc();
-        } else switch (result.Error)
+        }
+        else
         {
-            case InteractionCommandError.ParseFailed:
+            Statistics.SlashCommandsFailed.WithLabels(userCommand.Data.Name).Inc();
+            Log.Error("User command error: {Error}. Command: {CommandName}", failResult.Message, userCommand.Data.Name);
+            try
             {
-                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                embed.Embed.WithTitle("Error: Invalid input")
-                    .WithDescription($"{result.ErrorReason}")
-                    .WithColor(Color.Red);
-                await context.SendResponse(_fergunInteractiveService, embed);
-                break;
+                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
+                    new InteractionMessageProperties()
+                        .WithContent($"An error occurred while executing the command: {failResult.Message}")
+                        .WithFlags(MessageFlags.Ephemeral)));
             }
-            case InteractionCommandError.BadArgs:
+            catch (Exception ex)
             {
-                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                embed.Embed.WithTitle("Error: Bad argument count")
-                    .WithDescription($"You have provided too many or too few arguments for the command `{commandSearch.Command.Name}`")
-                    .WithColor(Color.Red);
-                await context.SendResponse(_fergunInteractiveService, embed);
-                break;
+                Log.Error(ex, "Failed to send error response for user command {CommandName}", userCommand.Data.Name);
             }
-            case InteractionCommandError.Exception:
-            {
-                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                embed.Embed.WithTitle("Error: Exception")
-                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
-                    .WithColor(Color.Red);
-                await context.SendResponse(_fergunInteractiveService, embed);
-                break;
-            }
-            case InteractionCommandError.Unsuccessful:
-            {
-                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-                embed.Embed.WithTitle("Error: Unsuccessful")
-                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
-                    .WithColor(Color.Red);
-                await context.SendResponse(_fergunInteractiveService, embed);
-                break;
-            }
-            // TODO would be nice to log when one of these errors below gets hit
-            // ReSharper disable once RedundantCaseLabel
-            case null:
-            // ReSharper disable once RedundantCaseLabel
-            case InteractionCommandError.UnknownCommand:
-            // ReSharper disable once RedundantCaseLabel
-            case InteractionCommandError.ConvertFailed:
-            // ReSharper disable once RedundantCaseLabel
-            case InteractionCommandError.UnmetPrecondition:
-            default:
-                Log.Error("Command error: {Result}. Message content: {@MessageContent}", result.ToString(), context.Interaction); 
-                Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                break;
         }
     }
 
-    private async Task EnsureGuildAndUserExists(SocketInteractionContext context)
+    private async Task ExecuteAutocomplete(AutocompleteInteraction autocomplete, GatewayClient client)
+    {
+        Statistics.DiscordEvents.WithLabels("AutoCompleteExecuted").Inc();
+
+        var ctx = new AutocompleteInteractionContext(autocomplete, client);
+        await _appCommands.ExecuteAutocompleteAsync(ctx, _provider);
+
+        Statistics.AutoCompletesExecuted.Inc();
+    }
+
+    private async Task ExecuteModal(ModalInteraction modal, GatewayClient client)
+    {
+        Statistics.DiscordEvents.WithLabels("ModalSubmitted").Inc();
+
+        var ctx = new ModalInteractionContext(modal, client);
+        await _modalCommands.ExecuteAsync(ctx, _provider);
+
+        Statistics.ModalsExecuted.Inc();
+    }
+
+    private async Task ExecuteComponent(MessageComponentInteraction component, GatewayClient client)
+    {
+        Statistics.DiscordEvents.WithLabels("ButtonExecuted").Inc();
+
+        var ctx = new ComponentInteractionContext(component, client);
+
+        await _componentCommands.ExecuteAsync(ctx, _provider);
+
+        Statistics.ButtonExecuted.Inc();
+    }
+
+    private async Task EnsureGuildAndUserExists(ApplicationCommandContext context)
     {
         if (context.Guild != null && !context.User.IsBot)
         {
             await _guildService.AddGuildAsync(context.Guild);
             await _userService.CreateOrAddUserToCache(context.User);
-            var guildUser = context.Guild.GetUser(context.User.Id);
+            var guildUser = await _memberLookup.GetOrFetchAsync(context.Guild.Id, context.User.Id, context.Guild);
             if (guildUser != null)
             {
                 await _guildService.AddGuildMemberAsync(guildUser);
@@ -245,62 +201,7 @@ public sealed class InteractionHandler
         }
     }
 
-    private async Task AutoCompleteExecuted(SocketInteraction socketInteraction)
-    {
-        Statistics.DiscordEvents.WithLabels(nameof(AutoCompleteExecuted)).Inc();
-
-        var context = new SocketInteractionContext(_client, socketInteraction);
-        await _interactionService.ExecuteCommandAsync(context, _provider);
-
-        Statistics.AutoCompletesExecuted.Inc();
-    }
-
-    private async Task SelectMenuExecuted(SocketInteraction socketInteraction)
-    {
-        Statistics.DiscordEvents.WithLabels(nameof(SelectMenuExecuted)).Inc();
-
-        var context = new SocketInteractionContext(_client, socketInteraction);
-        await _interactionService.ExecuteCommandAsync(context, _provider);
-
-        Statistics.SelectMenusExecuted.Inc();
-    }
-
-    private async Task ModalSubmitted(SocketModal socketModal)
-    {
-        Statistics.DiscordEvents.WithLabels(nameof(ModalSubmitted)).Inc();
-
-        var context = new SocketInteractionContext(_client, socketModal);
-        await _interactionService.ExecuteCommandAsync(context, _provider);
-
-        Statistics.ModalsExecuted.Inc();
-    }
-
-    private async Task ButtonExecuted(SocketMessageComponent socketMessageComponent)
-    {
-        Statistics.DiscordEvents.WithLabels(nameof(ButtonExecuted)).Inc();
-
-        var context = new SocketInteractionContext(_client, socketMessageComponent);
-
-        var commandSearch = _interactionService.SearchComponentCommand(socketMessageComponent);
-
-        if (!commandSearch.IsSuccess)
-        {
-            return;
-        }
-        
-        var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
-
-        if (!keepGoing)
-        {
-            return;
-        }
-
-        await _interactionService.ExecuteCommandAsync(context, _provider);
-
-        Statistics.ButtonExecuted.Inc();
-    }
-    
-    private async Task<bool> CheckAttributes(SocketInteractionContext context, IReadOnlyCollection<Attribute>? attributes)
+    private async Task<bool> CheckAttributes(ApplicationCommandContext context, IReadOnlyCollection<Attribute>? attributes)
     {
         if (attributes == null)
         {
@@ -309,7 +210,10 @@ public sealed class InteractionHandler
         if (attributes.OfType<GuildOnly>().Any())
         {
             if (context.Guild != null) return true;
-            await context.Interaction.RespondAsync("This command is not supported in DMs.");
+            await context.Interaction.SendResponseAsync(InteractionCallback.Message(
+                new InteractionMessageProperties()
+                    .WithContent("This command is not supported in DMs.")
+                    .WithFlags(MessageFlags.Ephemeral)));
             context.LogCommandUsed(CommandResponse.NotSupportedInDm);
             return false;
         }

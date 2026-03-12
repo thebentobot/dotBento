@@ -1,7 +1,7 @@
-using Discord.WebSocket;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using Microsoft.Extensions.Caching.Memory;
+using NetCord.Gateway;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
@@ -9,48 +9,46 @@ namespace dotBento.Bot.Handlers;
 public sealed class ClientLeftGuildHandler
 {
     private readonly IMemoryCache _cache;
-    private readonly DiscordSocketClient _client;
+    private readonly GatewayClient _client;
     private readonly GuildService _guildService;
-    
-    public ClientLeftGuildHandler(DiscordSocketClient client,
+
+    public ClientLeftGuildHandler(GatewayClient client,
         GuildService guildService, IMemoryCache cache)
     {
         _cache = cache;
         _client = client;
         _guildService = guildService;
-        _client.LeftGuild += ClientLeftGuildEvent;
+        _client.GuildDelete += ClientLeftGuildEvent;
     }
-    
-    private Task ClientLeftGuildEvent(SocketGuild guild)
+
+    private ValueTask ClientLeftGuildEvent(GuildDeleteEventArgs args)
     {
-        _ = Task.Run(() => ClientLeftGuild(guild));
-        return Task.CompletedTask;
+        _ = Task.Run(() => ClientLeftGuild(args.GuildId));
+        return ValueTask.CompletedTask;
     }
-    
-    private async Task ClientLeftGuild(SocketGuild guild)
+
+    private async Task ClientLeftGuild(ulong guildId)
     {
         var keepData = false;
 
-        var key = $"{guild.Id}-keep-data";
+        var key = $"{guildId}-keep-data";
         if (_cache.TryGetValue(key, out _))
         {
             keepData = true;
         }
-        if (_client.CurrentUser.Id == Constants.BotDevelopmentId)
+        if (_client.Cache.User?.Id == Constants.BotDevelopmentId)
         {
             keepData = true;
         }
         if (!keepData)
         {
             Statistics.DiscordEvents.WithLabels(nameof(ClientLeftGuild)).Inc();
-            Log.Information(
-                "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
-            await _guildService.RemoveGuildAsync(guild.Id);
+            Log.Information("LeftGuild: {GuildId}", guildId);
+            await _guildService.RemoveGuildAsync(guildId);
         }
         else
         {
-            Log.Information(
-                "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members (skipped delete)", guild.Name, guild.Id, guild.MemberCount);
+            Log.Information("LeftGuild: {GuildId} (skipped delete)", guildId);
         }
     }
 }

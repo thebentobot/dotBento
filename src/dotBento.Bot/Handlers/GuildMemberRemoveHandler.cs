@@ -1,47 +1,50 @@
-using Discord.WebSocket;
+using dotBento.Bot.Services;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
+using NetCord.Gateway;
 
 namespace dotBento.Bot.Handlers;
 
 public sealed class GuildMemberRemoveHandler
 {
-    private readonly DiscordSocketClient _client;
+    private readonly GatewayClient _client;
     private readonly GuildService _guildService;
     private readonly UserService _userService;
-    
-    public GuildMemberRemoveHandler(DiscordSocketClient client,
-        GuildService guildService, UserService userService)
+    private readonly GuildMemberLookupService _memberLookup;
+
+    public GuildMemberRemoveHandler(GatewayClient client,
+        GuildService guildService, UserService userService,
+        GuildMemberLookupService memberLookup)
     {
         _userService = userService;
         _client = client;
         _guildService = guildService;
-        _client.UserLeft += GuildMemberRemovedEvent;
-        _client.UserBanned += GuildMemberBannedEvent;
+        _memberLookup = memberLookup;
+        _client.GuildUserRemove += GuildMemberRemovedEvent;
+        _client.GuildBanAdd += GuildMemberBannedEvent;
     }
 
-    private Task GuildMemberRemovedEvent(SocketGuild guild, SocketUser user)
+    private ValueTask GuildMemberRemovedEvent(GuildUserRemoveEventArgs args)
     {
-        _ = Task.Run(() => GuildMemberRemoved(guild, user));
-        return Task.CompletedTask;
+        _ = Task.Run(() => GuildMemberRemoved(args.GuildId, args.User.Id));
+        return ValueTask.CompletedTask;
     }
-    
-    private Task GuildMemberBannedEvent(SocketUser user, SocketGuild guild)
+
+    private ValueTask GuildMemberBannedEvent(GuildBanEventArgs args)
     {
-        _ = Task.Run(() => GuildMemberRemoved(guild, user));
-        return Task.CompletedTask;
+        _ = Task.Run(() => GuildMemberRemoved(args.GuildId, args.User.Id));
+        return ValueTask.CompletedTask;
     }
-    
-    private async Task GuildMemberRemoved(SocketGuild guild, SocketUser discordUser)
+
+    private async Task GuildMemberRemoved(ulong guildId, ulong userId)
     {
-        if (discordUser.IsBot) return;
-        
         Statistics.DiscordEvents.WithLabels(nameof(GuildMemberRemoved)).Inc();
-        await _guildService.DeleteGuildMember(guild.Id, discordUser.Id);
-        var guildsForUser = _guildService.FindGuildsForUser(discordUser.Id).Result;
+        _memberLookup.Invalidate(guildId, userId);
+        await _guildService.DeleteGuildMember(guildId, userId);
+        var guildsForUser = await _guildService.FindGuildsForUser(userId);
         if (guildsForUser.Count == 0)
         {
-            await _userService.DeleteUserAsync(discordUser.Id);
+            await _userService.DeleteUserAsync(userId);
         }
     }
 }
