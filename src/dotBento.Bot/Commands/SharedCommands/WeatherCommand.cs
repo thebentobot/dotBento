@@ -1,5 +1,5 @@
 using System.Globalization;
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
@@ -26,7 +26,7 @@ public sealed class WeatherCommand(
             if (weather.HasNoValue)
             {
                 embed.Embed
-                    .WithColor(Color.Red)
+                    .WithColor(new NetCord.Color(255, 0, 0))
                     .WithTitle("Error: No city saved or provided")
                     .WithDescription("You need to provide a city or save one with the weather save command\nFind the weather save command as a slash command or by trying help after calling the weather command.");
                 return embed;
@@ -36,12 +36,12 @@ public sealed class WeatherCommand(
         {
             city = userCity;
         }
-        
+
         var weatherDataResult = await weatherApiService.GetWeatherForCity(city, config.Value.OpenWeatherApiKey);
         if (weatherDataResult.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(weatherDataResult.Error);
             return embed;
@@ -49,18 +49,18 @@ public sealed class WeatherCommand(
         var weatherData = weatherDataResult.Value;
         var currentWeather = weatherData.Weather.First();
         var cultureInfo = GetCultureInfoByCountryCode(weatherData.Sys.Country);
-        
+
         var openWeatherColour = OpenWeatherColour;
-        const string openWeatherLogo = "https://pbs.twimg.com/profile_images/1173919481082580992/f95OeyEW_400x400.jpg";
-        
-        var openWeatherAuthor = new EmbedAuthorBuilder()
+        const string openWeatherLogo = "https://play-lh.googleusercontent.com/-8wkZVkXugyyke6sDPUP5xHKQMzK7Ub3ms2EK9Jr00uhf1fiMhLbqX7K9SdoxbAuhQ";
+
+        var openWeatherAuthor = new EmbedAuthorProperties()
             .WithName(userCity != null ? "OpenWeather" : username)
             .WithIconUrl(userCity != null ? openWeatherLogo : userAvatar);
 
         var lastUpdated = DateTimeOffset.FromUnixTimeSeconds(weatherData.Dt)
             .AddSeconds(weatherData.Timezone)
             .ToString(cultureInfo.DateTimeFormat.ShortTimePattern);
-        var openWeatherFooter = new EmbedFooterBuilder()
+        var openWeatherFooter = new EmbedFooterProperties()
             .WithText($"Last updated at {lastUpdated} {GetFlagEmoji(weatherData.Sys.Country)} time")
             .WithIconUrl(userCity != null ? null : openWeatherLogo);
 
@@ -74,13 +74,13 @@ public sealed class WeatherCommand(
             .WithColor(openWeatherColour)
             .WithTitle(title)
             .WithUrl($"https://openweathermap.org/city/{weatherData.Id}")
-            .WithThumbnailUrl($"https://openweathermap.org/img/w/{currentWeather.Icon}.png")
+            .WithThumbnail(new EmbedThumbnailProperties($"https://openweathermap.org/img/w/{currentWeather.Icon}.png"))
             .WithDescription(rainOrSnow + description)
             .WithTimestamp(DateTimeOffset.FromUnixTimeSeconds(weatherData.Dt));
-        
+
         return embed;
     }
-    
+
     public async Task<ResponseModel> SaveWeatherAsync(long userId, string city)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -91,7 +91,7 @@ public sealed class WeatherCommand(
             .WithDescription("You can now use the weather command without any input, if you want to instantly check the weather at your saved location \ud83d\ude0e");
         return embed;
     }
-    
+
     public async Task<ResponseModel> DeleteWeatherAsync(long userId)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -101,8 +101,8 @@ public sealed class WeatherCommand(
             .WithTitle("Your saved city was successfully deleted!");
         return embed;
     }
-    
-    private static Color OpenWeatherColour => new(0xEB6E4B);
+
+    private static NetCord.Color OpenWeatherColour => new(0xEB6E4B);
 
     private static string CreateWeatherDescription(OpenWeatherApiObject weatherData, CultureInfo cultureInfo) =>
         string.Format(
@@ -138,7 +138,7 @@ public sealed class WeatherCommand(
         var specificCulture = cultures.FirstOrDefault(culture => culture.Name.EndsWith(countryCode));
         return specificCulture?? new CultureInfo("en-US");
     }
-    
+
     private static string GetFlagEmoji(string countryCode)
     {
         const int regionalIndicatorSymbolA = 0x1F1E6;
@@ -148,7 +148,7 @@ public sealed class WeatherCommand(
             .Select(char.ConvertFromUtf32));
         return flag;
     }
-    
+
     private static string WeatherEmote(int weather)
     {
         return weather switch
@@ -171,7 +171,7 @@ public sealed class WeatherCommand(
 
     private static string GetCountryFromEnglishName(CultureInfo culture)
     {
-        var englishName = culture.EnglishName; 
+        var englishName = culture.EnglishName;
         var firstParenthesis = englishName.IndexOf('(');
         var lastParenthesis = englishName.IndexOf(')');
 
@@ -181,12 +181,12 @@ public sealed class WeatherCommand(
         }
         return "";
     }
-    
-    private static int ConvertCelsiusToFahrenheit(double celsius) 
+
+    private static int ConvertCelsiusToFahrenheit(double celsius)
     {
         return (int) Math.Round(celsius * 9 / 5 + 32);
     }
-    
+
     private static string WindDirection(double degree)
     {
         switch (degree)
@@ -218,14 +218,14 @@ public sealed class WeatherCommand(
         const int maxVisibilityInMeters = 10000;
         var visibilityPercentage = ((double)visibilityInMeters / maxVisibilityInMeters) * 100;
         var fogginessPercentage = 100 - (int)Math.Round(visibilityPercentage);
-    
+
         return fogginessPercentage;
     }
-    
+
     private static IEnumerable<string> IfRainOrSnow(OpenWeatherApiRainObject? rain, OpenWeatherApiSnowObject? snow)
     {
         var results = new List<string>();
-    
+
         if (rain is not null)
         {
             var rainString = "🌧️ ";
@@ -235,7 +235,7 @@ public sealed class WeatherCommand(
             rainString += ".\n";
             results.Add(rainString);
         }
-    
+
         if (snow is not null)
         {
             var snowString = "🌨️ ";

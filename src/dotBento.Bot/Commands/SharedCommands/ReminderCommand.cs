@@ -1,4 +1,4 @@
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -17,18 +17,18 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new NetCord.Color(50, 205, 50))
             .WithTitle("Reminder created successfully.")
             .WithDescription($"A reminder `{content}` for <t:{date.ToUnixTimeSeconds()}:R> has been created.\nRemember to have DMs enabled to receive reminders.");
         return embed;
     }
-    
+
     public async Task<ResponseModel> DeleteReminderAsync(long userId, int reminderId)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
@@ -36,18 +36,18 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new NetCord.Color(50, 205, 50))
             .WithTitle("Reminder deleted successfully.")
             .WithDescription($"Reminder with ID `{reminderId}` has been deleted.");
         return embed;
     }
-    
+
     public async Task<ResponseModel> UpdateReminderAsync(long userId, int reminderId, string? newContent, DateTimeOffset? newDate)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
@@ -55,7 +55,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
@@ -70,12 +70,12 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
             description += $"\nNew date: <t:{newDate.Value.ToUnixTimeSeconds()}:R>";
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new NetCord.Color(50, 205, 50))
             .WithTitle("Reminder updated successfully.\nRemember to have DMs enabled to receive reminders.")
             .WithDescription(description);
         return embed;
     }
-    
+
     public async Task<ResponseModel> GetReminderAsync(long userId, int reminderId)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
@@ -83,7 +83,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
@@ -95,7 +95,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
             .WithDescription($"ID: `{reminder.Id}`\nContent: `{reminder.Content}`\nDate: <t:{reminder.Date.ToUnixTimeSeconds()}:R>");
         return embed;
     }
-    
+
     public async Task<ResponseModel> GetRemindersAsync(long userId)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
@@ -103,7 +103,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
@@ -111,18 +111,17 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var reminders = result.Value;
 
         var remindersPageChunks = reminders.ChunkBy(10);
-        
+
         var pages = remindersPageChunks
             .Select(remindersPageChunk => new PageBuilder()
                 .WithColor(DiscordConstants.BentoYellow)
-                .WithFooter(new EmbedFooterBuilder()
-                    { Text = $"{reminders.Count} {(reminders.Count != 1 ? "reminders" : "reminder")} found" })
+                .WithFooter($"{reminders.Count} {(reminders.Count != 1 ? "reminders" : "reminder")} found")
                 .WithDescription(string.Join("\n", remindersPageChunk.Select(x => $"ID: `{x.Id}`\nContent: `{x.Content}`\nDate: <t:{x.Date.ToUnixTimeSeconds()}:R>")))
             ).ToList();
-        
+
         embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
-        
+
         return embed;
     }
 }

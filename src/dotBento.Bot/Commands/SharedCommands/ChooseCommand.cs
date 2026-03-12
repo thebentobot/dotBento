@@ -1,4 +1,4 @@
-using Discord;
+using NetCord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
@@ -14,25 +14,25 @@ public static class ChooseCommand
         if (!options.Contains(','))
         {
             embed.Embed.WithTitle("You need to separate options with commas")
-                .WithColor(Color.Red);
+                .WithColor(new Color(0xFF0000));
             return Task.FromResult(embed);
         }
         var listOfOptions = options.Trim().Split(",").ToList();
-        
+
         switch (listOfOptions.Count)
         {
             case < 2:
             {
                 embed.Embed.WithTitle("You need to provide at least 2 options")
                     .WithDescription($"Well obviously the choice is **{listOfOptions[0]}**, but perhaps you wanted me to choose between a few more options other than one? 🙄")
-                    .WithColor(Color.Red);
+                    .WithColor(new Color(0xFF0000));
                 break;
             }
             case > 20:
             {
                 embed.Embed.WithTitle("You need to provide less than 20 options")
                     .WithDescription($"I can't choose between {listOfOptions.Count} options, that's too many! 😱")
-                    .WithColor(Color.Red);
+                    .WithColor(new Color(0xFF0000));
                 break;
             }
             default:
@@ -45,7 +45,7 @@ public static class ChooseCommand
         }
         return Task.FromResult(embed);
     }
-    
+
     private static string ChooseOption(IReadOnlyList<string> options)
     {
         var rnd = new Random();

@@ -1,5 +1,5 @@
-using Discord;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Utilities;
@@ -9,26 +9,27 @@ namespace dotBento.Bot.Commands.SharedCommands;
 
 public sealed class AvatarCommand(StylingUtilities stylingUtilities)
 {
-    public async Task<ResponseModel> UserAvatarCommand(SocketUser user)
+    public async Task<ResponseModel> UserAvatarCommand(User user)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        var userPfpColour = await stylingUtilities.GetDominantColorAsync(user.GetAvatarUrl(ImageFormat.WebP));
-        embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(user.GlobalName)} User Profile Avatar")
+        var avatarUrl = user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
+        var userPfpColour = await stylingUtilities.GetDominantColorAsync(avatarUrl);
+        embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(user.GlobalName ?? user.Username)} User Profile Avatar")
             .WithColor(userPfpColour)
-            .WithImageUrl(user.GetAvatarUrl(size: 2048, format: ImageFormat.Auto));
+            .WithImage(new EmbedImageProperties(avatarUrl));
         return embed;
     }
-    
-    public async Task<ResponseModel> ServerAvatarCommand(SocketGuildUser user)
+
+    public async Task<ResponseModel> ServerAvatarCommand(GuildUser user)
     {
-        var name = user.Nickname ?? user.DisplayName;
-        var avatarForColour = user.GetGuildAvatarUrl(ImageFormat.WebP) ?? user.GetDisplayAvatarUrl(ImageFormat.WebP);
-        var avatarForImage = user.GetGuildAvatarUrl(size: 2048, format: ImageFormat.Auto) ?? user.GetDisplayAvatarUrl(size: 2048, format: ImageFormat.Auto);
+        var name = user.Nickname ?? user.GlobalName ?? user.Username;
+        var avatarForColour = user.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
+        var avatarForImage = user.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
         var userPfpColour = await stylingUtilities.GetDominantColorAsync(avatarForColour);
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(name)} Server Profile Avatar")
             .WithColor(userPfpColour)
-            .WithImageUrl(avatarForImage);
+            .WithImage(new EmbedImageProperties(avatarForImage));
         return embed;
     }
 }
