@@ -1,5 +1,5 @@
-using Discord;
-using Discord.Commands;
+using NetCord;
+using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
@@ -11,16 +11,15 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[Name("Remind")]
+[ModuleName("Remind")]
 public sealed class ReminderTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ReminderCommand reminderCommand) : BaseCommandModule(botSettings)
 {
-    [Command("remind", RunMode = RunMode.Async)]
+    [Command("remind", "reminder")]
     [Summary(
         "Create, delete, or update reminders for yourself by content and date. Bento will remind you at the specified date and time. Date and time should be in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00).")]
-    [Alias("reminder")]
     [Examples(
         "remind create <YYYY-MM-DDThh:mm{+|-}hh:mm> <content>",
         "remind delete <reminderId>",
@@ -28,7 +27,7 @@ public sealed class ReminderTextCommand(
         "remind list",
         "remind info <reminderId>"
     )]
-    public async Task ReminderCommand([Remainder] string? input = null)
+    public async Task ReminderCommand([CommandParameter(Remainder = true)] string? input = null)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -38,7 +37,7 @@ public sealed class ReminderTextCommand(
             return;
         }
 
-        _ = Context.Channel.TriggerTypingAsync();
+        _ = Context.Channel?.TriggerTypingStateAsync();
 
         var args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var command = args[0].ToLower();
@@ -53,7 +52,7 @@ public sealed class ReminderTextCommand(
                         ErrorEmbed("Please provide a date and content for the reminder."));
                     return;
                 }
-                
+
                 var date = args[1].ParseDateTimeOffset();
                 if (date.HasNoValue)
                 {
@@ -98,7 +97,7 @@ public sealed class ReminderTextCommand(
                         ErrorEmbed("Invalid reminder ID. Please provide a valid reminder ID."));
                     return;
                 }
-                
+
                 if (args[2].Equals("keep", StringComparison.OrdinalIgnoreCase))
                 {
                     var newContent = string.Join(' ', args[3..]);
@@ -149,12 +148,12 @@ public sealed class ReminderTextCommand(
                 break;
         }
     }
-    
+
     private static ResponseModel ErrorEmbed(string error)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         embed.Embed.WithTitle(error)
-            .WithColor(Color.Red);
+            .WithColor(new Color(0xFF0000));
         return embed;
     }
 }

@@ -1,4 +1,4 @@
-using Discord.Commands;
+using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -13,14 +13,15 @@ public sealed class WeatherTextCommand(
     InteractiveService interactiveService, WeatherCommand weatherCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("weather", RunMode = RunMode.Async)]
+    [Command("weather")]
     [Summary("Check the weather for a city, either a saved city or a city you provide")]
     [Examples("weather", "weather Copenhagen")]
-    public async Task WeatherCommand([Remainder] string? city = null)
+    public async Task WeatherCommand([CommandParameter(Remainder = true)] string? city = null)
     {
-        _ = Context.Channel.TriggerTypingAsync();
-        var username = Context.Guild is null ? Context.User.GlobalName : Context.Guild.Users.First(x => x.Id == Context.User.Id).Nickname ?? Context.User.GlobalName;
-        var userAvatar = Context.Guild is null ? Context.User.GetAvatarUrl() : Context.Guild.Users.First(x => x.Id == Context.User.Id).GetGuildAvatarUrl() ?? Context.User.GetDisplayAvatarUrl();
+        _ = Context.Channel?.TriggerTypingStateAsync();
+        var guildMember = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
+        var username = guildMember?.Nickname ?? Context.User.GlobalName;
+        var userAvatar = guildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString(1024);
         await Context.SendResponse(interactiveService, await weatherCommand.GetWeatherAsync((long)Context.User.Id, username, userAvatar, city));
     }
 }

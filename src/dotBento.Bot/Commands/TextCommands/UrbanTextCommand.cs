@@ -1,4 +1,4 @@
-using Discord.Commands;
+using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -8,18 +8,18 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[Name("Urban")]
+[ModuleName("Urban")]
 public sealed class UrbanTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     UrbanCommand urbanCommand) : BaseCommandModule(botSettings)
 {
-    [Command("urban", RunMode = RunMode.Async)]
+    [Command("urban")]
     [Summary("Search for a word on Urban Dictionary")]
     [Examples("urban poggers")]
-    public async Task UrbanCommand([Remainder] string query)
+    public async Task UrbanCommand([CommandParameter(Remainder = true)] string query)
     {
-        _ = Context.Channel.TriggerTypingAsync();
+        _ = Context.Channel?.TriggerTypingStateAsync();
         await Context.SendResponse(interactiveService, await urbanCommand.Command(query));
     }
 }
