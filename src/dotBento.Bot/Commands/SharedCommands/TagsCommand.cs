@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
-using Discord;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -19,7 +19,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (content.MessageContent == null && content.Attachments.Length == 0)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription("Tag content cannot be empty.\nPlease provide message content or attachment.");
             return embed;
@@ -36,7 +36,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (name.Contains(' '))
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription("Tag name cannot contain spaces.");
             return embed;
@@ -45,14 +45,14 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
 
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new Color(50, 205, 50))
             .WithTitle($"The tag \"{name}\" has been created successfully");
         return embed;
     }
@@ -64,14 +64,14 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
 
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new Color(50, 205, 50))
             .WithTitle($"The tag \"{name}\" has been deleted successfully");
         return embed;
     }
@@ -82,7 +82,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (tagContent.MessageContent == null && tagContent.Attachments.Length == 0)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription("Tag content cannot be empty.\nPlease provide message content or attachment.");
             return embed;
@@ -92,7 +92,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (existingTag.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(existingTag.Error);
             return embed;
@@ -110,14 +110,14 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
 
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new Color(50, 205, 50))
             .WithTitle($"The tag \"{name}\" has been updated successfully");
         return embed;
     }
@@ -128,7 +128,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (newName.Contains(' '))
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription("Tag name cannot contain spaces.");
             return embed;
@@ -137,14 +137,14 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
         }
 
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(new Color(50, 205, 50))
             .WithTitle($"The tag \"{oldName}\" has successfully been renamed to \"{newName}\"");
         return embed;
     }
@@ -156,7 +156,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         {
             var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
             errorEmbed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return errorEmbed;
@@ -177,7 +177,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         {
             var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
             errorEmbed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return errorEmbed;
@@ -190,7 +190,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         await tagCommands.IncrementTagUsageAsync(result.Value.TagId);
         return resultEmbed;
     }
-    
+
     public async Task<Maybe<ResponseModel>> MaybeFindTagAsync(long guildId, string name)
     {
         var result = await tagCommands.FindTagAsync(guildId, name);
@@ -207,7 +207,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         return resultEmbed;
     }
 
-    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<SocketGuildUser> author)
+    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<GuildUser> author)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Paginator };
         var authorId = author.HasValue ? (long)author.Value.Id : Maybe<long>.None;
@@ -215,33 +215,44 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
-                .WithDescription(result.Error);
+                .WithDescription("Something went wrong while fetching tags. Please try again later.");
+            embed.ResponseType = ResponseType.Embed;
+            return embed;
+        }
+        if (result.Value.Count == 0)
+        {
+            embed.Embed
+                .WithColor(DiscordConstants.BentoYellow)
+                .WithTitle("No tags found")
+                .WithDescription(author.HasValue
+                    ? "This user has not created any tags on this server yet."
+                    : "This server has no tags yet. Create one with `/tag create`.");
             embed.ResponseType = ResponseType.Embed;
             return embed;
         }
         var tags = result.Value;
 
         var tagsPageChunks = tags.ChunkBy(10);
-        
+
         var title = top ? "Top Tags" : "Tags";
-        
+
         var pages = tagsPageChunks
             .Select(tagsPageChunk =>
             {
                 if (!author.HasValue)
                     return new PageBuilder().WithTitle(title)
                         .WithColor(DiscordConstants.BentoYellow)
-                        .WithFooter(new EmbedFooterBuilder()
-                            { Text = $"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found" })
+                        .WithFooter($"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found")
                         .WithDescription(string.Join("\n", tagsPageChunk.Select(x => x.Command)));
                 {
-                    var embedAuthor = new EmbedAuthorBuilder
-                    {
-                        Name = author.Value.DisplayName,
-                        IconUrl = author.Value.GetDisplayAvatarUrl()
-                    };
+                    var authorUser = author.Value;
+                    var authorDisplayName = authorUser.Nickname ?? authorUser.GlobalName ?? authorUser.Username;
+                    var authorAvatarUrl = authorUser.GetGuildAvatarUrl()?.ToString(1024) ?? authorUser.GetAvatarUrl()?.ToString(1024);
+                    var embedAuthor = new EmbedAuthorProperties()
+                        .WithName(authorDisplayName)
+                        .WithIconUrl(authorAvatarUrl);
                     return new PageBuilder().WithTitle(title)
                         .WithAuthor(embedAuthor)
                         .WithColor(DiscordConstants.BentoYellow)
@@ -252,7 +263,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
 
         embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
-        
+
         return embed;
     }
 
@@ -263,7 +274,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (result.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
                 .WithDescription(result.Error);
             return embed;
@@ -296,29 +307,42 @@ public sealed class TagsCommand(TagCommands tagCommands)
         if (tagsResults.IsFailure)
         {
             embed.Embed
-                .WithColor(Color.Red)
+                .WithColor(new Color(255, 0, 0))
                 .WithTitle("Error")
-                .WithDescription(tagsResults.Error);
+                .WithDescription("Something went wrong while searching tags. Please try again later.");
+            embed.ResponseType = ResponseType.Embed;
+            return embed;
+        }
+        if (tagsResults.Value.Count == 0)
+        {
+            var anyTags = await tagCommands.FindTagsAsync(guildId, false, Maybe<long>.None);
+            var hasAnyTags = anyTags.IsSuccess && anyTags.Value.Count > 0;
+            embed.Embed
+                .WithColor(DiscordConstants.BentoYellow)
+                .WithTitle("No tags found")
+                .WithDescription(hasAnyTags
+                    ? $"No tags match \"{query}\" on this server."
+                    : "This server has no tags yet. Create one with `/tag create`.");
             embed.ResponseType = ResponseType.Embed;
             return embed;
         }
         var tags = tagsResults.Value;
-        
+
         var tagsPageChunks = tags.ChunkBy(10);
-        
+
         var pages = tagsPageChunks
             .Select(tagsPageChunk =>
             {
                 return new PageBuilder().WithTitle("Search Results")
                     .WithColor(DiscordConstants.BentoYellow)
-                    .WithFooter(new EmbedFooterBuilder(){Text = $"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found"})
+                    .WithFooter($"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found")
                     .WithDescription(string.Join("\n", tagsPageChunk.Select(x => x.Command)));
             })
             .ToList();
-        
+
         embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
-        
+
         return embed;
     }
 }
