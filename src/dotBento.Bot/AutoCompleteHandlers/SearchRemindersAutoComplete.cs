@@ -1,36 +1,35 @@
-using Discord;
-using Discord.Interactions;
+using NetCord;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
 using dotBento.Domain.Entities;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchRemindersAutoComplete(ReminderCommands reminderCommands) : AutocompleteHandler
+public sealed class SearchRemindersAutoComplete(ReminderCommands reminderCommands) : IAutocompleteProvider<AutocompleteInteractionContext>
 {
-    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
-        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
+    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>> GetChoicesAsync(
+        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
     {
         var results = new List<string>();
         var reminders = await reminderCommands.GetRemindersAsync((long)context.User.Id);
         if (reminders.IsFailure)
         {
-            return await Task.FromResult(AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
+            return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
         }
-        
-        if (autocompleteInteraction.Data?.Current?.Value == null ||
-            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
+
+        if (option.Value == null || string.IsNullOrWhiteSpace(option.Value.ToString()))
         {
             results.ReplaceOrAddToList(reminders.Value.Select(CreateReminderString));
         }
         else
         {
-            var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
+            var searchValue = option.Value.ToString();
             results.ReplaceOrAddToList(reminders.Value.Where(x => x.Content.StartsWith(searchValue ?? "")).Select(CreateReminderString));
         }
 
-        return await Task.FromResult(
-            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
+        return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
     }
 
     private static string CreateReminderString(Reminder reminder) =>
