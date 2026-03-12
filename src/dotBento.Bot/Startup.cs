@@ -1,9 +1,8 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.Interactions;
-using Discord.WebSocket;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using DotNetEnv;
 using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.TypeReaders;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
@@ -21,13 +20,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.Commands;
+using NetCord.Services.ComponentInteractions;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Sinks.Discord;
 using Serilog.Sinks.Grafana.Loki;
 using BackgroundService = dotBento.Bot.Services.BackgroundService;
-using RunMode = Discord.Commands.RunMode;
 
 namespace dotBento.Bot;
 
@@ -66,14 +71,14 @@ public sealed class Startup
 
         return null;
     }
-    
+
     public static async Task RunAsync(string[] args)
     {
         var startup = new Startup();
 
         await startup.RunAsync();
     }
-    
+
     private async Task RunAsync()
     {
         var environment = Configuration["Environment"] ?? "local";
@@ -138,21 +143,30 @@ public sealed class Startup
 
         var services = new ServiceCollection();
         ConfigureServices(services);
-        
+
         var provider = services.BuildServiceProvider();
+
+        // Hook GatewayClient.InteractionCreate into InteractiveService.
+        // See CreateInteractiveService for why this is done via reflection.
+        var gatewayClient = provider.GetRequiredService<GatewayClient>();
+        var interactiveService = provider.GetRequiredService<InteractiveService>();
+        var interactionCreatedMethod = typeof(InteractiveService)
+            .GetMethod("InteractionCreated", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        gatewayClient.InteractionCreate += interaction =>
+            (ValueTask)interactionCreatedMethod.Invoke(interactiveService, [gatewayClient, interaction])!;
+
         provider.GetRequiredService<MessageHandler>();
         provider.GetRequiredService<InteractionHandler>();
-        provider.GetRequiredService<ClientLogHandler>();
         provider.GetRequiredService<UserUpdateHandler>();
         provider.GetRequiredService<GuildMemberUpdateHandler>();
         provider.GetRequiredService<GuildMemberRemoveHandler>();
         provider.GetRequiredService<ClientJoinedGuildHandler>();
         provider.GetRequiredService<ClientLeftGuildHandler>();
-        
+
         await provider.GetRequiredService<BotService>().StartAsync();
-        
+
         using var server = new BackgroundJobServer();
-        
+
         await Task.Delay(-1);
     }
 
@@ -160,42 +174,40 @@ public sealed class Startup
     {
         services.Configure<BotEnvConfig>(Configuration);
 
-        var discordClient = new DiscordSocketClient(new DiscordSocketConfig
-        {
-            // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
-                             GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
-                             GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
-            FormatUsersInBidirectionalUnicode = false,
-            AlwaysDownloadUsers = true,
-            LogGatewayIntentWarnings = true,
-            LogLevel = LogSeverity.Info,
-            MessageCacheSize = 0,
-        });
+        // Read the discord token to create the client
+        var discordToken = Configuration["Discord:Token"]
+            ?? throw new InvalidOperationException("Discord:Token environment variable not set.");
+
+        var discordClient = new GatewayClient(
+            new BotToken(discordToken),
+            new GatewayClientConfiguration
+            {
+                // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
+                Intents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
+                          GatewayIntents.GuildMessageReactions | GatewayIntents.GuildUsers |
+                          GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions
+            });
 
         services
             .AddSingleton(discordClient)
             .AddSingleton<IDiscordUserResolver, DiscordUserResolver>()
             .AddSingleton<IDmSender, DmSender>()
-            .AddSingleton(new CommandService(new CommandServiceConfig
-            {
-                LogLevel = LogSeverity.Info,
-                DefaultRunMode = RunMode.Async
-            }))
-            .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
-                new InteractionServiceConfig()
+            .AddSingleton(new CommandService<CommandContext>())
+            .AddSingleton(new ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext>(
+                ApplicationCommandServiceConfiguration<ApplicationCommandContext>.Default with
                 {
-                    LogLevel = LogSeverity.Info,
-                    DefaultRunMode = Discord.Interactions.RunMode.Async
+                    EnumTypeReader = new LenientEnumSlashCommandTypeReader<ApplicationCommandContext>()
                 }))
+            .AddSingleton<ComponentInteractionService<ComponentInteractionContext>>()
+            .AddSingleton<ComponentInteractionService<ModalInteractionContext>>()
             .AddSingleton<UserService>()
-            .AddSingleton<InteractiveService>()
+            .AddSingleton<InteractiveService>(CreateInteractiveService)
             .AddSingleton<GuildService>()
+            .AddSingleton<GuildMemberLookupService>()
             .AddSingleton<IPrefixService, PrefixService>()
             .AddSingleton<SupporterService>()
             .AddSingleton<BackgroundService>()
             .AddSingleton<MessageHandler>()
-            .AddSingleton<ClientLogHandler>()
             .AddSingleton<ClientJoinedGuildHandler>()
             .AddSingleton<ClientLeftGuildHandler>()
             .AddSingleton<GuildMemberRemoveHandler>()
@@ -239,7 +251,7 @@ public sealed class Startup
             .AddSingleton(Configuration);
 
         services.AddSingleton<InteractionHandler>();
-        
+
         services.AddHttpClient<BotListService>();
         services.AddHttpClient<StylingUtilities>();
         services.AddHttpClient<UrbanDictionaryService>();
@@ -253,18 +265,18 @@ public sealed class Startup
         });
         services.AddSingleton<MediaCommand>()
             .AddSingleton<MediaRateLimitService>();
-        
+
         services.AddHttpClient<SpotifyApiService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         });
 
         services.AddHealthChecks();
-        
-        services.AddDbContextFactory<BotDbContext>(b => 
+
+        services.AddDbContextFactory<BotDbContext>(b =>
             b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
                 builder.Log(RelationalEventId.PendingModelChangesWarning)));
-        
+
         // Configure shared distributed cache (Valkey/Redis) for cross-process caching. Fail if not configured.
         var distributedCacheConnection = Configuration["Valkey:ConnectionString"]
             ?? Configuration["Redis:ConnectionString"]
@@ -281,11 +293,46 @@ public sealed class Startup
         {
             throw new InvalidOperationException("Valkey/Redis connection string is not configured. Set Valkey:ConnectionString (env: VALKEY__CONNECTIONSTRING) or Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable the shared cache.");
         }
-        
+
         // Keep IMemoryCache for local per-process caching used elsewhere
         services.AddMemoryCache();
     }
-    
+
+    /// <summary>
+    /// Creates an <see cref="InteractiveService"/> without its constructor to avoid the
+    /// <see cref="NetCord.Gateway.ShardedGatewayClient"/> dependency.
+    /// Fergun.Interactive.NetCord 0.1.1 only exposes constructors that accept ShardedGatewayClient,
+    /// but dotBento uses a single-shard GatewayClient. We bypass the constructor via
+    /// RuntimeHelpers.GetUninitializedObject and wire up the GatewayClient.InteractionCreate event
+    /// separately in RunAsync.
+    /// </summary>
+    private static InteractiveService CreateInteractiveService(IServiceProvider _)
+    {
+        var service = (InteractiveService)RuntimeHelpers.GetUninitializedObject(typeof(InteractiveService));
+        var t = typeof(InteractiveService);
+
+        // _client: not needed — we subscribe GatewayClient.InteractionCreate manually in RunAsync
+        t.GetField("_client", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(service, null!);
+
+        // _logger: use NullLogger since Serilog is wired statically, not via ILogger<T>
+        t.GetField("_logger", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(service, NullLogger<InteractiveService>.Instance);
+
+        // _callbacks and _filteredCallbacks: standard ConcurrentDictionary instances
+        var callbacksField = t.GetField("_callbacks", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        callbacksField.SetValue(service, Activator.CreateInstance(callbacksField.FieldType)!);
+
+        var filteredField = t.GetField("_filteredCallbacks", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        filteredField.SetValue(service, Activator.CreateInstance(filteredField.FieldType)!);
+
+        // _options: default options
+        t.GetField("_options", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(service, new InteractiveServiceOptions());
+
+        return service;
+    }
+
     private static void AppUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is not Exception exception) return;
@@ -296,7 +343,7 @@ public sealed class Startup
             Log.CloseAndFlush();
         }
     }
-    
+
     private static void UnhandledExceptions(Exception e)
     {
         Log.Logger.Error(e, "dotbento crashed");

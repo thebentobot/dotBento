@@ -1,8 +1,8 @@
 using System.Reflection;
-using Discord;
-using Discord.Commands;
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.Commands;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.Domain;
@@ -18,17 +18,16 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public sealed class BotService(DiscordSocketClient client,
-    InteractionService interactions,
+public sealed class BotService(GatewayClient client,
+    ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> interactions,
     IDbContextFactory<BotDbContext> contextFactory,
     UserService userService,
     IPrefixService prefixService,
-    CommandService commands,
+    CommandService<CommandContext> commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
 {
-    
     public async Task StartAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -42,64 +41,71 @@ public sealed class BotService(DiscordSocketClient client,
             Log.Error(e, "Something went wrong while creating/updating the database!");
             throw;
         }
-    
+
         Log.Information("Loading all prefixes");
         await prefixService.LoadAllPrefixes();
-    
+
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
                            throw new InvalidOperationException("Discord:Token environment variable not set.");
-    
+
         Log.Information("Loading command modules");
-        await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+        commands.AddModules(Assembly.GetEntryAssembly()!);
 
         Log.Information("Loading interaction modules");
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
-    
+        interactions.AddModules(Assembly.GetEntryAssembly()!);
+
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
-    
-        Log.Information("Logging into Discord");
-        await client.LoginAsync(TokenType.Bot, discordToken);
-    
+
+        client.Ready += OnReadyAsync;
+
+        Log.Information("Connecting to Discord");
         await client.StartAsync();
-    
+
         await backgroundService.UpdateMetrics();
         InitializeHangfireConfig();
         backgroundService.QueueJobs();
-    
+
         StartMetricsPusher();
 
         await CacheDiscordUserIds();
+    }
 
-        client.Ready += async () =>
-        {
-            Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
+    private async ValueTask OnReadyAsync(ReadyEventArgs args)
+    {
+        Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
 
-            // Activate Discord channel logging sink now that client is ready
-            DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+        // Activate Discord channel logging sink now that client is ready
+        DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
 
-            await RegisterSlashCommands();
-            await CacheSlashCommandIds();
-        };
+        await RegisterSlashCommands();
+        await CacheSlashCommandIds();
     }
 
     // public instead of private because of Hangfire BackgroundJob
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task RegisterSlashCommands()
     {
+        var applicationId = client.Cache.User?.Id ?? throw new InvalidOperationException("Bot user ID not available");
         Log.Information("Starting slash command registration");
 
 #if DEBUG
         Log.Information("Registering slash commands to guild");
         // TODO: Make this an env var for development discord server
-        await interactions.RegisterCommandsToGuildAsync(790353119795871744);
+        var registered = await interactions.RegisterCommandsAsync(client.Rest, applicationId, guildId: 790353119795871744UL);
 #else
         Log.Information("Registering slash commands globally");
-        await interactions.RegisterCommandsGloballyAsync();
+        var registered = await interactions.RegisterCommandsAsync(client.Rest, applicationId);
 #endif
+        foreach (var cmd in registered)
+        {
+            Log.Information("Registered command: {Name}", cmd.Name);
+            foreach (var opt in cmd.Options ?? [])
+                Log.Debug("  option: {Name} ({Type})", opt.Name, opt.Type);
+        }
     }
-    
+
     private void StartMetricsPusher()
     {
         var environment = config.Value.Environment;
@@ -132,7 +138,7 @@ public sealed class BotService(DiscordSocketClient client,
 
         Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
     }
-    
+
     private static void PrepareCacheFolder()
     {
         var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
@@ -148,7 +154,12 @@ public sealed class BotService(DiscordSocketClient client,
     {
         try
         {
-            var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommands();
+            var applicationId = client.Cache.User?.Id ?? throw new InvalidOperationException("Bot user ID not available");
+#if DEBUG
+            var globalApplicationCommands = await client.Rest.GetGuildApplicationCommandsAsync(applicationId, 790353119795871744UL);
+#else
+            var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommandsAsync(applicationId);
+#endif
             Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
 
             foreach (var cmd in globalApplicationCommands)
@@ -164,7 +175,7 @@ public sealed class BotService(DiscordSocketClient client,
                 }
             }
         }
-        catch (Discord.Net.HttpException ex) when (ex.HttpCode == System.Net.HttpStatusCode.BadRequest)
+        catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             Log.Error("Invalid Form Body: Check command ID formatting or other parameters. Details: {Exception}", ex);
         }
@@ -173,7 +184,7 @@ public sealed class BotService(DiscordSocketClient client,
             Log.Error(ex, "Exception occurred while caching slash command IDs");
         }
     }
-    
+
     private async Task CacheDiscordUserIds()
     {
         var users = await userService.GetAllDiscordUserIds();
@@ -184,7 +195,7 @@ public sealed class BotService(DiscordSocketClient client,
             PublicProperties.RegisteredUsers.TryAdd((ulong)user.UserId, (int)user.UserId);
         }
     }
-    
+
     private void InitializeHangfireConfig()
     {
         GlobalConfiguration.Configuration
