@@ -1,7 +1,6 @@
-using Discord.WebSocket;
+using NetCord.Gateway;
 using Serilog;
 using Serilog.Configuration;
-using Serilog.Core;
 using Serilog.Events;
 
 namespace dotBento.Bot.Logging;
@@ -39,8 +38,8 @@ public static class DiscordChannelSinkExtensions
     /// Activates the Discord channel sink with the given client.
     /// Call this when the Discord client is ready.
     /// </summary>
-    /// <param name="client">The Discord socket client.</param>
-    public static void ActivateDiscordChannelSink(DiscordSocketClient client)
+    /// <param name="client">The NetCord gateway client.</param>
+    public static void ActivateDiscordChannelSink(GatewayClient client)
     {
         lock (Lock)
         {
