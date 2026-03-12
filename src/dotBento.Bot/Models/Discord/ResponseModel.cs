@@ -1,4 +1,4 @@
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Domain.Enums;
 using Fergun.Interactive.Pagination;
@@ -26,7 +26,7 @@ public sealed class ResponseModel
                 throw new ArgumentException("StaticPaginator must not be null when ResponseType is Paginator");
             case ResponseType.Text when string.IsNullOrEmpty(text):
                 throw new ArgumentException("Text must not be null or empty when ResponseType is Text");
-            case ResponseType.ImageWithEmbed or ResponseType.ImageOnly 
+            case ResponseType.ImageWithEmbed or ResponseType.ImageOnly
             when (stream == null || string.IsNullOrEmpty(fileName)):
                 throw new ArgumentException("Stream and FileName must not be null when ResponseType is ImageWithEmbed or ImageOnly");
         }
@@ -39,14 +39,14 @@ public sealed class ResponseModel
 
     public ResponseModel()
     {
-        
+
     }
 
-    public EmbedAuthorBuilder EmbedAuthor { get; set; } = new();
-    public EmbedBuilder Embed { get; set; } = new();
-    public EmbedFooterBuilder EmbedFooter { get; set; } = new();
-    public ComponentBuilder? Components { get; set; }
-    
+    public EmbedAuthorProperties EmbedAuthor { get; set; } = new();
+    public EmbedProperties Embed { get; set; } = new();
+    public EmbedFooterProperties EmbedFooter { get; set; } = new();
+    public List<ActionRowProperties>? Components { get; set; }
+
     /// <summary>
     /// Gets or sets the response type.
     /// </summary>
@@ -56,7 +56,7 @@ public sealed class ResponseModel
     /// If this property is set to <see cref="ResponseType.ImageWithEmbed"/> or <see cref="ResponseType.ImageOnly"/>, ensure to set the <see cref="Stream"/> and <see cref="FileName"/> properties.
     /// </remarks>
     public ResponseType ResponseType { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the Stream property.
     /// </summary>
@@ -64,7 +64,7 @@ public sealed class ResponseModel
     /// For <see cref="ResponseType.ImageWithEmbed"/> or <see cref="ResponseType.ImageOnly"/>, this property should not be null.
     /// </remarks>
     public Stream? Stream { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the FileName property.
     /// </summary>
@@ -73,7 +73,7 @@ public sealed class ResponseModel
     /// </remarks>
     public string? FileName { get; set; }
     public bool Spoiler { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets the Text property.
     /// </summary>
@@ -81,7 +81,7 @@ public sealed class ResponseModel
     /// For <see cref="ResponseType.Text"/>, this property must not be null or empty.
     /// </remarks>
     public string? Text { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the StaticPaginator property.
     /// </summary>
