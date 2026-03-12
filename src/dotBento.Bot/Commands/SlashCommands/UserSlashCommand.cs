@@ -1,20 +1,22 @@
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-[Group("user", "Commands for Discord Users")]
-public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+[SlashCommand("user", "Commands for Discord Users")]
+public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService, GuildMemberLookupService memberLookup)
+    : ApplicationCommandModule<ApplicationCommandContext>
 {
-    [SlashCommand("info", "Show info for a user")]
-    public async Task InfoCommand([Summary("user", "Pick a User")] SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")] bool? hide = null)
+    [SubSlashCommand("info", "Show info for a user")]
+    public async Task InfoCommand([SlashCommandParameter(Name = "user", Description = "Pick a User")] User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")] bool? hide = null)
     {
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
@@ -22,26 +24,28 @@ public sealed class UserSlashCommand(InteractiveService interactiveService, User
     }
 
     [GuildOnly]
-    [SlashCommand("profile", "Show a user's Bento profile")]
-    public async Task ProfileCommand([Summary("user", "Pick a User")] SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+    [SubSlashCommand("profile", "Show a user's Bento profile")]
+    public async Task ProfileCommand([SlashCommandParameter(Name = "user", Description = "Pick a User")] User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await Context.DeferResponseAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
-        var guildMember = Context.Guild.Users.First(x => x.Id == user.Id);
-        var botPfp = Context.Client.CurrentUser.GetDisplayAvatarUrl();
+        var guildMember = Context.Guild is not null
+            ? await memberLookup.GetOrFetchAsync(Context.Guild.Id, user.Id, Context.Guild)
+            : null;
+        var botPfp = Context.Client.Cache.User?.GetAvatarUrl()?.ToString(1024);
         await Context.SendFollowUpResponse(interactiveService,
             await userCommand.GetProfileAsync((long)user.Id,
-                (long)Context.Guild.Id,
+                (long)Context.Guild!.Id,
                 guildMember,
-                Context.Guild.MemberCount,
+                Context.Guild?.UserCount ?? 0,
                 botPfp),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("settings", "View and manage your personal settings")]
+    [SubSlashCommand("settings", "View and manage your personal settings")]
     public async Task SettingsCommand() =>
         await Context.SendResponse(interactiveService,
             await settingsCommand.GetUserSettingsAsync((long)Context.User.Id),
