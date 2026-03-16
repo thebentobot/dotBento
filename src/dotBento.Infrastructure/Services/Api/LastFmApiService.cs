@@ -14,7 +14,13 @@ namespace dotBento.Infrastructure.Services.Api;
 public sealed class LastFmApiService(HttpClient httpClient)
 {
     private const string ApiUrl = "https://ws.audioscrobbler.com/2.0/";
-    
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
     public async Task<Result<RecentTracksResponse>> GetRecentTracks(string lastFmUsername, string apiKey, int? limit = 50)
     {
         var parameters = new Dictionary<string, string?>
@@ -26,27 +32,22 @@ public sealed class LastFmApiService(HttpClient httpClient)
             { "limit", limit?.ToString() }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString(ApiUrl, parameters));
 
         if (!response.IsSuccessStatusCode)
         {
             return Result.Failure<RecentTracksResponse>(LastFmApiError((int)response.StatusCode, lastFmUsername));
         }
-        
+
         Statistics.LastfmApiCalls.WithLabels(ApiMethod.RecentTracks).Inc();
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<RecentTracksResponse>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<RecentTracksResponse>(responseContent, JsonOptions);
 
         return responseModel != null ? Result.Success(responseModel) : Result.Failure<RecentTracksResponse>("Could not deserialize the response from lastfm. It might be down.");
     }
-    
+
     public async Task<Result<TopTracksResponse>> GetTopTracks(string lastFmUsername, string apiKey, string period, int? limit = 50)
     {
         var parameters = new Dictionary<string, string?>
@@ -59,7 +60,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
             { "period", period }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString(ApiUrl, parameters));
 
         if (!response.IsSuccessStatusCode)
@@ -68,12 +69,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<TopTracksResponse>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<TopTracksResponse>(responseContent, JsonOptions);
 
         if (responseModel == null)
         {
@@ -88,7 +84,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
 
         return Result.Success(responseModel);
     }
-    
+
     public async Task<Result<TopAlbumsResponse>> GetTopAlbums(string lastFmUsername, string apiKey, string period, int? limit = 50)
     {
         var parameters = new Dictionary<string, string?>
@@ -101,7 +97,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
             { "period", period }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString(ApiUrl, parameters));
 
         if (!response.IsSuccessStatusCode)
@@ -110,12 +106,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<TopAlbumsResponse>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<TopAlbumsResponse>(responseContent, JsonOptions);
 
         if (responseModel == null)
         {
@@ -130,7 +121,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
 
         return Result.Success(responseModel);
     }
-    
+
     public async Task<Result<TopArtistsResponse>> GetTopArtists(string lastFmUsername, string apiKey, string period, int? limit = 50)
     {
         var parameters = new Dictionary<string, string?>
@@ -143,7 +134,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
             { "period", period }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString(ApiUrl, parameters));
 
         if (!response.IsSuccessStatusCode)
@@ -152,12 +143,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<TopArtistsResponse>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<TopArtistsResponse>(responseContent, JsonOptions);
 
         if (responseModel == null)
         {
@@ -171,7 +157,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
 
         return Result.Success(responseModel);
     }
-    
+
     public async Task<Result<UserInfoResponse>> GetUserInfo(string lastFmUsername, string apiKey)
     {
         var parameters = new Dictionary<string, string?>
@@ -182,7 +168,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
             { "format", "json" }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString(ApiUrl, parameters));
 
         if (!response.IsSuccessStatusCode)
@@ -191,12 +177,7 @@ public sealed class LastFmApiService(HttpClient httpClient)
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<UserInfoResponse>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<UserInfoResponse>(responseContent, JsonOptions);
 
         if (responseModel == null)
         {
