@@ -1,3 +1,4 @@
+using System.Reflection;
 using NetCord;
 using NetCord.Gateway;
 using NetCord.Rest;
@@ -84,9 +85,7 @@ public sealed class InteractionHandler
 
             await EnsureGuildAndUserExists(context);
 
-            var keepGoing = await CheckAttributes(context, slashCommand.Data.Options?.GetType().GetCustomAttributes(true).OfType<Attribute>().ToList());
-
-            if (!keepGoing)
+            if (!await CheckGuildOnly(context, slashCommand))
             {
                 return;
             }
@@ -124,13 +123,6 @@ public sealed class InteractionHandler
         var context = new ApplicationCommandContext(userCommand, client);
 
         await EnsureGuildAndUserExists(context);
-
-        var keepGoing = await CheckAttributes(context, null);
-
-        if (!keepGoing)
-        {
-            return;
-        }
 
         var result = await _appCommands.ExecuteAsync(context, _provider);
 
@@ -201,23 +193,111 @@ public sealed class InteractionHandler
         }
     }
 
-    private async Task<bool> CheckAttributes(ApplicationCommandContext context, IReadOnlyCollection<Attribute>? attributes)
+    /// <summary>
+    /// Checks whether the slash command method is decorated with <see cref="GuildOnly"/> and,
+    /// if so, ensures the interaction was sent from a guild. Returns false (and sends an
+    /// ephemeral reply) when the command requires a guild but <c>context.Guild</c> is null.
+    /// </summary>
+    private async Task<bool> CheckGuildOnly(ApplicationCommandContext context, SlashCommandInteraction slashCommand)
     {
-        if (attributes == null)
+        if (context.Guild != null)
         {
             return true;
         }
-        if (attributes.OfType<GuildOnly>().Any())
+
+        // Resolve the command name chain (e.g. "user profile" → parent "user", sub "profile")
+        var commandName = slashCommand.Data.Name;
+        var subCommandName = slashCommand.Data.Options?
+            .FirstOrDefault(o => o.Type is ApplicationCommandOptionType.SubCommand
+                                        or ApplicationCommandOptionType.SubCommandGroup)?.Name;
+
+        // Search all registered ApplicationCommandModule types for the matching method
+        var moduleTypes = Assembly.GetEntryAssembly()!
+            .GetTypes()
+            .Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ApplicationCommandModule<ApplicationCommandContext>)));
+
+        foreach (var moduleType in moduleTypes)
         {
-            if (context.Guild != null) return true;
-            await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                new InteractionMessageProperties()
-                    .WithContent("This command is not supported in DMs.")
-                    .WithFlags(MessageFlags.Ephemeral)));
-            context.LogCommandUsed(CommandResponse.NotSupportedInDm);
-            return false;
+            // Check if this module is the top-level command
+            var slashAttr = moduleType.GetCustomAttribute<SlashCommandAttribute>();
+            if (slashAttr == null || !string.Equals(slashAttr.Name, commandName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (subCommandName == null)
+            {
+                // Top-level command — check the module class itself
+                if (moduleType.GetCustomAttribute<GuildOnly>() != null)
+                {
+                    return await SendNotSupportedInDm(context);
+                }
+                return true;
+            }
+
+            // Check methods on this module for the sub-command
+            foreach (var method in moduleType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var subAttr = method.GetCustomAttribute<SubSlashCommandAttribute>();
+                if (subAttr != null && string.Equals(subAttr.Name, subCommandName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (method.GetCustomAttribute<GuildOnly>() != null)
+                    {
+                        return await SendNotSupportedInDm(context);
+                    }
+                    return true;
+                }
+            }
+
+            // Check nested classes (sub-command groups) for the sub-command
+            foreach (var nestedType in moduleType.GetNestedTypes())
+            {
+                var nestedSlashAttr = nestedType.GetCustomAttribute<SubSlashCommandAttribute>();
+                if (nestedSlashAttr == null)
+                    continue;
+
+                if (string.Equals(nestedSlashAttr.Name, subCommandName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (nestedType.GetCustomAttribute<GuildOnly>() != null)
+                    {
+                        return await SendNotSupportedInDm(context);
+                    }
+
+                    // Check methods within the nested group for a further sub-command
+                    var subSubName = slashCommand.Data.Options?
+                        .FirstOrDefault(o => o.Type is ApplicationCommandOptionType.SubCommand
+                                                    or ApplicationCommandOptionType.SubCommandGroup)?
+                        .Options?.FirstOrDefault(o => o.Type is ApplicationCommandOptionType.SubCommand)?.Name;
+
+                    if (subSubName != null)
+                    {
+                        foreach (var method in nestedType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                        {
+                            var subSubAttr = method.GetCustomAttribute<SubSlashCommandAttribute>();
+                            if (subSubAttr != null && string.Equals(subSubAttr.Name, subSubName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (method.GetCustomAttribute<GuildOnly>() != null)
+                                {
+                                    return await SendNotSupportedInDm(context);
+                                }
+                                return true;
+                            }
+                        }
+                    }
+
+                    return true;
+                }
+            }
         }
 
         return true;
+    }
+
+    private static async Task<bool> SendNotSupportedInDm(ApplicationCommandContext context)
+    {
+        await context.Interaction.SendResponseAsync(InteractionCallback.Message(
+            new InteractionMessageProperties()
+                .WithContent("This command is not supported in DMs.")
+                .WithFlags(MessageFlags.Ephemeral)));
+        context.LogCommandUsed(CommandResponse.NotSupportedInDm);
+        return false;
     }
 }
