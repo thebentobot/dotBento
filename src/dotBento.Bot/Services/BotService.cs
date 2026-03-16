@@ -5,10 +5,8 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
-using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Interfaces;
-using dotBento.Infrastructure.Services;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.EntityFrameworkCore;
@@ -21,14 +19,14 @@ namespace dotBento.Bot.Services;
 public sealed class BotService(DiscordSocketClient client,
     InteractionService interactions,
     IDbContextFactory<BotDbContext> contextFactory,
-    UserService userService,
     IPrefixService prefixService,
     CommandService commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
 {
-    
+    private MetricPusher? _metricPusher;
+
     public async Task StartAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -42,35 +40,36 @@ public sealed class BotService(DiscordSocketClient client,
             Log.Error(e, "Something went wrong while creating/updating the database!");
             throw;
         }
-    
-        Log.Information("Loading all prefixes");
-        await prefixService.LoadAllPrefixes();
-    
+
+        // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
+        // Re-enable these (and the command parsing in MessageHandler) when the intent is granted.
+        // Log.Information("Loading all prefixes");
+        // await prefixService.LoadAllPrefixes();
+
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
                            throw new InvalidOperationException("Discord:Token environment variable not set.");
-    
-        Log.Information("Loading command modules");
-        await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+
+        // TODO: Re-enable when MessageContent intent is granted (see above).
+        // Log.Information("Loading command modules");
+        // await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Loading interaction modules");
         await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
-    
+
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
-    
+
         Log.Information("Logging into Discord");
         await client.LoginAsync(TokenType.Bot, discordToken);
-    
+
         await client.StartAsync();
-    
+
         await backgroundService.UpdateMetrics();
         InitializeHangfireConfig();
         backgroundService.QueueJobs();
-    
-        StartMetricsPusher();
 
-        await CacheDiscordUserIds();
+        StartMetricsPusher();
 
         client.Ready += async () =>
         {
@@ -80,7 +79,6 @@ public sealed class BotService(DiscordSocketClient client,
             DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
 
             await RegisterSlashCommands();
-            await CacheSlashCommandIds();
         };
     }
 
@@ -99,7 +97,7 @@ public sealed class BotService(DiscordSocketClient client,
         await interactions.RegisterCommandsGloballyAsync();
 #endif
     }
-    
+
     private void StartMetricsPusher()
     {
         var environment = config.Value.Environment;
@@ -122,17 +120,17 @@ public sealed class BotService(DiscordSocketClient client,
         }
 
         Log.Information("Starting metrics pusher");
-        var pusher = new MetricPusher(new MetricPusherOptions
+        _metricPusher = new MetricPusher(new MetricPusherOptions
         {
             Endpoint = metricsPusherEndpoint,
             Job = metricsPusherName
         });
 
-        pusher.Start();
+        _metricPusher.Start();
 
         Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
     }
-    
+
     private static void PrepareCacheFolder()
     {
         var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
@@ -142,49 +140,6 @@ public sealed class BotService(DiscordSocketClient client,
         }
     }
 
-    // public instead of private because of Hangfire BackgroundJob
-    // ReSharper disable once MemberCanBePrivate.Global
-    public async Task CacheSlashCommandIds()
-    {
-        try
-        {
-            var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommands();
-            Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
-
-            foreach (var cmd in globalApplicationCommands)
-            {
-                // Ensure each command ID is valid before adding it
-                if (ulong.TryParse(cmd.Id.ToString(), out var commandId))
-                {
-                    PublicProperties.SlashCommands.TryAdd(cmd.Name, commandId);
-                }
-                else
-                {
-                    Log.Warning("Command ID {CommandId} for {CommandName} is not a valid snowflake", cmd.Id, cmd.Name);
-                }
-            }
-        }
-        catch (Discord.Net.HttpException ex) when (ex.HttpCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            Log.Error("Invalid Form Body: Check command ID formatting or other parameters. Details: {Exception}", ex);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Exception occurred while caching slash command IDs");
-        }
-    }
-    
-    private async Task CacheDiscordUserIds()
-    {
-        var users = await userService.GetAllDiscordUserIds();
-        Log.Information("Found {SlashCommandCount} registered users", users.Count);
-
-        foreach (var user in users)
-        {
-            PublicProperties.RegisteredUsers.TryAdd((ulong)user.UserId, (int)user.UserId);
-        }
-    }
-    
     private void InitializeHangfireConfig()
     {
         GlobalConfiguration.Configuration
