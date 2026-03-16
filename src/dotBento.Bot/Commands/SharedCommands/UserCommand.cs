@@ -35,12 +35,23 @@ public sealed class UserCommand(
         return embed;
     }
 
-    public async Task<ResponseModel> GetProfileAsync(long userId, long guildId, GuildUser guildMember, int guildMemberCount, string botAvatarUrl)
+    public async Task<ResponseModel> GetProfileAsync(long userId, long guildId, GuildUser? guildMember, int guildMemberCount, string botAvatarUrl)
     {
         var result = new ResponseModel
         {
             ResponseType = ResponseType.ImageOnly,
         };
+
+        if (guildMember is null)
+        {
+            result.ResponseType = ResponseType.Embed;
+            result.Embed
+                .WithColor(new Color(255, 0, 0))
+                .WithTitle("Error")
+                .WithDescription("Could not resolve your guild membership. Please try again later.");
+            return result;
+        }
+
         // Ensure the user exists in the database (creates if needed)
         await userService.CreateOrAddUserToCache(guildMember);
         var user = await userService.GetUserAsync((ulong)userId);
