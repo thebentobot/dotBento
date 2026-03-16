@@ -18,7 +18,7 @@ public sealed class EightBallTextCommand(
     [Examples("8ball Should I make a Bento")]
     public async Task EightBallCommand([CommandParameter(Remainder = true)] string question)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await GameCommand.MagicEightBallCommand(question));
     }
 }

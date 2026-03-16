@@ -2,10 +2,11 @@ using dotBento.Bot.Services;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using NetCord.Gateway;
+using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class GuildMemberRemoveHandler
+public sealed class GuildMemberRemoveHandler : IDisposable
 {
     private readonly GatewayClient _client;
     private readonly GuildService _guildService;
@@ -26,13 +27,21 @@ public sealed class GuildMemberRemoveHandler
 
     private ValueTask GuildMemberRemovedEvent(GuildUserRemoveEventArgs args)
     {
-        _ = Task.Run(() => GuildMemberRemoved(args.GuildId, args.User.Id));
+        _ = Task.Run(async () =>
+        {
+            try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberRemoved handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
     private ValueTask GuildMemberBannedEvent(GuildBanEventArgs args)
     {
-        _ = Task.Run(() => GuildMemberRemoved(args.GuildId, args.User.Id));
+        _ = Task.Run(async () =>
+        {
+            try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberBanned handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
@@ -46,5 +55,11 @@ public sealed class GuildMemberRemoveHandler
         {
             await _userService.DeleteUserAsync(userId);
         }
+    }
+
+    public void Dispose()
+    {
+        _client.GuildUserRemove -= GuildMemberRemovedEvent;
+        _client.GuildBanAdd -= GuildMemberBannedEvent;
     }
 }

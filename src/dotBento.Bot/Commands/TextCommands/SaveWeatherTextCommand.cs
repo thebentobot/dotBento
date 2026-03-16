@@ -18,7 +18,7 @@ public sealed class SaveWeatherTextCommand(
     [Examples("saveWeather Guangzhou")]
     public async Task SaveWeatherCommand([CommandParameter(Remainder = true)] string city)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await weatherCommand.SaveWeatherAsync((long)Context.User.Id, city));
     }
 }

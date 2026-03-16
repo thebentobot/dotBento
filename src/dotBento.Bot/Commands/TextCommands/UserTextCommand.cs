@@ -20,7 +20,7 @@ public sealed class UserTextCommand(
     [Examples("user", "user @Lewis", "user 166142440233893888")]
     public async Task UserCommand(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         await Context.SendResponse(interactiveService, await userCommand.Command(user));
@@ -32,7 +32,7 @@ public sealed class UserTextCommand(
     [GuildOnly]
     public async Task ProfileCommand(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         var guildMember = Context.Guild?.Users.GetValueOrDefault(user.Id);

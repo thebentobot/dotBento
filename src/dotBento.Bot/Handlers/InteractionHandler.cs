@@ -18,7 +18,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class InteractionHandler
+public sealed class InteractionHandler : IDisposable
 {
     private readonly GatewayClient _client;
     private readonly ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> _appCommands;
@@ -57,19 +57,39 @@ public sealed class InteractionHandler
         switch (interaction)
         {
             case SlashCommandInteraction slashCommand:
-                _ = Task.Run(() => ExecuteSlashCommand(slashCommand, _client));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteSlashCommand(slashCommand, _client); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in slash command handler"); }
+                });
                 break;
             case UserCommandInteraction userCommand:
-                _ = Task.Run(() => ExecuteUserCommand(userCommand, _client));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteUserCommand(userCommand, _client); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in user command handler"); }
+                });
                 break;
             case AutocompleteInteraction autocomplete:
-                _ = Task.Run(() => ExecuteAutocomplete(autocomplete, _client));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteAutocomplete(autocomplete, _client); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in autocomplete handler"); }
+                });
                 break;
             case ModalInteraction modal:
-                _ = Task.Run(() => ExecuteModal(modal, _client));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteModal(modal, _client); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in modal handler"); }
+                });
                 break;
             case MessageComponentInteraction component:
-                _ = Task.Run(() => ExecuteComponent(component, _client));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteComponent(component, _client); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in component handler"); }
+                });
                 break;
         }
         return ValueTask.CompletedTask;
@@ -299,5 +319,10 @@ public sealed class InteractionHandler
                 .WithFlags(MessageFlags.Ephemeral)));
         context.LogCommandUsed(CommandResponse.NotSupportedInDm);
         return false;
+    }
+
+    public void Dispose()
+    {
+        _client.InteractionCreate -= InteractionCreated;
     }
 }

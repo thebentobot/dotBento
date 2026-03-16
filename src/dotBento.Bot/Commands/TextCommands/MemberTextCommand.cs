@@ -24,7 +24,7 @@ public sealed class MemberTextCommand(
     [GuildOnly]
     public async Task MemberCommand(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         var guildMember = (Context.Guild?.Users.GetValueOrDefault(user.Id)).AsMaybe();

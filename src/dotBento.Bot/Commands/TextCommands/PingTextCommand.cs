@@ -23,7 +23,7 @@ public sealed class PingTextCommand(
     [Summary("Test the Bento's latency")]
     public async Task PingCommand()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
 
         var messageTimeStart = DateTime.UtcNow;
         var message = await Context.Client.Rest.SendMessageAsync(Context.Message.ChannelId,

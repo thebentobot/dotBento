@@ -1,25 +1,16 @@
-using System.Text.RegularExpressions;
-using NetCord;
 using NetCord.Gateway;
-using NetCord.Rest;
-using NetCord.Services;
 using NetCord.Services.Commands;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
-using dotBento.Bot.Extensions;
-using dotBento.Bot.Models.Discord;
-using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Infrastructure.Interfaces;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 using Microsoft.Extensions.Caching.Memory;
-using Prometheus;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class MessageHandler
+public sealed class MessageHandler : IDisposable
 {
     private readonly GatewayClient _client;
     private readonly IMemoryCache _cache;
@@ -62,7 +53,11 @@ public sealed class MessageHandler
             return ValueTask.CompletedTask;
         }
 
-        _ = Task.Run(() => HandleMessageAsync(_client, msg));
+        _ = Task.Run(async () =>
+        {
+            try { await HandleMessageAsync(_client, msg); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in message handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
@@ -87,13 +82,21 @@ public sealed class MessageHandler
 
         await _userService.AddExperienceAsync(context.User.Id, context.Guild.Id, patreonUser);
 
+        // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
+        // Without it, msg.Content is empty for guild messages. Re-enable the block below
+        // (and commands.AddModules / prefixService.LoadAllPrefixes in BotService) when the intent is granted.
+        /*
         var prefix = _prefixService.GetPrefix(context.Guild?.Id);
 
         // Check for string prefix
         if (msg.Content.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
             var argPos = prefix.Length;
-            _ = Task.Run(() => ExecuteCommand(msg, context, argPos, prefix));
+            _ = Task.Run(async () =>
+            {
+                try { await ExecuteCommand(msg, context, argPos, prefix); }
+                catch (Exception ex) { Log.Error(ex, "Unhandled exception in text command execution"); }
+            });
             return;
         }
 
@@ -135,12 +138,19 @@ public sealed class MessageHandler
                 }
                 else
                 {
-                    _ = Task.Run(() => ExecuteCommand(msg, context, mentionArgPos.Value, prefix));
+                    _ = Task.Run(async () =>
+                    {
+                        try { await ExecuteCommand(msg, context, mentionArgPos.Value, prefix); }
+                        catch (Exception ex) { Log.Error(ex, "Unhandled exception in mention command execution"); }
+                    });
                 }
             }
         }
+        */
     }
 
+    /*
+    // TODO: Re-enable when MessageContent intent is granted (see HandleMessageAsync above).
     private async Task ExecuteCommand(Message msg, CommandContext context, int argPosition, string prefix)
     {
         using (Statistics.TextCommandHandlerDuration.NewTimer())
@@ -187,6 +197,7 @@ public sealed class MessageHandler
             }
         }
     }
+    */
 
     private bool CheckUserRateLimit(ulong discordUserId)
     {
@@ -207,5 +218,10 @@ public sealed class MessageHandler
         }
 
         return true;
+    }
+
+    public void Dispose()
+    {
+        _client.MessageCreate -= MessageReceived;
     }
 }

@@ -20,7 +20,7 @@ public sealed class BentoTextCommand(
     [Examples("bento", "bento @Alonzo", "bento 188980576483540992")]
     public async Task BentoCommand(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         if (user == null)
         {
             await Context.SendResponse(interactiveService, await bentoCommand.CheckBentoCommand(Context.User));

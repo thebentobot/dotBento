@@ -19,7 +19,7 @@ public sealed class UrbanTextCommand(
     [Examples("urban poggers")]
     public async Task UrbanCommand([CommandParameter(Remainder = true)] string query)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await urbanCommand.Command(query));
     }
 }
