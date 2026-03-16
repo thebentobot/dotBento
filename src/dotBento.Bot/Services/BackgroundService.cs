@@ -27,7 +27,9 @@ public sealed class BackgroundService(UserService userService,
 {
     public void QueueJobs()
     {
-        var isProduction = string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase);
+        var environment = botSettings.Value.Environment;
+        var isProductionOrStaging = string.Equals(environment, "production", StringComparison.OrdinalIgnoreCase)
+                                 || string.Equals(environment, "staging", StringComparison.OrdinalIgnoreCase);
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
@@ -44,7 +46,7 @@ public sealed class BackgroundService(UserService userService,
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
 
-        if (isProduction)
+        if (isProductionOrStaging)
         {
             Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
             RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
@@ -171,7 +173,9 @@ public sealed class BackgroundService(UserService userService,
 
     public async Task UpdateMetrics()
     {
-        if (!string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase))
+        var environment = botSettings.Value.Environment;
+        if (!string.Equals(environment, "production", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(environment, "staging", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
