@@ -153,9 +153,13 @@ public sealed class Startup
         var gatewayClient = provider.GetRequiredService<GatewayClient>();
         var interactiveService = provider.GetRequiredService<InteractiveService>();
         var interactionCreatedMethod = typeof(InteractiveService)
-            .GetMethod("InteractionCreated", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        gatewayClient.InteractionCreate += interaction =>
-            (ValueTask)interactionCreatedMethod.Invoke(interactiveService, [gatewayClient, interaction])!;
+            .GetMethod("InteractionCreated", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException(
+                "Fergun.Interactive.NetCord internal layout changed: 'InteractionCreated' method not found. " +
+                "Update the reflection hook to match the new library version.");
+        var interactionCreatedDelegate = interactionCreatedMethod
+            .CreateDelegate<Func<GatewayClient, Interaction, ValueTask>>(interactiveService);
+        gatewayClient.InteractionCreate += interaction => interactionCreatedDelegate(gatewayClient, interaction);
 
         provider.GetRequiredService<MessageHandler>();
         provider.GetRequiredService<InteractionHandler>();

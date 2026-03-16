@@ -398,6 +398,6 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
     private static string? GetIconUrl(DiscordGuild guild) =>
         guild.IconHash != null
-            ? $"https://cdn.discordapp.com/icons/{guild.Id}/{guild.IconHash}.png"
+            ? $"https://cdn.discordapp.com/icons/{guild.Id}/{guild.IconHash}.{(guild.IconHash.StartsWith("a_") ? "gif" : "webp")}"
             : null;
 }

@@ -43,7 +43,8 @@ public sealed class LenientEnumSlashCommandTypeReader<TContext> : SlashCommandTy
         try
         {
             var enumVal = Enum.Parse(enumType, value, ignoreCase: true);
-            return new(SlashCommandTypeReaderResult.Success(enumVal));
+            if (Enum.IsDefined(enumType, enumVal))
+                return new(SlashCommandTypeReaderResult.Success(enumVal));
         }
         catch { }
 
