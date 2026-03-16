@@ -1,4 +1,4 @@
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
@@ -57,7 +57,7 @@ public sealed class MediaCommand(
         // Download failed — embed URL for images, show URL in description for videos
         if (isImage)
         {
-            embed.WithImageUrl(ResolveUrl(attachment, baseUrl));
+            embed.WithImage(new EmbedImageProperties(ResolveUrl(attachment, baseUrl)));
             return new ResponseModel { ResponseType = ResponseType.Embed, Embed = embed };
         }
 
@@ -72,22 +72,55 @@ public sealed class MediaCommand(
         MediaResolveResponse media,
         IReadOnlyList<MediaAttachment> attachments)
     {
+        var (platformLabel, platformColor) = media.Platform switch
+        {
+            "tiktok"  => ("TikTok",      new NetCord.Color(0x010101)),
+            "twitter" => ("Twitter / X", new NetCord.Color(0x1DA1F2)),
+            _         => (media.Platform, DiscordConstants.BentoYellow),
+        };
+
+        string? baseCaption = string.IsNullOrEmpty(media.Content.Caption) ? null : media.Content.Caption;
+        string? postedAtPart = media.PostedAt.HasValue
+            ? $"<t:{new DateTimeOffset(media.PostedAt.Value).ToUnixTimeSeconds()}:R>"
+            : null;
+        var captionParts = new[] { baseCaption, postedAtPart }.Where(p => p != null).ToList();
+        var baseDescription = captionParts.Count > 0 ? string.Join("\n", captionParts) : null;
+
+        EmbedAuthorProperties? author = null;
+        if (!string.IsNullOrEmpty(media.Author.Username))
+        {
+            author = new EmbedAuthorProperties().WithName($"@{media.Author.Username}");
+            var profileUrl = GetAuthorProfileUrl(media);
+            if (profileUrl != null)
+                author.WithUrl(profileUrl);
+        }
+
         var pages = attachments.Select((attachment, i) =>
         {
-            var page = BuildBaseEmbed(media);
-            page.WithFooter(new EmbedFooterBuilder().WithText($"{i + 1} / {attachments.Count}"));
+            var page = new PageBuilder()
+                .WithColor(platformColor)
+                .WithTitle(platformLabel)
+                .WithUrl(media.SourceUrl)
+                .WithFooter($"{i + 1} / {attachments.Count}");
+
+            if (author != null)
+                page.WithAuthor(author);
 
             if (attachment.Type == "image")
+            {
+                if (baseDescription != null)
+                    page.WithDescription(baseDescription);
                 page.WithImageUrl(attachment.Url);
+            }
             else
             {
-                var currentDesc = page.Description ?? string.Empty;
-                page.WithDescription(string.IsNullOrEmpty(currentDesc)
+                var desc = string.IsNullOrEmpty(baseDescription)
                     ? attachment.Url
-                    : $"{currentDesc}\n\n{attachment.Url}");
+                    : $"{baseDescription}\n\n{attachment.Url}";
+                page.WithDescription(desc);
             }
 
-            return PageBuilder.FromEmbedBuilder(page);
+            return page;
         }).ToList();
 
         return new ResponseModel
@@ -98,23 +131,23 @@ public sealed class MediaCommand(
         };
     }
 
-    private static EmbedBuilder BuildBaseEmbed(MediaResolveResponse media)
+    private static EmbedProperties BuildBaseEmbed(MediaResolveResponse media)
     {
         var (platformLabel, platformColor) = media.Platform switch
         {
-            "tiktok"  => ("TikTok",      new Color(0x010101)),
-            "twitter" => ("Twitter / X", new Color(0x1DA1F2)),
+            "tiktok"  => ("TikTok",      new NetCord.Color(0x010101)),
+            "twitter" => ("Twitter / X", new NetCord.Color(0x1DA1F2)),
             _         => (media.Platform, DiscordConstants.BentoYellow),
         };
 
-        var embed = new EmbedBuilder()
+        var embed = new EmbedProperties()
             .WithColor(platformColor)
             .WithTitle(platformLabel)
             .WithUrl(media.SourceUrl);
 
         if (!string.IsNullOrEmpty(media.Author.Username))
         {
-            var authorBuilder = new EmbedAuthorBuilder().WithName($"@{media.Author.Username}");
+            var authorBuilder = new EmbedAuthorProperties().WithName($"@{media.Author.Username}");
             var profileUrl    = GetAuthorProfileUrl(media);
             if (profileUrl != null)
                 authorBuilder.WithUrl(profileUrl);
@@ -154,14 +187,14 @@ public sealed class MediaCommand(
         if (error == "not_configured")
         {
             response.Embed
-                .WithColor(Color.Orange)
+                .WithColor(new NetCord.Color(255, 165, 0))
                 .WithTitle("Media commands are not enabled")
                 .WithDescription("This bot instance has not been configured with bento-media-server. Contact the bot operator.");
         }
         else
         {
             response.Embed
-                .WithColor(Color.Red)
+                .WithColor(new NetCord.Color(255, 0, 0))
                 .WithTitle("Failed to fetch media")
                 .WithDescription(error);
         }

@@ -1,5 +1,5 @@
 using System.Text;
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -140,15 +140,13 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             description.AppendLine($"**Global Bento Rank:** #{summary.BentoRank} — {summary.BentoCount} Bento");
         }
 
-        var author = new EmbedAuthorBuilder
-        {
-            Name = $"{displayName}'s Rankings",
-            IconUrl = avatarUrl
-        };
+        var author = new EmbedAuthorProperties()
+            .WithName($"{displayName}'s Rankings")
+            .WithIconUrl(avatarUrl);
 
         embed.Embed
             .WithAuthor(author)
-            .WithThumbnailUrl(avatarUrl)
+            .WithThumbnail(avatarUrl != null ? new EmbedThumbnailProperties(avatarUrl) : null)
             .WithDescription(description.ToString())
             .WithColor(DiscordConstants.BentoYellow);
 
@@ -246,7 +244,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         embed.Embed
             .WithTitle(error)
-            .WithColor(Color.Red);
+            .WithColor(new NetCord.Color(255, 0, 0));
         return embed;
     }
 }

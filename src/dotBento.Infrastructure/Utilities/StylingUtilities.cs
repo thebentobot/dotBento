@@ -2,13 +2,13 @@ using CSharpFunctionalExtensions;
 using dotBento.Infrastructure.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Color = System.Drawing.Color;
+using SystemColor = System.Drawing.Color;
 
 namespace dotBento.Infrastructure.Utilities;
 
 public sealed class StylingUtilities(HttpClient httpClient)
 {
-    public async Task<Discord.Color> GetDominantColorAsync(string imageUrl)
+    public async Task<NetCord.Color> GetDominantColorAsync(string imageUrl)
     {
         using (var stream = await httpClient.GetStreamAsync(imageUrl))
         {
@@ -18,8 +18,8 @@ public sealed class StylingUtilities(HttpClient httpClient)
             }
         }
     }
-    
-    public async Task<Result<Discord.Color>> TryGetDominantColorAsync(string imageUrl)
+
+    public async Task<Result<NetCord.Color>> TryGetDominantColorAsync(string imageUrl)
     {
         try
         {
@@ -27,11 +27,11 @@ public sealed class StylingUtilities(HttpClient httpClient)
         }
         catch (Exception e)
         {
-            return Result.Failure<Discord.Color>(e.Message);
+            return Result.Failure<NetCord.Color>(e.Message);
         }
     }
 
-    internal static Color CalculateDominantColor(Image<Rgba32> image)
+    internal static SystemColor CalculateDominantColor(Image<Rgba32> image)
     {
         double r = 0;
         double g = 0;
@@ -52,6 +52,6 @@ public sealed class StylingUtilities(HttpClient httpClient)
             }
         }
 
-        return Color.FromArgb((int)(r / total), (int)(g / total), (int)(b / total));
+        return SystemColor.FromArgb((int)(r / total), (int)(g / total), (int)(b / total));
     }
 }

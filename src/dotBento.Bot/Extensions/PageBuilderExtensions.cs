@@ -1,13 +1,14 @@
-using Discord;
 using dotBento.Bot.Resources;
 using Fergun.Interactive;
 using Fergun.Interactive.Pagination;
+using NetCord;
+using NetCord.Rest;
 
 namespace dotBento.Bot.Extensions;
 
 public static class PageBuilderExtensions
 {
-    public static StaticPaginator BuildStaticPaginator(this IList<PageBuilder> pages, string? customOptionId = null, IEmote? optionEmote = null)
+    public static StaticPaginator BuildStaticPaginator(this IList<PageBuilder> pages, string? customOptionId = null, EmojiProperties? optionEmote = null)
     {
         var builder = new StaticPaginatorBuilder()
             .WithPages(pages)
@@ -26,14 +27,14 @@ public static class PageBuilderExtensions
 
         if (customOptionId == null && pages.Count >= 25)
         {
-            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump));
+            builder.AddOption(EmojiProperties.Custom(DiscordConstants.PagesGoTo), PaginatorAction.Jump);
         }
 
         return builder.Build();
     }
 
     public static StaticPaginator BuildStaticPaginatorWithSelectMenu(this IList<PageBuilder> pages,
-        SelectMenuBuilder selectMenuBuilder)
+        StringMenuProperties selectMenuBuilder)
     {
         var builder = new StaticPaginatorBuilder()
             .WithPages(pages)
@@ -47,10 +48,10 @@ public static class PageBuilderExtensions
 
         if (pages.Count >= 10)
         {
-            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump));
+            builder.AddOption(EmojiProperties.Custom(DiscordConstants.PagesGoTo), PaginatorAction.Jump);
         }
-        
-        builder.WithSelectMenus(new List<SelectMenuBuilder> { selectMenuBuilder });
+
+        builder.WithSelectMenus(new List<StringMenuProperties> { selectMenuBuilder });
 
         return builder.Build();
     }
@@ -62,11 +63,11 @@ public static class PageBuilderExtensions
             .WithFooter(PaginatorFooter.None)
             .WithActionOnTimeout(ActionOnStop.DeleteInput);
 
-        builder.WithOptions(new Dictionary<IEmote, PaginatorAction>
+        builder.WithOptions(new List<PaginatorButton>
         {
-            { Emote.Parse("<:pages_previous:883825508507336704>"), PaginatorAction.Backward},
-            { Emote.Parse("<:pages_next:883825508087922739>"), PaginatorAction.Forward},
-            { Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump }
+            new(EmojiProperties.Custom(DiscordConstants.PagesPrevious), PaginatorAction.Backward, ButtonStyle.Secondary),
+            new(EmojiProperties.Custom(DiscordConstants.PagesNext), PaginatorAction.Forward, ButtonStyle.Secondary),
+            new(EmojiProperties.Custom(DiscordConstants.PagesGoTo), PaginatorAction.Jump, ButtonStyle.Secondary)
         });
 
         return builder.Build();

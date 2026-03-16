@@ -1,6 +1,7 @@
 using System.Runtime.Serialization;
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
 using dotBento.Infrastructure.Services;
@@ -9,28 +10,48 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-[Group("lastfm", "Commands for Discord Users")]
-public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public enum LastFmTimePeriodChoice
 {
-    [SlashCommand("nowplaying", "Show what you're currently listening to")]
+    [SlashCommandChoice(Name = "Overall")] Overall,
+    [SlashCommandChoice(Name = "7 Days")] SevenDays,
+    [SlashCommandChoice(Name = "1 Month")] OneMonth,
+    [SlashCommandChoice(Name = "3 Months")] ThreeMonths,
+    [SlashCommandChoice(Name = "6 Months")] SixMonths,
+    [SlashCommandChoice(Name = "1 Year")] OneYear
+}
+
+public enum LastFmCollageType
+{
+    [SlashCommandChoice(Name = "Top Artists")] TopArtists,
+    [SlashCommandChoice(Name = "Top Albums")] TopAlbums,
+    [SlashCommandChoice(Name = "Top Tracks")] TopTracks
+}
+
+public enum LastFmCollageSize
+{
+    [SlashCommandChoice(Name = "1x1")] OneByOne,
+    [SlashCommandChoice(Name = "2x2")] TwoByTwo,
+    [SlashCommandChoice(Name = "3x3")] ThreeByThree,
+    [SlashCommandChoice(Name = "4x4")] FourByFour,
+    [SlashCommandChoice(Name = "5x5")] FiveByFive,
+    [SlashCommandChoice(Name = "6x6")] SixBySix
+}
+
+[SlashCommand("lastfm", "Commands for Discord Users")]
+public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService)
+    : ApplicationCommandModule<ApplicationCommandContext>
+{
+    [SubSlashCommand("nowplaying", "Show what you're currently listening to")]
     public async Task NowPlayingCommand(
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id)
-                  .Nickname ??
-              user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id)
-                  .GetGuildAvatarUrl() ??
-              user.GetDisplayAvatarUrl();
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetNowPlaying((long)user.Id,
                 username,
@@ -38,32 +59,23 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("topartists", "Show top artists for a user")]
+    [SubSlashCommand("topartists", "Show top artists for a user")]
     public async Task TopArtistsCommand(
-        [Summary("timePeriod", "Time period")]
-        [Choice("Overall", "Overall")]
-        [Choice("7 Days", "7 Days")]
-        [Choice("1 Month", "1 Month")]
-        [Choice("3 Months", "3 Months")]
-        [Choice("6 Months", "6 Months")]
-        [Choice("1 Year", "1 Year")]
-        string? timePeriodDisplay = "Overall",
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("collage", "Show a collage of your top artists")]
+        [SlashCommandParameter(Name = "time-period", Description = "Time period")]
+        LastFmTimePeriodChoice timePeriodDisplay = LastFmTimePeriodChoice.Overall,
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "collage", Description = "Show a collage of your top artists")]
         bool? collage = false,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await Context.DeferResponseAsync();
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
             await Context.SendFollowUpResponse(interactiveService,
@@ -84,32 +96,23 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
     }
 
-    [SlashCommand("topalbums", "Show top albums for a user")]
+    [SubSlashCommand("topalbums", "Show top albums for a user")]
     public async Task TopAlbumsCommand(
-        [Summary("timePeriod", "Time period")]
-        [Choice("Overall", "Overall")]
-        [Choice("7 Days", "7 Days")]
-        [Choice("1 Month", "1 Month")]
-        [Choice("3 Months", "3 Months")]
-        [Choice("6 Months", "6 Months")]
-        [Choice("1 Year", "1 Year")]
-        string? timePeriodDisplay = "Overall",
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("collage", "Show a collage of your top artists")]
+        [SlashCommandParameter(Name = "time-period", Description = "Time period")]
+        LastFmTimePeriodChoice timePeriodDisplay = LastFmTimePeriodChoice.Overall,
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "collage", Description = "Show a collage of your top artists")]
         bool? collage = false,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await Context.DeferResponseAsync();
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
             await Context.SendFollowUpResponse(interactiveService,
@@ -130,32 +133,23 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
     }
 
-    [SlashCommand("toptracks", "Show top tracks for a user")]
+    [SubSlashCommand("toptracks", "Show top tracks for a user")]
     public async Task TopTracksCommand(
-        [Summary("timePeriod", "Time period")]
-        [Choice("Overall", "Overall")]
-        [Choice("7 Days", "7 Days")]
-        [Choice("1 Month", "1 Month")]
-        [Choice("3 Months", "3 Months")]
-        [Choice("6 Months", "6 Months")]
-        [Choice("1 Year", "1 Year")]
-        string timePeriodDisplay = "Overall",
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("collage", "Show a collage of your top artists")]
+        [SlashCommandParameter(Name = "time-period", Description = "Time period")]
+        LastFmTimePeriodChoice timePeriodDisplay = LastFmTimePeriodChoice.Overall,
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "collage", Description = "Show a collage of your top artists")]
         bool? collage = false,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await Context.DeferResponseAsync();
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay);
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
             await Context.SendFollowUpResponse(interactiveService,
@@ -176,96 +170,72 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
     }
 
-    [SlashCommand("user", "Show user info for a user")]
+    [SubSlashCommand("user", "Show user info for a user")]
     public async Task UserCommand(
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("recenttracks", "Show user info for a user")]
+    [SubSlashCommand("recenttracks", "Show user info for a user")]
     public async Task RecentTracksCommand(
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetRecentTracks((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("save", "Set your lastfm username")]
+    [SubSlashCommand("save", "Set your lastfm username")]
     public async Task SaveLastFmCommand(
-        [Summary("username", "For a user who has saved lastfm")]
+        [SlashCommandParameter(Name = "username", Description = "For a user who has saved lastfm")]
         string username) =>
         await Context.SendResponse(interactiveService,
             await lastFmCommand.SaveLastFmUser((long)Context.User.Id, username), true);
 
-    [SlashCommand("delete", "Delete your lastfm username")]
+    [SubSlashCommand("delete", "Delete your lastfm username")]
     public async Task DeleteLastFmCommand() =>
         await Context.SendResponse(interactiveService, await lastFmCommand.DeleteLastFmUser((long)Context.User.Id),
             true);
 
-    [SlashCommand("collage", "Generate a collage of your top artists, albums, or tracks")]
+    [SubSlashCommand("collage", "Generate a collage of your top artists, albums, or tracks")]
     public async Task CollageCommand(
-        [Summary("type", "Type of collage")]
-        [Choice("Top Artists", "Top Artists")]
-        [Choice("Top Albums", "Top Albums")]
-        [Choice("Top Tracks", "Top Tracks")]
-        string type = "Top Artists",
-        [Summary("timePeriod", "Time period")]
-        [Choice("Overall", "Overall")]
-        [Choice("7 Days", "7 Days")]
-        [Choice("1 Month", "1 Month")]
-        [Choice("3 Months", "3 Months")]
-        [Choice("6 Months", "6 Months")]
-        [Choice("1 Year", "1 Year")]
-        string timePeriodDisplay = "Overall",
-        [Summary("images", "Number of images to display")]
-        [Choice("1x1", "1x1")]
-        [Choice("2x2", "2x2")]
-        [Choice("3x3", "3x3")]
-        [Choice("4x4", "4x4")]
-        [Choice("5x5", "5x5")]
-        [Choice("6x6", "6x6")]
-        string? imageOption = "4x4",
-        [Summary("user", "For a user who has saved lastfm")]
-        SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+        [SlashCommandParameter(Name = "type", Description = "Type of collage")]
+        LastFmCollageType type = LastFmCollageType.TopArtists,
+        [SlashCommandParameter(Name = "time-period", Description = "Time period")]
+        LastFmTimePeriodChoice timePeriodDisplay = LastFmTimePeriodChoice.Overall,
+        [SlashCommandParameter(Name = "images", Description = "Number of images to display")]
+        LastFmCollageSize imageOption = LastFmCollageSize.FourByFour,
+        [SlashCommandParameter(Name = "user", Description = "For a user who has saved lastfm")]
+        User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await Context.DeferResponseAsync();
         user ??= Context.User;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay);
+        var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
+        var sizeStr = CollageSizeToString(imageOption);
         var collage = type switch
         {
-            "Top Artists" => await lastFmCommand.GetTopArtistsCollage((long)user.Id, userAvatar, period,
-                imageOption ?? "4x4"),
-            "Top Albums" => await lastFmCommand.GetTopAlbumsCollage((long)user.Id, userAvatar, period,
-                imageOption ?? "4x4"),
-            "Top Tracks" => await lastFmCommand.GetTopTracksCollage((long)user.Id, userAvatar, period,
-                imageOption ?? "4x4"),
+            LastFmCollageType.TopArtists => await lastFmCommand.GetTopArtistsCollage((long)user.Id, userAvatar, period, sizeStr),
+            LastFmCollageType.TopAlbums => await lastFmCommand.GetTopAlbumsCollage((long)user.Id, userAvatar, period, sizeStr),
+            LastFmCollageType.TopTracks => await lastFmCommand.GetTopTracksCollage((long)user.Id, userAvatar, period, sizeStr),
             _ => throw new SerializationException("Invalid type for lastfm collage")
         };
         try
@@ -277,4 +247,24 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             await Context.HandleCommandException(e);
         }
     }
+
+    private static string TimePeriodToString(LastFmTimePeriodChoice period) => period switch
+    {
+        LastFmTimePeriodChoice.SevenDays => "7 Days",
+        LastFmTimePeriodChoice.OneMonth => "1 Month",
+        LastFmTimePeriodChoice.ThreeMonths => "3 Months",
+        LastFmTimePeriodChoice.SixMonths => "6 Months",
+        LastFmTimePeriodChoice.OneYear => "1 Year",
+        _ => "Overall"
+    };
+
+    private static string CollageSizeToString(LastFmCollageSize size) => size switch
+    {
+        LastFmCollageSize.OneByOne => "1x1",
+        LastFmCollageSize.TwoByTwo => "2x2",
+        LastFmCollageSize.ThreeByThree => "3x3",
+        LastFmCollageSize.FiveByFive => "5x5",
+        LastFmCollageSize.SixBySix => "6x6",
+        _ => "4x4"
+    };
 }

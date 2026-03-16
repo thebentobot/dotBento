@@ -1,5 +1,5 @@
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
 using dotBento.Infrastructure.Services;
@@ -8,11 +8,11 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 public sealed class BentoSlashCommand(InteractiveService interactiveService, BentoCommand bentoCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+    : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SlashCommand("bento", "Give a friend a Bento Box")]
-    public async Task BentoCommand([Summary("user", "Pick a User. Omit to check status")] SocketUser? user = null,
-        [Summary("hide", "Only show result for you")] bool? hide = null)
+    public async Task BentoCommand([SlashCommandParameter(Name = "user", Description = "Pick a User. Omit to check status")] User? user = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show result for you")] bool? hide = null)
     {
         var effectiveHide = hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id);
         if (user == null)

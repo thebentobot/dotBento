@@ -1,4 +1,4 @@
-using Discord.Commands;
+using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -13,12 +13,12 @@ public sealed class DeleteWeatherTextCommand(
     InteractiveService interactiveService, WeatherCommand weatherCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("deleteWeather", RunMode = RunMode.Async)]
+    [Command("deleteWeather")]
     [Summary("Delete a saved city for the weather command")]
     [Examples("deleteWeather")]
     public async Task RemoveWeatherCommand()
     {
-        _ = Context.Channel.TriggerTypingAsync();
+        _ = Context.Channel?.TriggerTypingStateAsync();
         await Context.SendResponse(interactiveService, await weatherCommand.DeleteWeatherAsync((long)Context.User.Id));
     }
 }
