@@ -18,7 +18,7 @@ public sealed class BentoMediaServerService(HttpClient httpClient)
         string url,
         string? apiKey = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/resolve");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/resolve");
         if (!string.IsNullOrEmpty(apiKey))
             request.Headers.Add("X-API-Key", apiKey);
 
@@ -29,7 +29,7 @@ public sealed class BentoMediaServerService(HttpClient httpClient)
 
         try
         {
-            var response = await httpClient.SendAsync(request);
+            using var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -54,13 +54,13 @@ public sealed class BentoMediaServerService(HttpClient httpClient)
         string? apiKey = null)
     {
         var encodedUrl = Uri.EscapeDataString(mediaUrl);
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/proxy?url={encodedUrl}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/proxy?url={encodedUrl}");
         if (!string.IsNullOrEmpty(apiKey))
             request.Headers.Add("X-API-Key", apiKey);
 
         try
         {
-            var response = await httpClient.SendAsync(request);
+            using var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
                 return Result.Failure<Stream>($"Proxy returned HTTP {(int)response.StatusCode}");
             var bytes = await response.Content.ReadAsByteArrayAsync();

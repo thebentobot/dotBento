@@ -4,7 +4,6 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
-using dotBento.Domain;
 using dotBento.Domain.Enums;
 using Fergun.Interactive;
 using Serilog;
@@ -17,8 +16,6 @@ public static class CommandContextExtensions
     {
         Log.Information("CommandUsed: {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} | {MessageContent}",
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, context.Message.Content);
-
-        PublicProperties.UsedCommandsResponses.TryAdd(context.Message.Id, commandResponse);
     }
     
     public static async Task HandleCommandException(this ICommandContext context, Exception exception, string? message = null, bool sendReply = true)
@@ -42,7 +39,6 @@ public static class CommandContextExtensions
             }
         }
 
-        PublicProperties.UsedCommandsErrorReferences.TryAdd(context.Message.Id, referenceId);
     }
 
     public static async Task SendResponse(this ICommandContext context, InteractiveService interactiveService, ResponseModel response)

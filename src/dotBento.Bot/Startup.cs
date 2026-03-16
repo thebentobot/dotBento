@@ -82,11 +82,13 @@ public sealed class Startup
 
         // Logging levels based on environment:
         //   production - Warning console, Information minimum
-        //   staging    - Verbose console, Verbose minimum
+        //   staging    - Debug console, Debug minimum
         //   local      - Verbose console, Verbose minimum
         var (consoleLevel, logLevel) = isProduction
             ? (LogEventLevel.Warning, LogEventLevel.Information)
-            : (LogEventLevel.Verbose, LogEventLevel.Verbose);
+            : isStaging
+                ? (LogEventLevel.Debug, LogEventLevel.Debug)
+                : (LogEventLevel.Verbose, LogEventLevel.Verbose);
 
 #if DEBUG
         // Always use verbose logging in debug builds

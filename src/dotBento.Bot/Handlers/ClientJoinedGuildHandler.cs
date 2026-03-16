@@ -9,11 +9,11 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class ClientJoinedGuildHandler
+public sealed class ClientJoinedGuildHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
-    
+
     public ClientJoinedGuildHandler(DiscordSocketClient client,
         GuildService guildService)
     {
@@ -21,20 +21,24 @@ public sealed class ClientJoinedGuildHandler
         _guildService = guildService;
         _client.JoinedGuild += ClientJoinedGuildEvent;
     }
-    
+
     private Task ClientJoinedGuildEvent(SocketGuild guild)
     {
-        _ = Task.Run(() => ClientJoinedGuild(guild));
+        _ = Task.Run(async () =>
+        {
+            try { await ClientJoinedGuild(guild); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in ClientJoinedGuild handler"); }
+        });
         return Task.CompletedTask;
     }
-    
+
     private async Task ClientJoinedGuild(SocketGuild guild)
     {
         Statistics.DiscordEvents.WithLabels(nameof(ClientJoinedGuild)).Inc();
 
         Log.Information(
             "JoinedGuild: {GuildName} / {GuildId} | {MemberCount} members", guild.Name, guild.Id, guild.MemberCount);
-        
+
         await _guildService.AddGuildAsync(guild);
         try
         {
@@ -84,7 +88,12 @@ public sealed class ClientJoinedGuildHandler
         responseToGuildOwner.EmbedFooter
             .WithText("Bento \ud83c\udf71 is created by `banner.`")
             .WithIconUrl(_client.GetUser("232584569289703424").GetAvatarUrl());
-        
+
         return Task.FromResult(responseToGuildOwner);
+    }
+
+    public void Dispose()
+    {
+        _client.JoinedGuild -= ClientJoinedGuildEvent;
     }
 }

@@ -6,12 +6,12 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class ClientLeftGuildHandler
+public sealed class ClientLeftGuildHandler : IDisposable
 {
     private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
-    
+
     public ClientLeftGuildHandler(DiscordSocketClient client,
         GuildService guildService, IMemoryCache cache)
     {
@@ -20,13 +20,17 @@ public sealed class ClientLeftGuildHandler
         _guildService = guildService;
         _client.LeftGuild += ClientLeftGuildEvent;
     }
-    
+
     private Task ClientLeftGuildEvent(SocketGuild guild)
     {
-        _ = Task.Run(() => ClientLeftGuild(guild));
+        _ = Task.Run(async () =>
+        {
+            try { await ClientLeftGuild(guild); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in ClientLeftGuild handler"); }
+        });
         return Task.CompletedTask;
     }
-    
+
     private async Task ClientLeftGuild(SocketGuild guild)
     {
         var keepData = false;
@@ -52,5 +56,10 @@ public sealed class ClientLeftGuildHandler
             Log.Information(
                 "LeftGuild: {GuildName} / {GuildId} | {MemberCount} members (skipped delete)", guild.Name, guild.Id, guild.MemberCount);
         }
+    }
+
+    public void Dispose()
+    {
+        _client.LeftGuild -= ClientLeftGuildEvent;
     }
 }

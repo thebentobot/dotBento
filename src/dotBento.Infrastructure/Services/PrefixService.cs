@@ -60,7 +60,7 @@ public sealed class PrefixService(IDbContextFactory<BotDbContext> contextFactory
     public async Task LoadAllPrefixes()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-        var servers = await db.Guilds.Where(w => true).ToListAsync();
+        var servers = await db.Guilds.AsNoTracking().ToListAsync();
         foreach (var server in servers)
         {
             StorePrefix(server.Prefix, (ulong)server.GuildId);
