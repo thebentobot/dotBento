@@ -311,24 +311,27 @@ public sealed class Startup
         var service = (InteractiveService)RuntimeHelpers.GetUninitializedObject(typeof(InteractiveService));
         var t = typeof(InteractiveService);
 
+        static FieldInfo GetRequiredField(Type type, string name) =>
+            type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException(
+                $"Fergun.Interactive.NetCord internal layout changed: '{name}' field not found. " +
+                "Update CreateInteractiveService to match the new library version.");
+
         // _client: not needed — we subscribe GatewayClient.InteractionCreate manually in RunAsync
-        t.GetField("_client", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(service, null!);
+        GetRequiredField(t, "_client").SetValue(service, null!);
 
         // _logger: use NullLogger since Serilog is wired statically, not via ILogger<T>
-        t.GetField("_logger", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(service, NullLogger<InteractiveService>.Instance);
+        GetRequiredField(t, "_logger").SetValue(service, NullLogger<InteractiveService>.Instance);
 
         // _callbacks and _filteredCallbacks: standard ConcurrentDictionary instances
-        var callbacksField = t.GetField("_callbacks", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var callbacksField = GetRequiredField(t, "_callbacks");
         callbacksField.SetValue(service, Activator.CreateInstance(callbacksField.FieldType)!);
 
-        var filteredField = t.GetField("_filteredCallbacks", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var filteredField = GetRequiredField(t, "_filteredCallbacks");
         filteredField.SetValue(service, Activator.CreateInstance(filteredField.FieldType)!);
 
         // _options: default options
-        t.GetField("_options", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(service, new InteractiveServiceOptions());
+        GetRequiredField(t, "_options").SetValue(service, new InteractiveServiceOptions());
 
         return service;
     }

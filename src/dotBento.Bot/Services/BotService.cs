@@ -46,8 +46,6 @@ public sealed class BotService(GatewayClient client,
         await prefixService.LoadAllPrefixes();
 
         Log.Information("Starting bot");
-        var discordToken = config.Value.Discord.Token ??
-                           throw new InvalidOperationException("Discord:Token environment variable not set.");
 
         Log.Information("Loading command modules");
         commands.AddModules(Assembly.GetEntryAssembly()!);
