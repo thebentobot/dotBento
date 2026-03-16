@@ -27,7 +27,9 @@ public sealed class BackgroundService(UserService userService,
 {
     public void QueueJobs()
     {
-        var isProduction = string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase);
+        var environment = botSettings.Value.Environment;
+        var isProduction = string.Equals(environment, "production", StringComparison.OrdinalIgnoreCase);
+        var isStaging = string.Equals(environment, "staging", StringComparison.OrdinalIgnoreCase);
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
@@ -44,13 +46,10 @@ public sealed class BackgroundService(UserService userService,
         Log.Information($"RecurringJob: Adding {nameof(UpdateLeaderboardUserAvatars)}");
         RecurringJob.AddOrUpdate(nameof(UpdateLeaderboardUserAvatars), () => UpdateLeaderboardUserAvatars(), "0 */6 * * *");
 
-        if (isProduction)
+        if (isProduction || isStaging)
         {
             Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
             RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
-
-            Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
-            RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
 
             Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
             RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 2 * * *");
@@ -69,6 +68,17 @@ public sealed class BackgroundService(UserService userService,
 
             Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
             RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *");
+
+            // Bot list updates only in production
+            if (isProduction)
+            {
+                Log.Information($"RecurringJob: Adding {nameof(UpdateBotLists)}");
+                RecurringJob.AddOrUpdate(nameof(UpdateBotLists), () => UpdateBotLists(), "*/10 * * * *");
+            }
+            else
+            {
+                RecurringJob.RemoveIfExists(nameof(UpdateBotLists));
+            }
         }
         else
         {
