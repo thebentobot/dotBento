@@ -160,7 +160,7 @@ public static class InteractionContextExtensions
                 var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + imageEmbedFilename + ".png",
+                        (response.Spoiler ? "SPOILER_" : "") + imageEmbedFilename,
                         response.Stream))
                     .WithEmbeds([response.Embed])
                     .WithFlags(flags)
