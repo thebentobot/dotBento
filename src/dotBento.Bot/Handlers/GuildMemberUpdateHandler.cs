@@ -2,10 +2,11 @@ using Discord;
 using Discord.WebSocket;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
+using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class GuildMemberUpdateHandler
+public sealed class GuildMemberUpdateHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
@@ -20,10 +21,14 @@ public sealed class GuildMemberUpdateHandler
 
     private Task GuildMemberUpdateEvent(Cacheable<SocketGuildUser, ulong> cacheable, SocketGuildUser newGuildUser)
     {
-        _ = Task.Run(() => GuildMemberUpdated(cacheable, newGuildUser));
+        _ = Task.Run(async () =>
+        {
+            try { await GuildMemberUpdated(cacheable, newGuildUser); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberUpdated handler"); }
+        });
         return Task.CompletedTask;
     }
-    
+
     private async Task GuildMemberUpdated(Cacheable<SocketGuildUser, ulong> cacheable, SocketGuildUser newGuildUser)
     {
         if (newGuildUser.IsBot) return;
@@ -34,5 +39,10 @@ public sealed class GuildMemberUpdateHandler
             Statistics.DiscordEvents.WithLabels(nameof(GuildMemberUpdated)).Inc();
             await _guildService.UpdateGuildMemberAvatarAsync(newGuildUser);
         }
+    }
+
+    public void Dispose()
+    {
+        _client.GuildMemberUpdated -= GuildMemberUpdateEvent;
     }
 }

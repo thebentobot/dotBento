@@ -14,7 +14,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class InteractionHandler
+public sealed class InteractionHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;
@@ -315,5 +315,15 @@ public sealed class InteractionHandler
         }
 
         return true;
+    }
+
+    public void Dispose()
+    {
+        _client.SlashCommandExecuted -= SlashCommandExecuted;
+        _client.AutocompleteExecuted -= AutoCompleteExecuted;
+        _client.SelectMenuExecuted -= SelectMenuExecuted;
+        _client.ModalSubmitted -= ModalSubmitted;
+        _client.UserCommandExecuted -= UserCommandExecuted;
+        _client.ButtonExecuted -= ButtonExecuted;
     }
 }
