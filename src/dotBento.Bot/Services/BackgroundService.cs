@@ -325,6 +325,7 @@ public sealed class BackgroundService(UserService userService,
                 {
                     totalProcessed++;
 
+                    // client.GetGuild is a cache lookup, no REST call — no delay needed
                     var guild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
                     if (guild.HasNoValue)
                     {
@@ -332,13 +333,9 @@ public sealed class BackgroundService(UserService userService,
                         await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
                         totalDeleted++;
                     }
-
-                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
-
-                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
@@ -384,12 +381,12 @@ public sealed class BackgroundService(UserService userService,
                 {
                     totalProcessed++;
 
+                    // client.GetGuild is a cache lookup, no REST call — no delay needed
                     var guild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
                     if (guild.HasNoValue)
                     {
                         // Guild no longer exists in bot's guild list - safe to delete
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
-                        await Task.Delay(10000);
                         continue;
                     }
 
@@ -585,6 +582,7 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
+                        // client.GetGuild is a cache lookup, no REST call — no delay needed
                         var discordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
                         if (discordGuild.HasValue)
                         {
@@ -599,13 +597,9 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
                     }
-
-                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
-
-                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
