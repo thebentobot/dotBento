@@ -18,7 +18,7 @@ public sealed class RollTextCommand(
     [Examples("roll", "roll 1 10", "roll 1 1000")]
     public async Task RollCommand(int? userMin = 1, int? userMax = 10)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await GameCommand.RollCommand(userMin, userMax));
     }
 }

@@ -23,7 +23,7 @@ public sealed class ProfileTextCommand(
     [Examples("profile", "profile @SomeUser")]
     public async Task ShowProfile(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         var guildMember = Context.Guild?.Users.GetValueOrDefault(user.Id);
@@ -41,7 +41,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBackgroundUrl https://example.com/image.png")]
     public async Task SetBackgroundUrl([CommandParameter(Remainder = true)] string url)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetBackgroundUrlAsync(Context.User.Id, url);
         await Context.SendResponse(interactiveService, response);
     }
@@ -51,7 +51,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBackgroundColour #1F2937 80", "profileBackgroundColour 1F2937")]
     public async Task SetBackgroundColour(string hex, int? opacity = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetBackgroundColourAsync(Context.User.Id, hex, opacity);
         await Context.SendResponse(interactiveService, response);
     }
@@ -61,7 +61,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBackgroundUpload [attach an image]")]
     public async Task UploadBackground()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var attachment = Context.Message.Attachments.FirstOrDefault();
         if (attachment == null)
         {
@@ -79,7 +79,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileResetBackground")]
     public async Task ResetBackground()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.ResetBackgroundAsync(Context.User.Id);
         await Context.SendResponse(interactiveService, response);
     }
@@ -89,7 +89,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBoardsLastfm true", "profileBoardsLastfm false")]
     public async Task SetLastFmBoard(bool enabled)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetLastFmBoardAsync(Context.User.Id, enabled);
         await Context.SendResponse(interactiveService, response);
     }
@@ -99,7 +99,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBoardsXp true", "profileBoardsXp false")]
     public async Task SetXpBoard(bool enabled)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetXpBoardAsync(Context.User.Id, enabled);
         await Context.SendResponse(interactiveService, response);
     }
@@ -109,7 +109,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileDescription I like sushi and bento boxes!")]
     public async Task SetDescription([CommandParameter(Remainder = true)] string text)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetDescriptionAsync(Context.User.Id, text);
         await Context.SendResponse(interactiveService, response);
     }
@@ -119,7 +119,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileTimezone Europe/Oslo")]
     public async Task SetTimezone([CommandParameter(Remainder = true)] string id)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetTimezoneAsync(Context.User.Id, id);
         await Context.SendResponse(interactiveService, response);
     }
@@ -129,7 +129,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileBirthday 07-21", "profileBirthday 7/21")]
     public async Task SetBirthday([CommandParameter(Remainder = true)] string date)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.SetBirthdayAsync(Context.User.Id, date);
         await Context.SendResponse(interactiveService, response);
     }
@@ -139,7 +139,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileResetDescription")]
     public async Task ResetDescription()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.ResetDescriptionAsync(Context.User.Id);
         await Context.SendResponse(interactiveService, response);
     }
@@ -149,7 +149,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileResetTimezone")]
     public async Task ResetTimezone()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.ResetTimezoneAsync(Context.User.Id);
         await Context.SendResponse(interactiveService, response);
     }
@@ -159,7 +159,7 @@ public sealed class ProfileTextCommand(
     [Examples("profileResetBirthday")]
     public async Task ResetBirthday()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var response = await profileEditCommand.ResetBirthdayAsync(Context.User.Id);
         await Context.SendResponse(interactiveService, response);
     }

@@ -45,7 +45,7 @@ public sealed class TagsTextCommand(
             return;
         }
 
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
 
         var args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var command = args[0].ToLower();

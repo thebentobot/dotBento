@@ -17,7 +17,7 @@ public sealed class ChooseTextCommand(
     [Examples("choose option1, option2, option3")]
     public async Task ChooseCommand([CommandParameter(Remainder = true)] [Summary("List of options to choose between")] string options)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await SharedCommands.ChooseCommand.Command(options));
     }
 }

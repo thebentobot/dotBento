@@ -43,7 +43,7 @@ public sealed class LastFmTextCommand(
     [GuildOnly]
     public async Task LastFmCommand([CommandParameter(Remainder = true)] string? input = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
 
         var args = input?.Split(' ') ?? [];
         var mentions = Context.Message.MentionedUsers;

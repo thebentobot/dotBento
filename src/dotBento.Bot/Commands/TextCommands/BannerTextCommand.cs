@@ -22,7 +22,7 @@ public sealed class BannerTextCommand(
     [Examples("banner", "banner @Banner", "banner 232584569289703424")]
     public async Task BannerCommand(User? user = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         var restUser = await userResolver.GetRestUserAsync(user.Id);

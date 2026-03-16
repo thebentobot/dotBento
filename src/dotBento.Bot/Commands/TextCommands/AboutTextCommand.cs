@@ -18,7 +18,7 @@ public sealed class AboutTextCommand(
     [Examples("about")]
     public async Task AboutCommand()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await SharedCommands.AboutCommand.Command(Context));
     }
 }

@@ -18,7 +18,7 @@ public sealed class WeatherTextCommand(
     [Examples("weather", "weather Copenhagen")]
     public async Task WeatherCommand([CommandParameter(Remainder = true)] string? city = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         var guildMember = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
         var username = guildMember?.Nickname ?? Context.User.GlobalName;
         var userAvatar = guildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString(1024);

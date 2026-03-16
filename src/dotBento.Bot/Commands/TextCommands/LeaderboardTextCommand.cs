@@ -33,7 +33,7 @@ public sealed class LeaderboardTextCommand(
     [GuildOnly]
     public async Task LeaderboardCommand([CommandParameter(Remainder = true)] string? input = null)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
 
         var guildId = (long)Context.Guild!.Id;
         var guildName = Context.Guild.Name;

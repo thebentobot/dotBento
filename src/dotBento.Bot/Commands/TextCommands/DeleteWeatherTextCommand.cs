@@ -18,7 +18,7 @@ public sealed class DeleteWeatherTextCommand(
     [Examples("deleteWeather")]
     public async Task RemoveWeatherCommand()
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await weatherCommand.DeleteWeatherAsync((long)Context.User.Id));
     }
 }

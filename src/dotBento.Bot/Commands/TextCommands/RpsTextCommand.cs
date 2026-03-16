@@ -23,7 +23,7 @@ public sealed class RpsTextCommand(
     [Examples("rps rock", "rps paper", "rps scissors")]
     public async Task RpsCommand(string userChoice)
     {
-        _ = Context.Channel?.TriggerTypingStateAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         if (!Enum.TryParse<RpsGameChoice>(userChoice, true, out var rpsChoice))
         {
             var errorEmbed = new ResponseModel{ ResponseType = ResponseType.Embed };
