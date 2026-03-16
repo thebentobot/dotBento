@@ -20,7 +20,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class MessageHandler
+public sealed class MessageHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly IMemoryCache _cache;
@@ -82,12 +82,21 @@ public sealed class MessageHandler
 
         await _userService.AddExperienceAsync(context, patreonUser);
 
+        // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
+        // Without it, msg.Content is empty for all guild messages, so prefix checking and command
+        // parsing are wasted work. Re-enable the block below (and commands.AddModulesAsync /
+        // prefixService.LoadAllPrefixes in BotService) when the intent is granted.
+        /*
         var messageArgumentPositionByIndex = 0;
         var prefix = _prefixService.GetPrefix(context.Guild?.Id);
-        
+
         if (msg.HasStringPrefix(prefix, ref messageArgumentPositionByIndex, StringComparison.OrdinalIgnoreCase))
         {
-            _ = Task.Run(() => ExecuteCommand(msg, context, messageArgumentPositionByIndex, prefix));
+            _ = Task.Run(async () =>
+            {
+                try { await ExecuteCommand(msg, context, messageArgumentPositionByIndex, prefix); }
+                catch (Exception ex) { Log.Error(ex, "Unhandled exception in text command execution"); }
+            });
             return;
         }
 
@@ -112,11 +121,18 @@ public sealed class MessageHandler
             }
             else
             {
-                _ = Task.Run(() => ExecuteCommand(msg, context, messageArgumentPositionByIndex, prefix));
+                _ = Task.Run(async () =>
+                {
+                    try { await ExecuteCommand(msg, context, messageArgumentPositionByIndex, prefix); }
+                    catch (Exception ex) { Log.Error(ex, "Unhandled exception in text command execution"); }
+                });
             }
         }
+        */
     }
 
+    /*
+    // TODO: Re-enable when MessageContent intent is granted (see HandleMessageAsync above).
     private async Task ExecuteCommand(SocketUserMessage msg, SocketCommandContext context, int argPosition, string prefix)
     {
         var searchResult = _commands.Search(context, argPosition);
@@ -232,6 +248,7 @@ public sealed class MessageHandler
             }
         }
     }
+    */
     
     private bool CheckUserRateLimit(ulong discordUserId)
     {
@@ -252,5 +269,10 @@ public sealed class MessageHandler
         }
 
         return true;
+    }
+
+    public void Dispose()
+    {
+        _client.MessageReceived -= MessageReceived;
     }
 }
