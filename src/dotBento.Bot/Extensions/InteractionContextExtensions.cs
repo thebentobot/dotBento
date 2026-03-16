@@ -8,7 +8,6 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
-using dotBento.Domain;
 using dotBento.Domain.Enums;
 using dotBento.Domain.Extensions;
 using Serilog;
@@ -28,7 +27,6 @@ public static class InteractionContextExtensions
         Log.Information("SlashCommandUsed: {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} | {MessageContent}",
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, commandName);
 
-        PublicProperties.UsedCommandsResponses.TryAdd(context.Interaction.Id, commandResponse);
     }
 
     public static async Task HandleCommandException(this ApplicationCommandContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false)
@@ -58,7 +56,6 @@ public static class InteractionContextExtensions
                 .WithFlags(MessageFlags.Ephemeral));
         }
 
-        PublicProperties.UsedCommandsErrorReferences.TryAdd(context.Interaction.Id, referenceId);
     }
 
     public static async Task SendResponse(this ApplicationCommandContext context, InteractiveService interactiveService, ResponseModel response, bool ephemeral = false)

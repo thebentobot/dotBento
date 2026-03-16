@@ -5,10 +5,8 @@ using NetCord.Services.ApplicationCommands;
 using NetCord.Services.Commands;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
-using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Interfaces;
-using dotBento.Infrastructure.Services;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +19,13 @@ namespace dotBento.Bot.Services;
 public sealed class BotService(GatewayClient client,
     ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> interactions,
     IDbContextFactory<BotDbContext> contextFactory,
-    UserService userService,
     IPrefixService prefixService,
     CommandService<CommandContext> commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
 {
+    private MetricPusher? _metricPusher;
     public async Task StartAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -42,13 +40,15 @@ public sealed class BotService(GatewayClient client,
             throw;
         }
 
-        Log.Information("Loading all prefixes");
-        await prefixService.LoadAllPrefixes();
+        // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
+        // Re-enable these (and the command parsing in MessageHandler) when the intent is granted.
+        // Log.Information("Loading all prefixes");
+        // await prefixService.LoadAllPrefixes();
+
+        // Log.Information("Loading command modules");
+        // commands.AddModules(Assembly.GetEntryAssembly()!);
 
         Log.Information("Starting bot");
-
-        Log.Information("Loading command modules");
-        commands.AddModules(Assembly.GetEntryAssembly()!);
 
         Log.Information("Loading interaction modules");
         interactions.AddModules(Assembly.GetEntryAssembly()!);
@@ -66,8 +66,6 @@ public sealed class BotService(GatewayClient client,
         backgroundService.QueueJobs();
 
         StartMetricsPusher();
-
-        await CacheDiscordUserIds();
     }
 
     private async ValueTask OnReadyAsync(ReadyEventArgs args)
@@ -78,7 +76,6 @@ public sealed class BotService(GatewayClient client,
         DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
 
         await RegisterSlashCommands();
-        await CacheSlashCommandIds();
     }
 
     // public instead of private because of Hangfire BackgroundJob
@@ -126,13 +123,13 @@ public sealed class BotService(GatewayClient client,
         }
 
         Log.Information("Starting metrics pusher");
-        var pusher = new MetricPusher(new MetricPusherOptions
+        _metricPusher = new MetricPusher(new MetricPusherOptions
         {
             Endpoint = metricsPusherEndpoint,
             Job = metricsPusherName
         });
 
-        pusher.Start();
+        _metricPusher.Start();
 
         Log.Information("Metrics pusher pushing to {MetricsPusherEndpoint}, job name {MetricsPusherName}", metricsPusherEndpoint, metricsPusherName);
     }
@@ -143,54 +140,6 @@ public sealed class BotService(GatewayClient client,
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
-        }
-    }
-
-    // public instead of private because of Hangfire BackgroundJob
-    // ReSharper disable once MemberCanBePrivate.Global
-    public async Task CacheSlashCommandIds()
-    {
-        try
-        {
-            var applicationId = client.Cache.User?.Id ?? throw new InvalidOperationException("Bot user ID not available");
-#if DEBUG
-            var globalApplicationCommands = await client.Rest.GetGuildApplicationCommandsAsync(applicationId, 790353119795871744UL);
-#else
-            var globalApplicationCommands = await client.Rest.GetGlobalApplicationCommandsAsync(applicationId);
-#endif
-            Log.Information("Found {SlashCommandCount} registered slash commands", globalApplicationCommands.Count);
-
-            foreach (var cmd in globalApplicationCommands)
-            {
-                // Ensure each command ID is valid before adding it
-                if (ulong.TryParse(cmd.Id.ToString(), out var commandId))
-                {
-                    PublicProperties.SlashCommands.TryAdd(cmd.Name, commandId);
-                }
-                else
-                {
-                    Log.Warning("Command ID {CommandId} for {CommandName} is not a valid snowflake", cmd.Id, cmd.Name);
-                }
-            }
-        }
-        catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            Log.Error("Invalid Form Body: Check command ID formatting or other parameters. Details: {Exception}", ex);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Exception occurred while caching slash command IDs");
-        }
-    }
-
-    private async Task CacheDiscordUserIds()
-    {
-        var users = await userService.GetAllDiscordUserIds();
-        Log.Information("Found {SlashCommandCount} registered users", users.Count);
-
-        foreach (var user in users)
-        {
-            PublicProperties.RegisteredUsers.TryAdd((ulong)user.UserId, (int)user.UserId);
         }
     }
 

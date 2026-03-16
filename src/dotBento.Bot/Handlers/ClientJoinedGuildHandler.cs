@@ -8,7 +8,7 @@ using DiscordGuild = NetCord.Gateway.Guild;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class ClientJoinedGuildHandler
+public sealed class ClientJoinedGuildHandler : IDisposable
 {
     private readonly GatewayClient _client;
     private readonly GuildService _guildService;
@@ -24,7 +24,11 @@ public sealed class ClientJoinedGuildHandler
     private ValueTask ClientJoinedGuildEvent(GuildCreateEventArgs args)
     {
         if ((DateTimeOffset.UtcNow - args.Guild.JoinedAt).TotalSeconds > 30) return ValueTask.CompletedTask;
-        _ = Task.Run(() => ClientJoinedGuild(args.Guild));
+        _ = Task.Run(async () =>
+        {
+            try { await ClientJoinedGuild(args.Guild); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in ClientJoinedGuild handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
@@ -91,5 +95,10 @@ public sealed class ClientJoinedGuildHandler
             .WithFooter(new EmbedFooterProperties().WithText("Bento 🍱 is created by `banner.`"));
 
         return embed;
+    }
+
+    public void Dispose()
+    {
+        _client.GuildCreate -= ClientJoinedGuildEvent;
     }
 }

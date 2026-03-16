@@ -8,6 +8,12 @@ namespace dotBento.Infrastructure.Services.Api;
 
 public sealed class WeatherApiService(HttpClient httpClient)
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
     public async Task<Result<OpenWeatherApiObject>> GetWeatherForCity(string city, string weatherKey)
     {
         var parameters = new Dictionary<string, string?>
@@ -18,7 +24,7 @@ public sealed class WeatherApiService(HttpClient httpClient)
             { "lang", "en" }
         };
 
-        var response = await httpClient.GetAsync(
+        using var response = await httpClient.GetAsync(
             QueryHelpers.AddQueryString($"https://api.openweathermap.org/data/2.5/weather", parameters));
 
         if (!response.IsSuccessStatusCode)
@@ -27,23 +33,18 @@ public sealed class WeatherApiService(HttpClient httpClient)
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseModel = JsonSerializer.Deserialize<OpenWeatherApiObject>(responseContent, options);
+        var responseModel = JsonSerializer.Deserialize<OpenWeatherApiObject>(responseContent, JsonOptions);
 
         if (responseModel == null)
         {
             Statistics.WeatherApiErrors.WithLabels("GetWeatherForCity").Inc();
             return Result.Failure<OpenWeatherApiObject>("Could not deserialize the response from OpenWeather. It might be down.");
         }
-        
+
         Statistics.WeatherApiCalls.WithLabels("GetWeatherForCity").Inc();
         return Result.Success(responseModel);
     }
-    
+
     private static string WeatherApiError(int statusCode, string city) =>
         statusCode switch
         {

@@ -3,10 +3,11 @@ using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using NetCord;
 using NetCord.Gateway;
+using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class GuildMemberUpdateHandler
+public sealed class GuildMemberUpdateHandler : IDisposable
 {
     private readonly GatewayClient _client;
     private readonly GuildService _guildService;
@@ -23,7 +24,11 @@ public sealed class GuildMemberUpdateHandler
 
     private ValueTask GuildUserUpdateEvent(GuildUser member)
     {
-        _ = Task.Run(() => GuildUserUpdated(member));
+        _ = Task.Run(async () =>
+        {
+            try { await GuildUserUpdated(member); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildUserUpdated handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
@@ -37,5 +42,10 @@ public sealed class GuildMemberUpdateHandler
             Statistics.DiscordEvents.WithLabels(nameof(GuildUserUpdated)).Inc();
             await _guildService.UpdateGuildMemberAvatarAsync(member);
         }
+    }
+
+    public void Dispose()
+    {
+        _client.GuildUserUpdate -= GuildUserUpdateEvent;
     }
 }

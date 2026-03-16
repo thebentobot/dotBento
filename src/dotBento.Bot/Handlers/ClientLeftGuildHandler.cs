@@ -6,7 +6,7 @@ using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
-public sealed class ClientLeftGuildHandler
+public sealed class ClientLeftGuildHandler : IDisposable
 {
     private readonly IMemoryCache _cache;
     private readonly GatewayClient _client;
@@ -23,7 +23,11 @@ public sealed class ClientLeftGuildHandler
 
     private ValueTask ClientLeftGuildEvent(GuildDeleteEventArgs args)
     {
-        _ = Task.Run(() => ClientLeftGuild(args.GuildId));
+        _ = Task.Run(async () =>
+        {
+            try { await ClientLeftGuild(args.GuildId); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in ClientLeftGuild handler"); }
+        });
         return ValueTask.CompletedTask;
     }
 
@@ -50,5 +54,10 @@ public sealed class ClientLeftGuildHandler
         {
             Log.Information("LeftGuild: {GuildId} (skipped delete)", guildId);
         }
+    }
+
+    public void Dispose()
+    {
+        _client.GuildDelete -= ClientLeftGuildEvent;
     }
 }
