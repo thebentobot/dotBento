@@ -323,13 +323,9 @@ public sealed class BackgroundService(UserService userService,
                         await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
                         totalDeleted++;
                     }
-
-                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
-
-                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
@@ -380,7 +376,6 @@ public sealed class BackgroundService(UserService userService,
                     {
                         // Guild no longer exists in bot's guild list - safe to delete
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
-                        await Task.Delay(10000);
                         continue;
                     }
 
@@ -405,6 +400,7 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to verify guild member {dbGuildMember.GuildMemberId} in guild {dbGuildMember.GuildId}");
                     }
 
+                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -527,6 +523,7 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
                     }
 
+                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -589,13 +586,9 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
                     }
-
-                    await Task.Delay(10000);
                 }
 
                 skip += batchSize;
-
-                await Task.Delay(15000);
             }
 
             Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
@@ -654,11 +647,18 @@ public sealed class BackgroundService(UserService userService,
                             }
                         }
                     }
+                    catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        // Member no longer in guild — remove stale record
+                        await guildService.DeleteGuildMember((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                        Log.Information($"Removed stale guild member {dbGuildMember.UserId} from guild {dbGuildMember.GuildId} during sync");
+                    }
                     catch (Exception ex)
                     {
                         Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
                     }
 
+                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -678,8 +678,7 @@ public sealed class BackgroundService(UserService userService,
 
     private bool HasClientNoGuilds(string jobName)
     {
-        var clientGuilds = client.Cache.Guilds.AsMaybe();
-        if (clientGuilds.HasNoValue)
+        if (client.Cache.Guilds.Count == 0)
         {
             Log.Information($"Client guilds not available, cancelling {jobName}");
             return true;
