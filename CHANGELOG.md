@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.19.1](https://github.com/thebentobot/dotBento/compare/v1.19.0...v1.19.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* add IDisposable and error handling to event handlers ([dce0c5e](https://github.com/thebentobot/dotBento/commit/dce0c5e33b701829c0a1f05834cef3a5bded11da))
+* disable text command processing without MessageContent intent ([aa01189](https://github.com/thebentobot/dotBento/commit/aa01189db512f06cd94448b2efc237ffdd60e67d))
+* memory leaks, resource disposal, and staging alignment ([9434505](https://github.com/thebentobot/dotBento/commit/943450557edf8992743bf92f233d14f9238d2ec2))
+* remove unbounded static dictionaries and unused cache methods ([8500ff6](https://github.com/thebentobot/dotBento/commit/8500ff62f8e7cc5c7909d7ed06adc982c114df76))
+* remove unnecessary delays on cache-only lookups in BackgroundSe… ([2846f5e](https://github.com/thebentobot/dotBento/commit/2846f5e8acc6056ad32e74cb8fb7aafaaf2ce1fb))
+* resolve resource leaks in API services ([d648b7c](https://github.com/thebentobot/dotBento/commit/d648b7c1d6bbe05de5a731163c0c591440b664c1))
+
+
+### Performance Improvements
+
+* optimize PrefixService.LoadAllPrefixes query ([730f52e](https://github.com/thebentobot/dotBento/commit/730f52e3599167413ef042200420a790d1796174))
+* remove unnecessary delays on cache-only lookups in BackgroundService ([3dadf68](https://github.com/thebentobot/dotBento/commit/3dadf68b45992ec5394d5c36747cb16c614c52d7))
+
 ## [1.19.0](https://github.com/thebentobot/dotBento/compare/v1.18.0...v1.19.0) (2026-03-08)
 
 
