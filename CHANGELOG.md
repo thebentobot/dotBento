@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.2](https://github.com/thebentobot/dotBento/compare/v1.19.1...v1.19.2) (2026-03-21)
+
+
+### Bug Fixes
+
+* bump discord.net version to 3.19.1 ([08cb3d1](https://github.com/thebentobot/dotBento/commit/08cb3d15763be86d1324bcbe6e4a6a84b01d4aa2))
+* bump discord.net version to 3.19.1 ([d4b9928](https://github.com/thebentobot/dotBento/commit/d4b9928362c0fa61babe61123623cda4d4d9961b))
+
 ## [1.19.1](https://github.com/thebentobot/dotBento/compare/v1.19.0...v1.19.1) (2026-03-16)
 
 
