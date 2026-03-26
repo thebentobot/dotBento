@@ -17,7 +17,7 @@ public sealed class UserService(IMemoryCache cache,
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsNoTracking()
-            .FirstAsync(f => f.UserId == (long)discordUserId);
+            .FirstOrDefaultAsync(f => f.UserId == (long)discordUserId);
 
         return user.AsMaybe();
     }
