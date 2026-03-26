@@ -263,8 +263,9 @@ public sealed class Startup
 
         services.AddHealthChecks();
         
-        services.AddDbContextFactory<BotDbContext>(b => 
-            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
+        services.AddDbContextFactory<BotDbContext>(b =>
+            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"],
+                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()).ConfigureWarnings(builder =>
                 builder.Log(RelationalEventId.PendingModelChangesWarning)));
         
         // Configure shared distributed cache (Valkey/Redis) for cross-process caching. Fail if not configured.

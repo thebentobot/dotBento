@@ -87,7 +87,8 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 builder.Services.AddDbContextFactory<BotDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString,
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
 var app = builder.Build();
 

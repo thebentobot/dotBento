@@ -33,6 +33,7 @@ public sealed class GuildMemberUpdateHandler : IDisposable
     {
         if (newGuildUser.IsBot) return;
         var getGuildMemberFromDatabaseAsync = await _guildService.GetGuildMemberAsync(newGuildUser.Guild.Id, newGuildUser.Id);
+        if (!cacheable.HasValue) return;
         var oldGuildUser = cacheable.Value;
         if (getGuildMemberFromDatabaseAsync.HasValue && oldGuildUser.GetGuildAvatarUrl() != newGuildUser.GetGuildAvatarUrl())
         {
