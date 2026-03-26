@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.3](https://github.com/thebentobot/dotBento/compare/v1.19.2...v1.19.3) (2026-03-26)
+
+
+### Bug Fixes
+
+* resolve unhandled exceptions in UserUpdated and GuildMemberUpdated handlers ([ce680c0](https://github.com/thebentobot/dotBento/commit/ce680c06eaf7fdfb7cf429937ffdb2d5e68b4fb8))
+* resolve unhandled exceptions in UserUpdated and GuildMemberUpdated handlers ([b557232](https://github.com/thebentobot/dotBento/commit/b55723290e10885a6477e03c264c31a57bbd1c97))
+
 ## [1.19.2](https://github.com/thebentobot/dotBento/compare/v1.19.1...v1.19.2) (2026-03-21)
 
 
