@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.4](https://github.com/thebentobot/dotBento/compare/v1.19.3...v1.19.4) (2026-04-09)
+
+
+### Bug Fixes
+
+* Update renovate.json ([d077958](https://github.com/thebentobot/dotBento/commit/d0779589d8eb8896f4d478ebc3c56ac9eb25da99))
+
 ## [1.19.3](https://github.com/thebentobot/dotBento/compare/v1.19.2...v1.19.3) (2026-03-26)
 
 
