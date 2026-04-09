@@ -8,5 +8,19 @@
   "assignees": ["banner4422"],
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
-  "rangeStrategy": "bump"
+  "rangeStrategy": "bump",
+  "packageRules": [
+      {
+        "matchDatasources": ["docker"],
+        "minimumReleaseAge": "3 day"
+      },
+      {
+        "matchManagers": ["github-actions"],
+        "minimumReleaseAge": "3 day"
+      },
+      {
+        "matchDatasources": ["nuget"],
+        "minimumReleaseAge": "3 day"
+      }
+    ]
 }
