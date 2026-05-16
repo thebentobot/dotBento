@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.5](https://github.com/thebentobot/dotBento/compare/v1.19.4...v1.19.5) (2026-05-16)
+
+
+### Bug Fixes
+
+* make Docker health checks actually work for bot and webapi ([c06af9e](https://github.com/thebentobot/dotBento/commit/c06af9e2a12a0fd8649e041052d95f33cc26dda3)), closes [#454](https://github.com/thebentobot/dotBento/issues/454)
+* make Docker health checks work for bot and webapi ([f952745](https://github.com/thebentobot/dotBento/commit/f9527455c3252a66bf78a1462482c53bb714beb0))
+
 ## [1.19.4](https://github.com/thebentobot/dotBento/compare/v1.19.3...v1.19.4) (2026-04-09)
 
 
