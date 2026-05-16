@@ -18,6 +18,5 @@ RUN dotnet publish "dotBento.Bot.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 CMD find healthcheck -mmin -1
 ENTRYPOINT ["dotnet", "dotBento.Bot.dll"]
-
-HEALTHCHECK --interval=20s --timeout=20s --retries=90 CMD find healthcheck -mmin -1
