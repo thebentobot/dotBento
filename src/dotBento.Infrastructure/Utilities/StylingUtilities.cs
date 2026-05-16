@@ -1,7 +1,6 @@
 using CSharpFunctionalExtensions;
 using dotBento.Infrastructure.Extensions;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using Color = System.Drawing.Color;
 
 namespace dotBento.Infrastructure.Utilities;
@@ -10,15 +9,12 @@ public sealed class StylingUtilities(HttpClient httpClient)
 {
     public async Task<Discord.Color> GetDominantColorAsync(string imageUrl)
     {
-        using (var stream = await httpClient.GetStreamAsync(imageUrl))
-        {
-            using (var image = Image.Load<Rgba32>(stream))
-            {
-                return CalculateDominantColor(image).ColorToDiscordColor();
-            }
-        }
+        await using var stream = await httpClient.GetStreamAsync(imageUrl);
+        using var bitmap = SKBitmap.Decode(stream)
+            ?? throw new InvalidOperationException("Could not decode image stream.");
+        return CalculateDominantColor(bitmap).ColorToDiscordColor();
     }
-    
+
     public async Task<Result<Discord.Color>> TryGetDominantColorAsync(string imageUrl)
     {
         try
@@ -31,23 +27,19 @@ public sealed class StylingUtilities(HttpClient httpClient)
         }
     }
 
-    internal static Color CalculateDominantColor(Image<Rgba32> image)
+    internal static Color CalculateDominantColor(SKBitmap bitmap)
     {
-        double r = 0;
-        double g = 0;
-        double b = 0;
+        double r = 0, g = 0, b = 0;
         var total = 0;
 
-        for (var y = 0; y < image.Height; y++)
+        for (var y = 0; y < bitmap.Height; y++)
         {
-            for (var x = 0; x < image.Width; x++)
+            for (var x = 0; x < bitmap.Width; x++)
             {
-                var pixel = image[x, y];
-
-                r += pixel.R;
-                g += pixel.G;
-                b += pixel.B;
-
+                var pixel = bitmap.GetPixel(x, y);
+                r += pixel.Red;
+                g += pixel.Green;
+                b += pixel.Blue;
                 total++;
             }
         }
