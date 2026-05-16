@@ -15,7 +15,7 @@
       <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
       <PackageReference Include="Serilog" Version="4.3.1" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="4.0.0" />
     </ItemGroup>
 
     <ItemGroup>
