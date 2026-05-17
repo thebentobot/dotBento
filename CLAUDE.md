@@ -64,7 +64,7 @@ Discord event handlers in `dotBento.Bot/Handlers/`:
 
 ### Configuration
 
-- Bot config: `src/dotBento.Bot/configs/config.json` or environment variables
+- Bot config: `.env` file at repo root (loaded automatically via DotNetEnv) or environment variables
 - Web API config: `src/dotBento.WebApi/appsettings.json` or environment variables
 - Required services: PostgreSQL, Valkey/Redis for distributed caching
 
@@ -78,10 +78,26 @@ Uses EF Core with PostgreSQL. The `BotDbContext` in `dotBento.EntityFramework/Co
 
 ### Docker Development
 
+The dev compose runs infrastructure only (Postgres, Valkey, Sushii image server). Run the bot and webapi locally with `dotnet run`.
+
 ```bash
-# Start local development environment (Postgres, Valkey, Sushii image server)
-docker compose -f src/docker-compose.dev.yml up
+# 1. Start infrastructure
+docker compose -f src/docker-compose.dev.yml up -d
+
+# 2. Copy env file and fill in your Discord token (first time only)
+cp .env.example .env
+
+# 3. Run the bot (in one terminal)
+dotnet run --project src/dotBento.Bot
+
+# 4. Run the web API (in another terminal, optional)
+dotnet run --project src/dotBento.WebApi
+
+# Stop infrastructure
+docker compose -f src/docker-compose.dev.yml down
 ```
+
+Postgres data is persisted in a Docker named volume (`postgres_data`) so your data survives restarts.
 
 ## Conventions
 
