@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.6](https://github.com/thebentobot/dotBento/compare/v1.19.5...v1.19.6) (2026-05-17)
+
+
+### Bug Fixes
+
+* pin postgres to version 16 to match production ([9af069f](https://github.com/thebentobot/dotBento/commit/9af069f22fc47a3ab41d070159137e9105cf3eae))
+
 ## [1.19.5](https://github.com/thebentobot/dotBento/compare/v1.19.4...v1.19.5) (2026-05-16)
 
 
