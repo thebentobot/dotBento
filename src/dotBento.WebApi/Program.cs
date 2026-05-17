@@ -61,6 +61,7 @@ else
     throw new InvalidOperationException("Valkey/Redis connection string is not configured. Set Valkey:ConnectionString (env: VALKEY__CONNECTIONSTRING) or Redis:ConnectionString (env: REDIS__CONNECTIONSTRING) or RedisConnectionString (env: REDISCONNECTIONSTRING) to enable the shared cache.");
 }
 
+builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<dotBento.Infrastructure.Services.ProfileService>();
@@ -87,7 +88,8 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 builder.Services.AddDbContextFactory<BotDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString,
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
 var app = builder.Build();
 
@@ -100,6 +102,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+app.MapHealthChecks("/health");
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.UseMetricServer();

@@ -2,8 +2,7 @@ using System.Net;
 using dotBento.Infrastructure.Utilities;
 using Moq;
 using Moq.Protected;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 
 namespace dotBento.Infrastructure.Tests.Utilities;
 
@@ -13,9 +12,11 @@ public class StylingUtilitiesTests
     public async Task TryGetDominantColorAsync_ReturnsSuccess_WhenImageIsValid()
     {
         // Arrange
-        var image = new Image<Rgba32>(2, 2); // a small blank image
+        using var bitmap = new SKBitmap(2, 2);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         var imageStream = new MemoryStream();
-        await image.SaveAsPngAsync(imageStream, cancellationToken: TestContext.Current.CancellationToken);
+        data.SaveTo(imageStream);
         imageStream.Position = 0;
 
         var mockHandler = new Mock<HttpMessageHandler>();
@@ -68,19 +69,19 @@ public class StylingUtilitiesTests
         Assert.True(result.IsFailure);
         Assert.Contains("something went wrong", result.Error);
     }
-    
+
     [Fact]
     public void CalculateDominantColor_ReturnsAverageColor()
     {
         // Arrange
-        var image = new Image<Rgba32>(2, 2);
-        image[0, 0] = new Rgba32(100, 150, 200);
-        image[0, 1] = new Rgba32(100, 150, 200);
-        image[1, 0] = new Rgba32(200, 100, 50);
-        image[1, 1] = new Rgba32(200, 100, 50);
+        using var bitmap = new SKBitmap(2, 2);
+        bitmap.SetPixel(0, 0, new SKColor(100, 150, 200));
+        bitmap.SetPixel(0, 1, new SKColor(100, 150, 200));
+        bitmap.SetPixel(1, 0, new SKColor(200, 100, 50));
+        bitmap.SetPixel(1, 1, new SKColor(200, 100, 50));
 
         // Act
-        var result = StylingUtilities.CalculateDominantColor(image);
+        var result = StylingUtilities.CalculateDominantColor(bitmap);
 
         // Assert
         Assert.Equal(System.Drawing.Color.FromArgb(150, 125, 125), result);

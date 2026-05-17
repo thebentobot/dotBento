@@ -8,8 +8,7 @@ using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp.ColorSpaces.Conversion;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 
 namespace dotBento.Bot.Commands.SharedCommands;
 
@@ -183,11 +182,8 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
 
     private static (float H, float S, float V) RgbToHsv(int r, int g, int b)
     {
-        var color = new Rgba32((byte)r, (byte)g, (byte)b);
-
-        var hsv = ColorSpaceConverter.ToHsv(color);
-
-        return ((float)Math.Round(hsv.H), (float)Math.Round(hsv.S * 100), (float)Math.Round(hsv.V * 100));
+        new SKColor((byte)r, (byte)g, (byte)b).ToHsv(out var h, out var s, out var v);
+        return ((float)Math.Round(h), (float)Math.Round(s), (float)Math.Round(v));
     }
 
     private static string RgbToHex(int[] rgb)

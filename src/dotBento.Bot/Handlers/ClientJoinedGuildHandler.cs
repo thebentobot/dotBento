@@ -71,7 +71,6 @@ public sealed class ClientJoinedGuildHandler : IDisposable
 
     private EmbedProperties BuildWelcomeEmbed()
     {
-        var botUser = _client.Cache.User;
         var embed = new EmbedProperties()
             .WithTitle("Hello! My name is Bento 🍱")
             .WithDescription("Thank you for choosing me to service your server!")

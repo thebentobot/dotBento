@@ -23,7 +23,41 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 
 ## Getting started
 
-TBD soon™️
+### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Docker](https://docs.docker.com/get-docker/) (for local infrastructure)
+- A Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
+
+### Local development
+
+1. **Start infrastructure** (Postgres, Valkey, Sushii image server):
+   ```bash
+   docker compose -f src/docker-compose.dev.yml up -d
+   ```
+
+2. **Configure environment** (first time only):
+   ```bash
+   cp .env.example .env
+   # Edit .env and set Discord__Token to your bot token
+   ```
+
+3. **Run the bot:**
+   ```bash
+   dotnet run --project src/dotBento.Bot
+   ```
+
+4. **Optionally run the web API** (in a separate terminal):
+   ```bash
+   cp .env.webapi.example .env.webapi  # fill in ApiKey
+   dotnet run --project src/dotBento.WebApi
+   ```
+
+5. **Stop infrastructure** when done:
+   ```bash
+   docker compose -f src/docker-compose.dev.yml down
+   ```
+
+Postgres data is persisted in a named Docker volume, so your database survives restarts.
 
 ## Relevant links
 - The commit linting rules follows Conventional Commits. You can read about the linting rules specifically [here](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional)

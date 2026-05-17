@@ -26,6 +26,7 @@ public sealed class BotService(GatewayClient client,
     IOptions<BotEnvConfig> config)
 {
     private MetricPusher? _metricPusher;
+
     public async Task StartAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();

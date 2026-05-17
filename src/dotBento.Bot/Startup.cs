@@ -173,6 +173,17 @@ public sealed class Startup
 
         using var server = new BackgroundJobServer();
 
+        // Touch a file every 30s so the Docker HEALTHCHECK (find healthcheck -mmin -1) sees the process as alive
+        var healthCheckPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "healthcheck");
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await File.WriteAllTextAsync(healthCheckPath, DateTimeOffset.UtcNow.ToString("O"));
+                await Task.Delay(TimeSpan.FromSeconds(30));
+            }
+        });
+
         await Task.Delay(-1);
     }
 
@@ -280,7 +291,8 @@ public sealed class Startup
         services.AddHealthChecks();
 
         services.AddDbContextFactory<BotDbContext>(b =>
-            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"]).ConfigureWarnings(builder =>
+            b.UseNpgsql(Configuration["PostgreSQL:ConnectionString"],
+                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()).ConfigureWarnings(builder =>
                 builder.Log(RelationalEventId.PendingModelChangesWarning)));
 
         // Configure shared distributed cache (Valkey/Redis) for cross-process caching. Fail if not configured.
