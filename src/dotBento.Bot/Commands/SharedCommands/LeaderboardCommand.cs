@@ -4,6 +4,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
 using dotBento.Domain.Enums.Leaderboard;
 using dotBento.Infrastructure.Models;
 using dotBento.Infrastructure.Services;
@@ -17,10 +18,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetServerXpLeaderboardAsync(guildId);
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the server leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the server leaderboard.");
 
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard/{guildId}";
         return BuildXpPaginator(result.Value, $"Leaderboard for {guildName}", guildIconUrl, leaderboardUrl);
@@ -30,10 +31,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetGlobalXpLeaderboardAsync();
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the global leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the global leaderboard.");
 
         var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
         var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
@@ -48,10 +49,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetServerBentoLeaderboardAsync(guildId);
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the server bento leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the server bento leaderboard.");
 
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard/{guildId}";
         return BuildBentoPaginator(result.Value, $"Bento Leaderboard for {guildName}", guildIconUrl, leaderboardUrl);
@@ -61,10 +62,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetGlobalBentoLeaderboardAsync();
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the global bento leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the global bento leaderboard.");
 
         var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
         var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
@@ -81,10 +82,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetServerRpsLeaderboardAsync(guildId, type, order);
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the server RPS leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the server RPS leaderboard.");
 
         var typeLabel = type == RpsLeaderboardType.All ? "" : $" ({type})";
         var leaderboardUrl = $"{DiscordConstants.WebsiteUrl}/leaderboard/{guildId}";
@@ -96,10 +97,10 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetGlobalRpsLeaderboardAsync(type, order);
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         if (result.Value.Count == 0)
-            return ErrorEmbed("No users found on the global RPS leaderboard.");
+            return GenericEmbedService.ErrorEmbed("No users found on the global RPS leaderboard.");
 
         var hiddenUserIds = await userSettingService.GetHiddenGlobalLeaderboardUserIdsAsync();
         var anonymized = result.Value.Select(e => hiddenUserIds.Contains(e.UserId)
@@ -116,7 +117,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
     {
         var result = await leaderboardService.GetUserLeaderboardSummaryAsync(userId, guildId);
         if (result.IsFailure)
-            return ErrorEmbed(result.Error);
+            return GenericEmbedService.ErrorEmbed(result.Error);
 
         var summary = result.Value;
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
@@ -241,12 +242,4 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
         return embed;
     }
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel { ResponseType = ResponseType.Embed };
-        embed.Embed
-            .WithTitle(error)
-            .WithColor(Color.Red);
-        return embed;
-    }
 }

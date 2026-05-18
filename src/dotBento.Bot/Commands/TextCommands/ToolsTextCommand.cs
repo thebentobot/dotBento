@@ -1,11 +1,10 @@
-using Discord;
 using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
@@ -45,7 +44,7 @@ public sealed class ToolsTextCommand(
         
         if (string.IsNullOrWhiteSpace(url))
         {
-            await Context.SendResponse(interactiveService, ErrorEmbed("Please provide a URL or attach an image to the command."));
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide a URL or attach an image to the command."));
             return;
         }
         
@@ -87,11 +86,4 @@ public sealed class ToolsTextCommand(
             await toolsCommand.GetTimezone(timezoneId, compareId, Context.User.Id));
     }
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(Color.Red);
-        return embed;
-    }
 }

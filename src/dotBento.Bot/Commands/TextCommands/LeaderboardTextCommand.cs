@@ -7,6 +7,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Domain.Enums.Leaderboard;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
@@ -81,7 +82,7 @@ public sealed class LeaderboardTextCommand(
                 break;
 
             default:
-                await Context.SendResponse(interactiveService, ErrorEmbed(
+                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed(
                     "Invalid subcommand. Use: `leaderboard [global|bento|bento global|rps|rps global|user @someone]`"));
                 break;
         }
@@ -132,14 +133,14 @@ public sealed class LeaderboardTextCommand(
                 var resolvedUser = Context.Client.GetUser(userId);
                 if (resolvedUser == null)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("User not found."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("User not found."));
                     return;
                 }
                 user = resolvedUser;
             }
             else
             {
-                await Context.SendResponse(interactiveService, ErrorEmbed("Invalid user. Mention a user or provide a user ID."));
+                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Invalid user. Mention a user or provide a user ID."));
                 return;
             }
         }
@@ -158,11 +159,4 @@ public sealed class LeaderboardTextCommand(
                 (long)user.Id, (long)guild.Id, displayName, avatarUrl, guild.Name));
     }
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel { ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(Color.Red);
-        return embed;
-    }
 }

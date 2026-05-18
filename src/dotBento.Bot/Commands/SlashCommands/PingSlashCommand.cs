@@ -1,4 +1,3 @@
-using Discord;
 using Discord.Interactions;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
@@ -46,7 +45,7 @@ public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveServi
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
-                .WithColor(Color.Red);
+                .WithColor(DiscordConstants.ErrorRed);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
             Context.LogCommandUsed(CommandResponse.Error);
             Log.Error(e, "Ping Slash Command failed");

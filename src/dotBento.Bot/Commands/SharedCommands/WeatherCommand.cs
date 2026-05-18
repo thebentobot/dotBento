@@ -3,6 +3,7 @@ using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Models.Weather;
 using dotBento.Infrastructure.Services;
@@ -25,11 +26,8 @@ public sealed class WeatherCommand(
             var weather = await weatherService.GetWeatherAsync(userId);
             if (weather.HasNoValue)
             {
-                embed.Embed
-                    .WithColor(Color.Red)
-                    .WithTitle("Error: No city saved or provided")
-                    .WithDescription("You need to provide a city or save one with the weather save command\nFind the weather save command as a slash command or by trying help after calling the weather command.");
-                return embed;
+                return GenericEmbedService.ErrorEmbed("Error: No city saved or provided",
+                    "You need to provide a city or save one with the weather save command\nFind the weather save command as a slash command or by trying help after calling the weather command.");
             }
             city = weather.Value.City;
         } else
@@ -40,11 +38,7 @@ public sealed class WeatherCommand(
         var weatherDataResult = await weatherApiService.GetWeatherForCity(city, config.Value.OpenWeatherApiKey);
         if (weatherDataResult.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(weatherDataResult.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", weatherDataResult.Error);
         }
         var weatherData = weatherDataResult.Value;
         var currentWeather = weatherData.Weather.First();

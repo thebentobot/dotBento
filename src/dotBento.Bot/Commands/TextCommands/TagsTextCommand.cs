@@ -1,13 +1,12 @@
 using CSharpFunctionalExtensions;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Dto.Tags;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
@@ -42,7 +41,7 @@ public sealed class TagsTextCommand(
     {
         if (string.IsNullOrWhiteSpace(input))
         {
-            await Context.SendResponse(interactiveService, ErrorEmbed("Please provide an argument to the command. You can check the usage of the command with the `tags help` command."));
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide an argument to the command. You can check the usage of the command with the `tags help` command."));
             return;
         }
         
@@ -60,7 +59,7 @@ public sealed class TagsTextCommand(
             case "add":
                 if (args.Length < 3)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags create <tag name> <tag content>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags create <tag name> <tag content>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var createName = args[1];
@@ -74,7 +73,7 @@ public sealed class TagsTextCommand(
             case "get":
                 if (args.Length < 2)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags get <tag name>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags get <tag name>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var getName = args[1];
@@ -86,7 +85,7 @@ public sealed class TagsTextCommand(
             case "search":
                 if (args.Length < 2)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags search <tag name>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags search <tag name>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var query = string.Join(' ', args.Skip(1));
@@ -99,7 +98,7 @@ public sealed class TagsTextCommand(
             case "remove":
                 if (args.Length < 2)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags delete <tag name>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags delete <tag name>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var deleteName = args[1];
@@ -129,7 +128,7 @@ public sealed class TagsTextCommand(
             case "update":
                 if (args.Length < 3)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags update <tag name> <new tag content>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags update <tag name> <new tag content>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var updateName = args[1];
@@ -143,7 +142,7 @@ public sealed class TagsTextCommand(
             case "info":
                 if (args.Length < 2)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags info <tag name>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags info <tag name>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var infoName = args[1];
@@ -155,7 +154,7 @@ public sealed class TagsTextCommand(
             case "rename":
                 if (args.Length < 3)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("Usage: tags rename <tag name> <new tag name>. You can check the usage of the command with the `tags help` command."));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Usage: tags rename <tag name> <new tag name>. You can check the usage of the command with the `tags help` command."));
                     return;
                 }
                 var oldName = args[1];
@@ -178,16 +177,9 @@ public sealed class TagsTextCommand(
                     await Context.SendResponse(interactiveService, tag.Value);
                     break;
                 }
-                await Context.SendResponse(interactiveService, ErrorEmbed("Invalid command. Please check the usage of the command with the `tags help` command."));
+                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Invalid command. Please check the usage of the command with the `tags help` command."));
                 break;
         }
     }
     
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(Color.Red);
-        return embed;
-    }
 }

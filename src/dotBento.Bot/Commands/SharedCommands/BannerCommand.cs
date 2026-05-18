@@ -3,6 +3,7 @@ using Discord;
 using Discord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Bot.Utilities;
 using dotBento.Infrastructure.Utilities;
 
@@ -15,13 +16,11 @@ public sealed class BannerCommand(StylingUtilities stylingUtilities)
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         if (user.HasNoValue)
         {
-            embed.Embed.WithTitle("Error").WithDescription("That user does not exist.").WithColor(Color.Red);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "That user does not exist.");
         }
         if (user.Value.GetBannerUrl(ImageFormat.Auto, 2048) == null)
         {
-            embed.Embed.WithTitle("Error").WithDescription("That user does not have a banner.").WithColor(Color.Red);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "That user does not have a banner.");
         }
         var bannerColour = await stylingUtilities.GetDominantColorAsync(user.Value.GetBannerUrl(ImageFormat.WebP, 128));
         embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(user.Value.GlobalName)} User Profile Banner")

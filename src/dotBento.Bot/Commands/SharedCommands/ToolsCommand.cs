@@ -3,6 +3,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
@@ -20,13 +21,9 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (colourImage.IsFailure)
         {
-            embed.ResponseType = ResponseType.Embed;
-            embed.Embed.WithTitle("Error")
-                .WithDescription(colourImage.Error)
-                .WithColor(Color.Red);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
         }
-        
+
         embed.Stream = colourImage.Value.Image;
         embed.FileName = "colour.png";
 
@@ -62,12 +59,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (getDominantColorAsync.IsFailure)
         {
-            embed.ResponseType = ResponseType.Embed;
-            embed.Embed
-                .WithTitle("Error")
-                .WithDescription($"Could not get the dominant colour by your provided input: `{url}`")
-                .WithColor(Color.Red);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", $"Could not get the dominant colour by your provided input: `{url}`");
         }
         
         var dominantColor = getDominantColorAsync.Value;
@@ -80,13 +72,9 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (colourImage.IsFailure)
         {
-            embed.ResponseType = ResponseType.Embed;
-            embed.Embed.WithTitle("Error")
-                .WithDescription(colourImage.Error)
-                .WithColor(Color.Red);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
         }
-        
+
         embed.Stream = colourImage.Value.Image;
         embed.FileName = "colour.png";
         
@@ -105,20 +93,14 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
 
         if (!ProfileValidationUtilities.TryValidateTimezone(timezoneId))
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Invalid timezone")
-                .WithDescription($"The timezone `{timezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Invalid timezone",
+                $"The timezone `{timezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
         }
 
         if (compareTimezoneId != null && !ProfileValidationUtilities.TryValidateTimezone(compareTimezoneId))
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Invalid comparison timezone")
-                .WithDescription($"The timezone `{compareTimezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Invalid comparison timezone",
+                $"The timezone `{compareTimezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
         }
 
         var zone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
