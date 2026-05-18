@@ -200,7 +200,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
             })
             .ToList();
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -257,7 +257,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
             })
             .ToList();
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;

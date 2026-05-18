@@ -22,6 +22,6 @@ public sealed class ServerInfoTextCommand(
     public async Task ServerInfoCommand()
     {
         _ = Context.Channel?.TriggerTypingAsync();
-        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild));
+        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild!));
     }
 }

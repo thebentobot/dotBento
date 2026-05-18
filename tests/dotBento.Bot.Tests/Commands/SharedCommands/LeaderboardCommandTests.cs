@@ -3,6 +3,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Resources;
 using dotBento.Domain.Enums.Leaderboard;
 using Fergun.Interactive;
+using Fergun.Interactive.Pagination;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using dotBento.Infrastructure.Services;
@@ -38,6 +39,16 @@ public class LeaderboardCommandTests
 
     private static LeaderboardCommand CreateLeaderboardCommand(InMemoryDbFactory factory) =>
         new(new LeaderboardService(factory), new UserSettingService(factory, Mock.Of<IDistributedCache>()));
+
+    /// <summary>
+    /// Gets the embed from a <see cref="IComponentPaginator"/> at the specified page index by invoking the page factory.
+    /// </summary>
+    private static async Task<NetCord.Rest.EmbedProperties> GetEmbedAtPageAsync(IComponentPaginator paginator, int pageIndex)
+    {
+        paginator.SetPage(pageIndex);
+        var page = (Page)await paginator.PageFactory!(paginator);
+        return page.Embeds!.First();
+    }
 
     private static async Task<(LeaderboardCommand Command, InMemoryDbFactory Factory)> CreateCommandWithUsersAsync(int userCount)
     {
@@ -106,7 +117,7 @@ public class LeaderboardCommandTests
         var result = await command.GetServerXpLeaderboardAsync(1, "TestServer", "https://icon.url");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        Assert.NotNull(result.StaticPaginator);
+        Assert.NotNull(result.ComponentPaginator);
     }
 
     [Fact]
@@ -118,9 +129,8 @@ public class LeaderboardCommandTests
         var result = await command.GetServerXpLeaderboardAsync(1, "MyServer", "https://icon.url");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        var pages = result.StaticPaginator!.Pages.ToList();
-        Assert.Single(pages);
-        var embed = pages[0].Embeds.First();
+        Assert.Equal(1, result.ComponentPaginator!.PageCount);
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("Leaderboard for MyServer", embed.Title);
     }
 
@@ -146,8 +156,7 @@ public class LeaderboardCommandTests
         var result = await command.GetGlobalXpLeaderboardAsync("https://bot.avatar");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("Global Leaderboard", embed.Title);
     }
 
@@ -158,8 +167,7 @@ public class LeaderboardCommandTests
 
         var result = await command.GetGlobalXpLeaderboardAsync("https://bot.avatar");
 
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("https://bot.avatar", embed.Thumbnail!.Url);
     }
 
@@ -185,8 +193,7 @@ public class LeaderboardCommandTests
         var result = await command.GetServerBentoLeaderboardAsync(1, "BentoServer", "https://icon.url");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("Bento Leaderboard for BentoServer", embed.Title);
     }
 
@@ -210,8 +217,7 @@ public class LeaderboardCommandTests
         var result = await command.GetGlobalBentoLeaderboardAsync("https://bot.avatar");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("Global Bento Leaderboard", embed.Title);
     }
 
@@ -236,8 +242,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetServerRpsLeaderboardAsync(1, "RpsServer", null, RpsLeaderboardType.All, RpsLeaderboardOrder.Wins);
 
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("RPS Leaderboard for RpsServer", embed.Title);
     }
 
@@ -260,8 +265,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetServerRpsLeaderboardAsync(1, "RpsServer", null, RpsLeaderboardType.Rock, RpsLeaderboardOrder.Wins);
 
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("RPS Leaderboard for RpsServer (Rock)", embed.Title);
     }
 
@@ -284,8 +288,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, RpsLeaderboardOrder.Wins, "https://bot.avatar");
 
-        var pages = result.StaticPaginator!.Pages.ToList();
-        var embed = pages[0].Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Equal("Global RPS Leaderboard", embed.Title);
     }
 
@@ -380,8 +383,7 @@ public class LeaderboardCommandTests
         var result = await command.GetGlobalXpLeaderboardAsync("https://bot.avatar");
 
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
-        var pages = result.StaticPaginator!.Pages.ToList();
-        Assert.Equal(3, pages.Count); // 25 entries / 10 per page = 3 pages
+        Assert.Equal(3, result.ComponentPaginator!.PageCount); // 25 entries / 10 per page = 3 pages
     }
 
     [Fact]
@@ -391,8 +393,7 @@ public class LeaderboardCommandTests
 
         var result = await command.GetGlobalXpLeaderboardAsync("https://bot.avatar");
 
-        var pages = result.StaticPaginator!.Pages.ToList();
-        Assert.Single(pages);
+        Assert.Equal(1, result.ComponentPaginator!.PageCount);
     }
 
     // --- Entry Formatting ---
@@ -411,7 +412,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalXpLeaderboardAsync(null);
 
-        var embed = result.StaticPaginator!.Pages.First().Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Contains("**1.** TopPlayer", embed.Description);
         Assert.Contains("Level 10 (1000 XP)", embed.Description);
         Assert.Contains("**2.** SecondPlayer", embed.Description);
@@ -431,7 +432,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalBentoLeaderboardAsync(null);
 
-        var embed = result.StaticPaginator!.Pages.First().Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         Assert.Contains("100 Bento", embed.Description);
         Assert.Contains("BentoKing", embed.Description);
     }
@@ -456,7 +457,7 @@ public class LeaderboardCommandTests
         var command = CreateLeaderboardCommand(factory);
         var result = await command.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, RpsLeaderboardOrder.Wins, null);
 
-        var embed = result.StaticPaginator!.Pages.First().Embeds.First();
+        var embed = await GetEmbedAtPageAsync(result.ComponentPaginator!, 0);
         // 7 wins out of 10 total = 70%
         Assert.Contains("7W / 2T / 1L (70%)", embed.Description);
     }

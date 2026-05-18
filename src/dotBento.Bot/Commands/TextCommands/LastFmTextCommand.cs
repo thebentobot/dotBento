@@ -53,8 +53,8 @@ public sealed class LastFmTextCommand(
             var noArgGuildMember = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
             await Context.SendResponse(interactiveService,
                 await lastFmCommand.GetNowPlaying((long)Context.User.Id,
-                    noArgGuildMember?.Nickname ?? noArgGuildMember?.GlobalName,
-                    noArgGuildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? noArgGuildMember?.GetAvatarUrl()?.ToString(1024)));
+                    noArgGuildMember?.Nickname ?? noArgGuildMember?.GlobalName ?? Context.User.GlobalName ?? Context.User.Username,
+                    noArgGuildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? noArgGuildMember?.GetAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString()));
             return;
         }
 
@@ -99,8 +99,8 @@ public sealed class LastFmTextCommand(
                     return;
                 }
                 var memberForUserCmd23 = guildMemberForUserCmd23.Value;
-                var userAvatarForUserCmd23 = memberForUserCmd23.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd23.GetAvatarUrl()?.ToString(1024);
-                var usernameForUserCmd23 = memberForUserCmd23.Nickname ?? memberForUserCmd23.GlobalName;
+                var userAvatarForUserCmd23 = memberForUserCmd23.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd23.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd23.DefaultAvatarUrl.ToString();
+                var usernameForUserCmd23 = memberForUserCmd23.Nickname ?? memberForUserCmd23.GlobalName ?? memberForUserCmd23.Username;
                 await Context.SendResponse(interactiveService, await lastFmCommand.GetRecentTracks((long)memberForUserCmd23.Id, usernameForUserCmd23, userAvatarForUserCmd23));
                 return;
             case "np":
@@ -141,8 +141,8 @@ public sealed class LastFmTextCommand(
                     return;
                 }
                 var memberForUserCmd2 = guildMemberForUserCmd2.Value;
-                var userAvatarForUserCmd2 = memberForUserCmd2.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd2.GetAvatarUrl()?.ToString(1024);
-                var usernameForUserCmd2 = memberForUserCmd2.Nickname ?? memberForUserCmd2.GlobalName;
+                var userAvatarForUserCmd2 = memberForUserCmd2.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd2.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd2.DefaultAvatarUrl.ToString();
+                var usernameForUserCmd2 = memberForUserCmd2.Nickname ?? memberForUserCmd2.GlobalName ?? memberForUserCmd2.Username;
                 await Context.SendResponse(interactiveService, await lastFmCommand.GetNowPlaying((long)memberForUserCmd2.Id, usernameForUserCmd2, userAvatarForUserCmd2));
                 return;
             case "save":
@@ -188,8 +188,8 @@ public sealed class LastFmTextCommand(
                     return;
                 }
                 var memberForUserCmd = guildMemberForUserCmd.Value;
-                var userAvatarForUserCmd = memberForUserCmd.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd.GetAvatarUrl()?.ToString(1024);
-                var usernameForUserCmd = memberForUserCmd.Nickname ?? memberForUserCmd.GlobalName;
+                var userAvatarForUserCmd = memberForUserCmd.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd.DefaultAvatarUrl.ToString();
+                var usernameForUserCmd = memberForUserCmd.Nickname ?? memberForUserCmd.GlobalName ?? memberForUserCmd.Username;
                 await Context.SendResponse(interactiveService, await lastFmCommand.GetUserInfo((long)memberForUserCmd.Id, usernameForUserCmd, userAvatarForUserCmd));
                 return;
         }
@@ -244,9 +244,9 @@ public sealed class LastFmTextCommand(
 
         var guildMember = user.Value;
 
-        var userAvatar = guildMember.GetGuildAvatarUrl()?.ToString(1024) ?? guildMember.GetAvatarUrl()?.ToString(1024);
+        var userAvatar = guildMember.GetGuildAvatarUrl()?.ToString(1024) ?? guildMember.GetAvatarUrl()?.ToString(1024) ?? guildMember.DefaultAvatarUrl.ToString();
 
-        var username = guildMember.Nickname ?? guildMember.GlobalName;
+        var username = guildMember.Nickname ?? guildMember.GlobalName ?? guildMember.Username;
 
         switch (args.FirstOrDefault())
         {

@@ -34,7 +34,7 @@ public sealed class ServerSlashCommand(InteractiveService interactiveService, Se
     [SubSlashCommand("info", "Show info for the server")]
     [GuildOnly]
     public async Task ServerCommand([SlashCommandParameter(Name = "hide", Description = "Only show server info for you")] bool? hide = null) =>
-        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild),
+        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild!),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 
     [SubSlashCommand("settings", "View and manage server settings")]

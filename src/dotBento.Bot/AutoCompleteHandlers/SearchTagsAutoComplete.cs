@@ -9,7 +9,7 @@ namespace dotBento.Bot.AutoCompleteHandlers;
 
 public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : IAutocompleteProvider<AutocompleteInteractionContext>
 {
-    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>> GetChoicesAsync(
+    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
         ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
     {
         var results = new List<string>();

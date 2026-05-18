@@ -23,6 +23,7 @@ public sealed class ClientJoinedGuildHandler : IDisposable
 
     private ValueTask ClientJoinedGuildEvent(GuildCreateEventArgs args)
     {
+        if (args.Guild is null) return ValueTask.CompletedTask;
         if ((DateTimeOffset.UtcNow - args.Guild.JoinedAt).TotalSeconds > 30) return ValueTask.CompletedTask;
         _ = Task.Run(async () =>
         {

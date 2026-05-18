@@ -20,7 +20,7 @@ public sealed class WeatherTextCommand(
     {
         _ = Context.Channel?.TriggerTypingAsync();
         var guildMember = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
-        var username = guildMember?.Nickname ?? Context.User.GlobalName;
+        var username = guildMember?.Nickname ?? Context.User.GlobalName ?? Context.User.Username;
         var userAvatar = guildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString(1024);
         await Context.SendResponse(interactiveService, await weatherCommand.GetWeatherAsync((long)Context.User.Id, username, userAvatar, city));
     }

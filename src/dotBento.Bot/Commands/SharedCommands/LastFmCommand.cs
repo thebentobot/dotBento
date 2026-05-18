@@ -121,7 +121,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -188,7 +188,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -258,7 +258,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -375,7 +375,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;

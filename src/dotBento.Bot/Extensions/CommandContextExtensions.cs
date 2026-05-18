@@ -64,27 +64,29 @@ public static class CommandContextExtensions
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator ?? throw new InvalidOperationException(),
-                    context.Channel,
+                    response.ComponentPaginator ?? throw new InvalidOperationException(),
+                    context.Channel ?? throw new InvalidOperationException("Channel required for paginator"),
                     TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds));
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageEmbedFilename = response.FileName;
+                var imageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+                var imageEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
                 await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
                     .AddAttachments(new AttachmentProperties(
                         (response.Spoiler ? "SPOILER_" : "") + imageEmbedFilename,
-                        response.Stream))
+                        imageEmbedStream))
                     .AddEmbeds(response.Embed)
                     .WithComponents(response.Components));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await imageEmbedStream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageFilename = response.FileName;
+                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+                var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
                     .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + imageFilename + ".png",
-                        response.Stream)));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                        (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename + ".png",
+                        imageOnlyStream)));
+                await imageOnlyStream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

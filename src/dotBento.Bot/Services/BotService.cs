@@ -16,6 +16,7 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
+#pragma warning disable CS9113 // text-command params kept for re-enablement; see TODO at StartAsync:44
 public sealed class BotService(GatewayClient client,
     ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> interactions,
     IDbContextFactory<BotDbContext> contextFactory,
@@ -24,6 +25,7 @@ public sealed class BotService(GatewayClient client,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
+#pragma warning restore CS9113
 {
     private MetricPusher? _metricPusher;
 

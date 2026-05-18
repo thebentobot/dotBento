@@ -8,8 +8,8 @@ public static class InformationExtensions
     public static PatreonUserDto ToPatreonUserDto(this Patreon patreon) =>
         new(
             patreon.UserId,
-            patreon.Name,
-            patreon.Avatar,
+            patreon.Name ?? "",
+            patreon.Avatar ?? "",
             patreon.Sponsor,
             patreon.Disciple,
             patreon.Enthusiast,

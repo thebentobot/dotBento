@@ -177,7 +177,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -204,7 +204,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -236,7 +236,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 

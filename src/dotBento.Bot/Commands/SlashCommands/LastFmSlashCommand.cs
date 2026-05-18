@@ -50,8 +50,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
     {
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetNowPlaying((long)user.Id,
                 username,
@@ -73,8 +73,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         await Context.DeferResponseAsync();
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
@@ -110,8 +110,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         await Context.DeferResponseAsync();
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
@@ -147,8 +147,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         await Context.DeferResponseAsync();
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         try
         {
@@ -179,8 +179,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
     {
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
@@ -194,8 +194,8 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
     {
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         await Context.SendResponse(interactiveService,
             await lastFmCommand.GetRecentTracks((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
@@ -228,7 +228,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         await Context.DeferResponseAsync();
         user ??= Context.User;
         var guildUser = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(TimePeriodToString(timePeriodDisplay));
         var sizeStr = CollageSizeToString(imageOption);
         var collage = type switch

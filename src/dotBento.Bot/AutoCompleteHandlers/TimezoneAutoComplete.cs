@@ -6,7 +6,7 @@ namespace dotBento.Bot.AutoCompleteHandlers;
 
 public sealed class TimezoneAutoComplete : IAutocompleteProvider<AutocompleteInteractionContext>
 {
-    public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>> GetChoicesAsync(
+    public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
         ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
     {
         var zones = TimeZoneInfo.GetSystemTimeZones();
@@ -30,7 +30,7 @@ public sealed class TimezoneAutoComplete : IAutocompleteProvider<AutocompleteInt
             select new ApplicationCommandOptionChoiceProperties(name, z.Id))
             .AsEnumerable<ApplicationCommandOptionChoiceProperties>();
 
-        return ValueTask.FromResult(results);
+        return ValueTask.FromResult<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(results);
     }
 
     private static string FormatOffset(TimeSpan offset)

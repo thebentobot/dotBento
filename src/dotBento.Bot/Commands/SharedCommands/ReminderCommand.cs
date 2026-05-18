@@ -100,7 +100,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
                 .WithDescription(string.Join("\n", remindersPageChunk.Select(x => $"ID: `{x.Id}`\nContent: `{x.Content}`\nDate: <t:{x.Date.ToUnixTimeSeconds()}:R>")))
             ).ToList();
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;

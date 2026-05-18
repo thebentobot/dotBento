@@ -30,7 +30,7 @@ public sealed class ProfileSlashCommand(
         var guildMember = Context.Guild is not null
             ? await memberLookup.GetOrFetchAsync(Context.Guild.Id, user.Id, Context.Guild)
             : null;
-        var botPfp = Context.Client.Cache.User?.GetAvatarUrl()?.ToString(1024);
+        var botPfp = Context.Client.Cache.User?.GetAvatarUrl()?.ToString(1024) ?? string.Empty;
         await Context.SendFollowUpResponse(interactiveService,
             await userCommand.GetProfileAsync((long)user.Id,
                 (long)Context.Guild!.Id,

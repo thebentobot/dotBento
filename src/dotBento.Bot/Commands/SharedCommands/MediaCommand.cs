@@ -126,7 +126,7 @@ public sealed class MediaCommand(
         return new ResponseModel
         {
             ResponseType     = ResponseType.Paginator,
-            StaticPaginator  = pages.BuildStaticPaginator(),
+            ComponentPaginator = pages.BuildStaticPaginator(),
             PaginatorTimeout = TimeSpan.FromMinutes(5),
         };
     }

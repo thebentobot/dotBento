@@ -16,8 +16,8 @@ public sealed class WeatherSlashCommand(InteractiveService interactiveService, W
         [SlashCommandParameter(Name = "hide", Description = "Only show weather info for you")] bool? hide = null)
     {
         var guildUser = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
-        var username = guildUser?.Nickname ?? Context.User.GlobalName;
-        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024);
+        var username = guildUser?.Nickname ?? Context.User.GlobalName ?? Context.User.Username;
+        var userAvatar = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString();
         await Context.SendResponse(interactiveService, await weatherCommand.GetWeatherAsync((long)Context.User.Id, username, userAvatar, city), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 

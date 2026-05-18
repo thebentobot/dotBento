@@ -81,41 +81,48 @@ public static class InteractionContextExtensions
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator ?? throw new InvalidOperationException(),
+                    response.ComponentPaginator ?? throw new InvalidOperationException(),
                     context.Interaction,
                     TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds),
+                    InteractionCallbackType.Message,
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
+                var imageWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+                var imageWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
                         .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + response.FileName,
-                            response.Stream))
+                            (response.Spoiler ? "SPOILER_" : "") + imageWithEmbedFilename,
+                            imageWithEmbedStream))
                         .WithEmbeds([response.Embed])
                         .WithFlags(flags)
                         .WithComponents(response.Components)));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await imageWithEmbedStream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
+                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+                var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
                         .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + response.FileName,
-                            response.Stream))
+                            (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename,
+                            imageOnlyStream))
                         .WithFlags(flags)));
-                await response.Stream!.DisposeAsync();
+                await imageOnlyStream.DisposeAsync();
                 break;
             case ResponseType.FileWithEmbed:
+                var fileWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
+                var fileWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
                         .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + response.FileName,
-                            response.Stream))
+                            (response.Spoiler ? "SPOILER_" : "") + fileWithEmbedFilename,
+                            fileWithEmbedStream))
                         .WithEmbeds([response.Embed])
                         .WithFlags(flags)
                         .WithComponents(response.Components)));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await fileWithEmbedStream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -148,41 +155,45 @@ public static class InteractionContextExtensions
                 break;
             case ResponseType.Paginator:
                 await interactiveService.SendPaginatorAsync(
-                    response.StaticPaginator ?? throw new InvalidOperationException(),
+                    response.ComponentPaginator ?? throw new InvalidOperationException(),
                     context.Interaction,
                     response.PaginatorTimeout ?? TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds),
                     InteractionCallbackType.DeferredMessage,
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
+                var followupImageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+                var followupImageEmbedFilename = (response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed")).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + imageEmbedFilename,
-                        response.Stream))
+                        (response.Spoiler ? "SPOILER_" : "") + followupImageEmbedFilename,
+                        followupImageEmbedStream))
                     .WithEmbeds([response.Embed])
                     .WithFlags(flags)
                     .WithComponents(response.Components));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await followupImageEmbedStream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
+                var followupImageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+                var followupImageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + response.FileName,
-                        response.Stream))
+                        (response.Spoiler ? "SPOILER_" : "") + followupImageOnlyFilename,
+                        followupImageOnlyStream))
                     .WithFlags(flags));
-                await response.Stream!.DisposeAsync();
+                await followupImageOnlyStream.DisposeAsync();
                 break;
             case ResponseType.FileWithEmbed:
-                var fileEmbedFilename = response.FileName ?? throw new InvalidOperationException();
+                var followupFileEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
+                var followupFileEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,
-                        response.Stream))
+                        (response.Spoiler ? "SPOILER_" : "") + followupFileEmbedFilename,
+                        followupFileEmbedStream))
                     .WithEmbeds([response.Embed])
                     .WithFlags(flags)
                     .WithComponents(response.Components));
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                await followupFileEmbedStream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

@@ -46,7 +46,7 @@ public sealed class LeaderboardSlashCommand(
         var guild = Context.Guild;
         var guildUser = guild?.Users.GetValueOrDefault(user.Id);
         var displayName = guildUser?.Nickname ?? guildUser?.GlobalName ?? user.GlobalName ?? user.Username;
-        var avatarUrl = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024);
+        var avatarUrl = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString();
         await Context.SendResponse(interactiveService,
             await leaderboardCommand.GetUserSummaryAsync(
                 (long)user.Id, (long)guild!.Id, displayName, avatarUrl, guild.Name),
