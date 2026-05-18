@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
-using Discord;
-using Discord.WebSocket;
+using NetCord;
+using DiscordGuild = NetCord.Gateway.Guild;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
@@ -57,8 +57,11 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
-    public async Task AddGuildAsync(SocketGuild guild)
+    public async Task AddGuildAsync(DiscordGuild guild)
     {
+        if (cache.TryGetValue(CacheKeyForGuild(guild.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseGuild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)guild.Id);
 
@@ -69,35 +72,40 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
                 GuildId = (long)guild.Id,
                 Prefix = Constants.StartPrefix,
                 GuildName = guild.Name,
-                MemberCount = guild.MemberCount,
+                MemberCount = guild.UserCount,
             };
             await db.Guilds.AddAsync(databaseGuild);
             await db.SaveChangesAsync();
-            await AddGuildToCache(databaseGuild);
         }
+
+        await AddGuildToCache(databaseGuild);
     }
 
-    public async Task AddGuildMemberAsync(SocketGuildUser guildUser)
+    public async Task AddGuildMemberAsync(NetCord.GuildUser guildUser)
     {
+        if (cache.TryGetValue(CacheKeyForGuildMember(guildUser.GuildId, guildUser.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var guildMember = await db.GuildMembers
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.GuildId == (long)guildUser.Guild.Id && f.UserId == (long)guildUser.Id);
+            .FirstOrDefaultAsync(f => f.GuildId == (long)guildUser.GuildId && f.UserId == (long)guildUser.Id);
 
         if (guildMember == null)
         {
             guildMember = new GuildMember
             {
-                GuildId = (long)guildUser.Guild.Id,
+                GuildId = (long)guildUser.GuildId,
                 UserId = (long)guildUser.Id,
-                AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512),
+                AvatarUrl = GetGuildAvatarUrl(guildUser) ?? GetGlobalAvatarUrl(guildUser),
                 Xp = 0,
                 Level = 1
             };
             await db.GuildMembers.AddAsync(guildMember);
             await db.SaveChangesAsync();
-            await AddGuildMemberToCache(guildMember);
         }
+
+        await AddGuildMemberToCache(guildMember);
     }
 
     private Task AddGuildMemberToCache(GuildMember guildMember)
@@ -177,16 +185,18 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         return listOfGuildsForUser;
     }
 
-    public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
+    public async Task UpdateGuildMemberAvatarAsync(NetCord.GuildUser guildMember)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.GuildMembers
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)guildMember.Id && f.GuildId == (long)guildMember.Guild.Id);
+            .FirstOrDefaultAsync(f => f.UserId == (long)guildMember.Id && f.GuildId == (long)guildMember.GuildId);
 
         if (user != null)
         {
-            user.AvatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildMember.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
+            var newAvatarUrl = GetGuildAvatarUrl(guildMember) ?? GetGlobalAvatarUrl(guildMember);
+            if (user.AvatarUrl == newAvatarUrl) return;
+            user.AvatarUrl = newAvatarUrl;
             await db.SaveChangesAsync();
             await RemoveGuildMemberFromCache((ulong)user.GuildId, (ulong)user.UserId);
             await AddGuildMemberToCache(user);
@@ -238,7 +248,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     }
 
     public async Task<Maybe<GuildMember>> GetOrCreateGuildMemberAsync(ulong discordGuildId, ulong discordUserId,
-        SocketGuildUser guildUser)
+        NetCord.GuildUser guildUser)
     {
         var cachedKey = CacheKeyForGuildMember(discordGuildId, discordUserId);
         if (cache.TryGetValue(cachedKey, out GuildMember? cachedGuildMember))
@@ -262,7 +272,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         {
             GuildId = (long)discordGuildId,
             UserId = (long)discordUserId,
-            AvatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ?? guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512),
+            AvatarUrl = GetGuildAvatarUrl(guildUser) ?? GetGlobalAvatarUrl(guildUser),
             Xp = 0,
             Level = 1
         };
@@ -305,7 +315,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     /// <summary>
     /// Updates guild information (name, icon) from Discord.
     /// </summary>
-    public async Task<bool> SyncGuildFromDiscordAsync(Guild dbGuild, IGuild discordGuild)
+    public async Task<bool> SyncGuildFromDiscordAsync(Guild dbGuild, DiscordGuild discordGuild)
     {
         var hasChanges = false;
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -320,7 +330,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             hasChanges = true;
         }
 
-        var newIconUrl = discordGuild.IconUrl;
+        var newIconUrl = GetIconUrl(discordGuild);
         if (guild.Icon != newIconUrl)
         {
             guild.Icon = newIconUrl;
@@ -339,7 +349,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
     /// <summary>
     /// Updates guild member avatar from Discord.
     /// </summary>
-    public async Task<bool> SyncGuildMemberFromDiscordAsync(GuildMember dbGuildMember, IGuildUser discordGuildUser)
+    public async Task<bool> SyncGuildMemberFromDiscordAsync(GuildMember dbGuildMember, NetCord.GuildUser discordGuildUser)
     {
         var hasChanges = false;
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -348,8 +358,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (guildMember == null) return false;
 
-        var newAvatarUrl = discordGuildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512)
-            ?? discordGuildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
+        var newAvatarUrl = GetGuildAvatarUrl(discordGuildUser) ?? GetGlobalAvatarUrl(discordGuildUser);
         if (guildMember.AvatarUrl != newAvatarUrl)
         {
             guildMember.AvatarUrl = newAvatarUrl;
@@ -386,4 +395,19 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             }
         }
     }
+
+    private static string? GetGuildAvatarUrl(NetCord.GuildUser member) =>
+        member.GuildAvatarHash != null
+            ? $"https://cdn.discordapp.com/guilds/{member.GuildId}/users/{member.Id}/avatars/{member.GuildAvatarHash}.{(member.GuildAvatarHash.StartsWith("a_") ? "gif" : "webp")}?size=512"
+            : null;
+
+    private static string? GetGlobalAvatarUrl(NetCord.GuildUser member) =>
+        member.AvatarHash != null
+            ? $"https://cdn.discordapp.com/avatars/{member.Id}/{member.AvatarHash}.{(member.AvatarHash.StartsWith("a_") ? "gif" : "webp")}?size=512"
+            : null;
+
+    private static string? GetIconUrl(DiscordGuild guild) =>
+        guild.IconHash != null
+            ? $"https://cdn.discordapp.com/icons/{guild.Id}/{guild.IconHash}.{(guild.IconHash.StartsWith("a_") ? "gif" : "webp")}"
+            : null;
 }

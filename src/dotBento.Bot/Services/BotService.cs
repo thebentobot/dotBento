@@ -1,8 +1,8 @@
 using System.Reflection;
-using Discord;
-using Discord.Commands;
-using Discord.Interactions;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.Commands;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.EntityFramework.Context;
@@ -16,14 +16,16 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public sealed class BotService(DiscordSocketClient client,
-    InteractionService interactions,
+#pragma warning disable CS9113 // text-command params kept for re-enablement; see TODO at StartAsync:44
+public sealed class BotService(GatewayClient client,
+    ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> interactions,
     IDbContextFactory<BotDbContext> contextFactory,
     IPrefixService prefixService,
-    CommandService commands,
+    CommandService<CommandContext> commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
+#pragma warning restore CS9113
 {
     private MetricPusher? _metricPusher;
 
@@ -46,23 +48,20 @@ public sealed class BotService(DiscordSocketClient client,
         // Log.Information("Loading all prefixes");
         // await prefixService.LoadAllPrefixes();
 
-        Log.Information("Starting bot");
-        var discordToken = config.Value.Discord.Token ??
-                           throw new InvalidOperationException("Discord:Token environment variable not set.");
-
-        // TODO: Re-enable when MessageContent intent is granted (see above).
         // Log.Information("Loading command modules");
-        // await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+        // commands.AddModules(Assembly.GetEntryAssembly()!);
+
+        Log.Information("Starting bot");
 
         Log.Information("Loading interaction modules");
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+        interactions.AddModules(Assembly.GetEntryAssembly()!);
 
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
 
-        Log.Information("Logging into Discord");
-        await client.LoginAsync(TokenType.Bot, discordToken);
+        client.Ready += OnReadyAsync;
 
+        Log.Information("Connecting to Discord");
         await client.StartAsync();
 
         await backgroundService.UpdateMetrics();
@@ -70,32 +69,39 @@ public sealed class BotService(DiscordSocketClient client,
         backgroundService.QueueJobs();
 
         StartMetricsPusher();
+    }
 
-        client.Ready += async () =>
-        {
-            Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
+    private async ValueTask OnReadyAsync(ReadyEventArgs args)
+    {
+        Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
 
-            // Activate Discord channel logging sink now that client is ready
-            DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+        // Activate Discord channel logging sink now that client is ready
+        DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
 
-            await RegisterSlashCommands();
-        };
+        await RegisterSlashCommands();
     }
 
     // public instead of private because of Hangfire BackgroundJob
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task RegisterSlashCommands()
     {
+        var applicationId = client.Cache.User?.Id ?? throw new InvalidOperationException("Bot user ID not available");
         Log.Information("Starting slash command registration");
 
 #if DEBUG
         Log.Information("Registering slash commands to guild");
         // TODO: Make this an env var for development discord server
-        await interactions.RegisterCommandsToGuildAsync(790353119795871744);
+        var registered = await interactions.RegisterCommandsAsync(client.Rest, applicationId, guildId: 790353119795871744UL);
 #else
         Log.Information("Registering slash commands globally");
-        await interactions.RegisterCommandsGloballyAsync();
+        var registered = await interactions.RegisterCommandsAsync(client.Rest, applicationId);
 #endif
+        foreach (var cmd in registered)
+        {
+            Log.Information("Registered command: {Name}", cmd.Name);
+            foreach (var opt in cmd.Options ?? [])
+                Log.Debug("  option: {Name} ({Type})", opt.Name, opt.Type);
+        }
     }
 
     private void StartMetricsPusher()

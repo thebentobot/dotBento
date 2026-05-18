@@ -32,7 +32,7 @@ public static class ChooseCommand
         }
         return Task.FromResult(embed);
     }
-    
+
     private static string ChooseOption(IReadOnlyList<string> options)
     {
         var rnd = new Random();

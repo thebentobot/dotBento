@@ -36,14 +36,14 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("Tag not found.");
         }
-        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
+        if (userId != tagExistsCheck.Value.UserId && !hasMessageEditPerms)
         {
             return Result.Failure("You can only delete your own tags.");
         }
         await tagService.DeleteTagAsync(userId, guildId, name);
         return Result.Success();
     }
-    
+
     public async Task<Result> UpdateTagAsync(long userId, long guildId, string name, string content, bool hasMessageEditPerms)
     {
         if (string.IsNullOrWhiteSpace(SanitizeTagContent(content)))
@@ -55,26 +55,31 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("Tag not found.");
         }
-        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
+        if (userId != tagExistsCheck.Value.UserId && !hasMessageEditPerms)
         {
             return Result.Failure("You can only update your own tags.");
         }
         await tagService.UpdateTagAsync(userId, guildId, name, SanitizeTagContent(content));
         return Result.Success();
     }
-    
+
     public async Task<Result> RenameTagAsync(long userId, long guildId, string oldName, string newName, bool hasMessageEditPerms)
     {
-        var tagExistsCheck = await tagService.FindTagAsync(guildId, newName);
-        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || tagExistsCheck.HasValue)
-        {
-            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
-        }
         if (string.IsNullOrWhiteSpace(newName))
         {
             return Result.Failure("New tag name cannot be empty.");
         }
-        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
+        var newTagCheck = await tagService.FindTagAsync(guildId, newName);
+        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || newTagCheck.HasValue)
+        {
+            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
+        }
+        var oldTagCheck = await tagService.FindTagAsync(guildId, oldName);
+        if (!oldTagCheck.HasValue)
+        {
+            return Result.Failure("Tag not found.");
+        }
+        if (userId != oldTagCheck.Value.UserId && !hasMessageEditPerms)
         {
             return Result.Failure("You can only rename your own tags.");
         }
@@ -106,10 +111,11 @@ public sealed class TagCommands(TagService tagService)
     {
         var tagsByCommand = await tagService.SearchTagsByCommandAsync(guildId, query);
         var tagsByContent = await tagService.SearchTagsByContentAsync(guildId, query);
-        var tags = tagsByCommand.Concat(tagsByContent).ToList();
-        return tags.Count != 0
-            ? Result.Success(tags.Select(x => x.ToBentoTag()).Distinct().ToList())
-            : Result.Failure<List<BentoTags>>("No tags found.");
+        var tags = tagsByCommand.Concat(tagsByContent)
+            .DistinctBy(t => t.TagId)
+            .Select(x => x.ToBentoTag())
+            .ToList();
+        return Result.Success(tags);
     }
     
     public async Task IncrementTagUsageAsync(long tagId)

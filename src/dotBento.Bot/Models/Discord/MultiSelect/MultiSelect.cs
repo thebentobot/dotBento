@@ -1,38 +1,37 @@
-using Discord;
+using NetCord.Rest;
 using Fergun.Interactive.Selection;
 
 namespace dotBento.Bot.Models.Discord.MultiSelect;
 
 public sealed class MultiSelect<T>(MultiSelectBuilder<T> builder) : BaseSelection<MultiSelectOption>(builder)
 {
-    public override ComponentBuilder GetOrAddComponents(bool disableAll, ComponentBuilder? builder = null)
+    public override List<IMessageComponentProperties> GetOrAddComponents(bool disableAll, List<IMessageComponentProperties>? components = null)
     {
-        builder ??= new ComponentBuilder();
-        var selectMenus = new Dictionary<int, SelectMenuBuilder>();
+        components ??= new List<IMessageComponentProperties>();
+        var selectMenus = new Dictionary<int, (string customId, bool disabled, List<StringMenuSelectOptionProperties> options)>();
 
         foreach (var option in Options)
         {
-            if (!selectMenus.TryGetValue(option.Row, out var value))
+            if (!selectMenus.TryGetValue(option.Row, out var menuData))
             {
-                value = new SelectMenuBuilder()
-                    .WithCustomId($"selectmenu{option.Row}")
-                    .WithDisabled(disableAll);
-                selectMenus[option.Row] = value;
+                menuData = ($"selectmenu{option.Row}", disableAll, new List<StringMenuSelectOptionProperties>());
+                selectMenus[option.Row] = menuData;
             }
 
-            var optionBuilder = new SelectMenuOptionBuilder()
-                .WithLabel(option.Option)
-                .WithValue(option.Value)
+            var selectOption = new StringMenuSelectOptionProperties(option.Option, option.Value)
                 .WithDescription(option.Description)
                 .WithDefault(option.IsDefault);
-            value.AddOption(optionBuilder);
+            menuData.options.Add(selectOption);
+            selectMenus[option.Row] = menuData;
         }
 
-        foreach (var (row, selectMenu) in selectMenus)
+        foreach (var (_, menuData) in selectMenus)
         {
-            builder.WithSelectMenu(selectMenu, row);
+            var selectMenu = new StringMenuProperties(menuData.customId, menuData.options)
+                .WithDisabled(menuData.disabled);
+            components.Add(selectMenu);
         }
 
-        return builder;
+        return components;
     }
 }

@@ -60,7 +60,7 @@ public class ProfileController(BotDbContext dbContext, ProfileService profileSer
     private ActionResult? TryApplyProfileChanges(Profile profile, ProfileUpdateRequest request)
     {
         // Background URL
-        if (!TryApplyUrl(request.BackgroundUrl, "Invalid BackgroundUrl. Must be an http/https URL.",
+        if (!TryApplyUrl(request.BackgroundUrl, "Invalid BackgroundUrl. Must be an https URL.",
                 v => profile.BackgroundUrl = v, out var err))
             return BadRequest(err);
 

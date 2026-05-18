@@ -1,5 +1,5 @@
 using System.Text;
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
@@ -41,21 +41,17 @@ public sealed class LastFmCommand(
         var description = bentoLastFmRecentTracks.Select(recentTrack =>
             $"{(recentTrack.NowPlaying ? "Now Playing" : $"<t:{recentTrack.Date?.ToUnixTimeSeconds()}:R>")}\n**{recentTrack.Artist}** - [{recentTrack.Track}]({recentTrack.Url})\nFrom the album **{recentTrack.Album}**");
         var singleDescription = string.Join("\n\n", description);
-        var footer = new EmbedFooterBuilder
-        {
-            Text = $"Total Tracks: {response.Value.TotalTracks} | Powered by Last.fm",
-            IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-        };
-        var author = new EmbedAuthorBuilder
-        {
-            Name = discordName,
-            IconUrl = discordAvatarUrl,
-            Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-        };
+        var footer = new EmbedFooterProperties()
+            .WithText($"Total Tracks: {response.Value.TotalTracks} | Powered by Last.fm")
+            .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
+        var author = new EmbedAuthorProperties()
+            .WithName(discordName)
+            .WithIconUrl(discordAvatarUrl)
+            .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
         embed.Embed
             .WithAuthor(author)
             .WithFooter(footer)
-            .WithThumbnailUrl(bentoLastFmRecentTracks.First().Image)
+            .WithThumbnail(new EmbedThumbnailProperties(bentoLastFmRecentTracks.First().Image))
             .WithColor(DiscordConstants.LastFmColorRed)
             .WithDescription(singleDescription);
         return embed;
@@ -102,18 +98,14 @@ public sealed class LastFmCommand(
             var pageDescription = string.Join('\n', artistChunk.Select(artist =>
                 $"**{artist.Rank}.** [{artist.Name}]({artist.Url}) - {artist.PlayCount} plays"));
 
-            var author = new EmbedAuthorBuilder
-            {
-                Name = discordName,
-                IconUrl = discordAvatarUrl,
-                Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-            };
+            var author = new EmbedAuthorProperties()
+                .WithName(discordName)
+                .WithIconUrl(discordAvatarUrl)
+                .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
 
-            var footer = new EmbedFooterBuilder
-            {
-                Text = $"Time period: {period} | Powered by Last.fm",
-                IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-            };
+            var footer = new EmbedFooterProperties()
+                .WithText($"Time period: {period} | Powered by Last.fm")
+                .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
             var page = new PageBuilder()
                 .WithAuthor(author)
@@ -129,7 +121,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -173,18 +165,14 @@ public sealed class LastFmCommand(
             var pageDescription = string.Join('\n', albumChunk.Select(album =>
                 $"**{album.Rank}.** [{album.Name}]({album.Url}) by **{album.Artist}** - {album.PlayCount} plays"));
 
-            var author = new EmbedAuthorBuilder
-            {
-                Name = discordName,
-                IconUrl = discordAvatarUrl,
-                Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-            };
+            var author = new EmbedAuthorProperties()
+                .WithName(discordName)
+                .WithIconUrl(discordAvatarUrl)
+                .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
 
-            var footer = new EmbedFooterBuilder
-            {
-                Text = $"Time period: {period} | Powered by Last.fm",
-                IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-            };
+            var footer = new EmbedFooterProperties()
+                .WithText($"Time period: {period} | Powered by Last.fm")
+                .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
             var page = new PageBuilder()
                 .WithAuthor(author)
@@ -200,7 +188,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -247,18 +235,14 @@ public sealed class LastFmCommand(
             var pageDescription = string.Join('\n', trackChunk.Select(track =>
                 $"**{track.Rank}.** [{track.Name}]({track.Url}) by {track.Artist} - {track.PlayCount} plays"));
 
-            var author = new EmbedAuthorBuilder
-            {
-                Name = discordName,
-                IconUrl = discordAvatarUrl,
-                Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-            };
+            var author = new EmbedAuthorProperties()
+                .WithName(discordName)
+                .WithIconUrl(discordAvatarUrl)
+                .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
 
-            var footer = new EmbedFooterBuilder
-            {
-                Text = $"Time period: {period} | Powered by Last.fm",
-                IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-            };
+            var footer = new EmbedFooterProperties()
+                .WithText($"Time period: {period} | Powered by Last.fm")
+                .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
             var page = new PageBuilder()
                 .WithAuthor(author)
@@ -274,7 +258,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -310,24 +294,20 @@ public sealed class LastFmCommand(
         description.AppendLine($"**Total tracks:** {userInfo.PlayCount}");
         description.AppendLine($"**Registered:** <t:{userInfo.RegisteredAt.ToUnixTimeSeconds()}:R>");
 
-        var author = new EmbedAuthorBuilder
-        {
-            Name = discordName,
-            IconUrl = discordAvatarUrl,
-            Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-        };
+        var author = new EmbedAuthorProperties()
+            .WithName(discordName)
+            .WithIconUrl(discordAvatarUrl)
+            .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
 
-        var footer = new EmbedFooterBuilder
-        {
-            Text = $"Powered by Last.fm",
-            IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-        };
+        var footer = new EmbedFooterProperties()
+            .WithText($"Powered by Last.fm")
+            .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
         embed.Embed
             .WithAuthor(author)
             .WithFooter(footer)
             .WithDescription(description.ToString())
-            .WithThumbnailUrl(userInfo.ImageUrl ?? null)
+            .WithThumbnail(userInfo.ImageUrl != null ? new EmbedThumbnailProperties(userInfo.ImageUrl) : null)
             .WithColor(DiscordConstants.LastFmColorRed);
 
         return embed;
@@ -372,18 +352,14 @@ public sealed class LastFmCommand(
             var pageDescription = string.Join('\n', recentTrackChunk.Select(recentTrack =>
                 $"{(recentTrack.NowPlaying ? "Now Playing" : $"<t:{recentTrack.Date?.ToUnixTimeSeconds()}:R>")} | **{recentTrack.Artist}** - [{recentTrack.Track}]({recentTrack.Url})"));
 
-            var author = new EmbedAuthorBuilder
-            {
-                Name = username,
-                IconUrl = userAvatar,
-                Url = $"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}"
-            };
+            var author = new EmbedAuthorProperties()
+                .WithName(username)
+                .WithIconUrl(userAvatar)
+                .WithUrl($"https://www.last.fm/user/{lastFmUser.Value.Lastfm1}");
 
-            var footer = new EmbedFooterBuilder
-            {
-                Text = $"From {fromDate} to {toDate} | Powered by Last.fm",
-                IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-            };
+            var footer = new EmbedFooterProperties()
+                .WithText($"From {fromDate} to {toDate} | Powered by Last.fm")
+                .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
             var page = new PageBuilder()
                 .WithAuthor(author)
@@ -399,7 +375,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -414,11 +390,9 @@ public sealed class LastFmCommand(
 
         await lastFmService.SaveLastFmAsync(userId, username);
 
-        var author = new EmbedAuthorBuilder
-        {
-            Name = "Last.fm",
-            IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-        };
+        var author = new EmbedAuthorProperties()
+            .WithName("Last.fm")
+            .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
         embed.Embed
             .WithAuthor(author)
@@ -437,11 +411,9 @@ public sealed class LastFmCommand(
 
         await lastFmService.DeleteLastFmAsync(userId);
 
-        var author = new EmbedAuthorBuilder
-        {
-            Name = "Last.fm",
-            IconUrl = "https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png"
-        };
+        var author = new EmbedAuthorProperties()
+            .WithName("Last.fm")
+            .WithIconUrl("https://www.last.fm/static/images/lastfm_avatar_twitter.52a5d69a85ac.png");
 
         embed.Embed
             .WithAuthor(author)

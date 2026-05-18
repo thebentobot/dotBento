@@ -28,7 +28,7 @@ dotnet run --project src/dotBento.WebApi
 
 ## Architecture Overview
 
-This is a Discord bot written in .NET 10 using Discord.NET, with a clean architecture separation:
+This is a Discord bot written in .NET 10 using NetCord, with a clean architecture separation:
 
 ### Projects
 

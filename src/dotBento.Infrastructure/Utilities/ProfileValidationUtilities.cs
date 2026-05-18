@@ -8,7 +8,7 @@ public static class ProfileValidationUtilities
     {
         if (string.IsNullOrWhiteSpace(url)) return false;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
-        return uri.Scheme is "http" or "https";
+        return uri.Scheme is "https";
     }
 
     public static string? NormalizeHex(string hex)
