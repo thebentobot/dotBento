@@ -42,7 +42,7 @@ public class LeaderboardCommandTests
     private static async Task<(LeaderboardCommand Command, InMemoryDbFactory Factory)> CreateCommandWithUsersAsync(int userCount)
     {
         var factory = new InMemoryDbFactory();
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         for (var i = 0; i < userCount; i++)
         {
             db.Users.Add(new User
@@ -54,7 +54,7 @@ public class LeaderboardCommandTests
                 Xp = (userCount - i) * 100
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var command = CreateLeaderboardCommand(factory);
         return (command, factory);
@@ -62,7 +62,7 @@ public class LeaderboardCommandTests
 
     private static async Task<LeaderboardCommand> CreateCommandWithGuildMembersAsync(InMemoryDbFactory factory, long guildId, int count)
     {
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         db.Guilds.Add(new Guild
         {
             GuildId = guildId,
@@ -90,7 +90,7 @@ public class LeaderboardCommandTests
                 Xp = (count - i) * 50
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return CreateLeaderboardCommand(factory);
     }
@@ -169,7 +169,7 @@ public class LeaderboardCommandTests
     public async Task GetServerBentoLeaderboardAsync_Success_ReturnsBentoLeaderboardTitle()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = 1, GuildName = "BentoGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 3; i++)
@@ -178,7 +178,7 @@ public class LeaderboardCommandTests
                 db.GuildMembers.Add(new GuildMember { GuildId = 1, UserId = i + 1, Level = 1, Xp = 0 });
                 db.Bentos.Add(new Bento { UserId = i + 1, Bento1 = (3 - i) * 10, BentoDate = DateTime.UtcNow });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -196,14 +196,14 @@ public class LeaderboardCommandTests
     public async Task GetGlobalBentoLeaderboardAsync_Success_ReturnsGlobalBentoTitle()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             for (var i = 0; i < 3; i++)
             {
                 db.Users.Add(new User { UserId = i + 1, Username = $"BU{i + 1}", Discriminator = "0001", Level = 1, Xp = 0 });
                 db.Bentos.Add(new Bento { UserId = i + 1, Bento1 = (3 - i) * 10, BentoDate = DateTime.UtcNow });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -221,7 +221,7 @@ public class LeaderboardCommandTests
     public async Task GetServerRpsLeaderboardAsync_AllType_TitleWithoutTypeLabel()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = 1, GuildName = "RG", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 3; i++)
@@ -230,7 +230,7 @@ public class LeaderboardCommandTests
                 db.GuildMembers.Add(new GuildMember { GuildId = 1, UserId = i + 1, Level = 1, Xp = 0 });
                 db.RpsGames.Add(new RpsGame { UserId = i + 1, RockWins = 5, RockLosses = 1, RockTies = 1 });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -245,7 +245,7 @@ public class LeaderboardCommandTests
     public async Task GetServerRpsLeaderboardAsync_RockType_TitleIncludesTypeLabel()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = 1, GuildName = "RG", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 2; i++)
@@ -254,7 +254,7 @@ public class LeaderboardCommandTests
                 db.GuildMembers.Add(new GuildMember { GuildId = 1, UserId = i + 1, Level = 1, Xp = 0 });
                 db.RpsGames.Add(new RpsGame { UserId = i + 1, RockWins = 5, RockLosses = 1, RockTies = 1 });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -271,14 +271,14 @@ public class LeaderboardCommandTests
     public async Task GetGlobalRpsLeaderboardAsync_Success_ReturnsGlobalRpsTitle()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             for (var i = 0; i < 3; i++)
             {
                 db.Users.Add(new User { UserId = i + 1, Username = $"RU{i + 1}", Discriminator = "0001", Level = 1, Xp = 0 });
                 db.RpsGames.Add(new RpsGame { UserId = i + 1, RockWins = 5, RockLosses = 1, RockTies = 1 });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -295,13 +295,13 @@ public class LeaderboardCommandTests
     public async Task GetUserSummaryAsync_Success_ReturnsEmbedWithCorrectAuthor()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = 1, GuildName = "TestGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             db.Users.Add(new User { UserId = 1, Username = "TestUser", Discriminator = "0001", Level = 5, Xp = 500 });
             db.GuildMembers.Add(new GuildMember { GuildId = 1, UserId = 1, Level = 5, Xp = 500 });
             db.Bentos.Add(new Bento { UserId = 1, Bento1 = 42, BentoDate = DateTime.UtcNow });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -318,7 +318,7 @@ public class LeaderboardCommandTests
     public async Task GetUserSummaryAsync_DescriptionContainsGuildNameForServerRank()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = 1, GuildName = "CoolGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 3; i++)
@@ -327,7 +327,7 @@ public class LeaderboardCommandTests
                 db.GuildMembers.Add(new GuildMember { GuildId = 1, UserId = i + 1, Level = 3 - i, Xp = (3 - i) * 100 });
                 db.Bentos.Add(new Bento { UserId = i + 1, Bento1 = (3 - i) * 30, BentoDate = DateTime.UtcNow });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -344,10 +344,10 @@ public class LeaderboardCommandTests
     public async Task GetUserSummaryAsync_NoServerRank_OmitsServerLine()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Users.Add(new User { UserId = 1, Username = "Loner", Discriminator = "0001", Level = 3, Xp = 300 });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -401,11 +401,11 @@ public class LeaderboardCommandTests
     public async Task GetGlobalXpLeaderboardAsync_PageDescriptionContainsUserData()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Users.Add(new User { UserId = 1, Username = "TopPlayer", Discriminator = "0001", Level = 10, Xp = 1000 });
             db.Users.Add(new User { UserId = 2, Username = "SecondPlayer", Discriminator = "0001", Level = 8, Xp = 800 });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -421,11 +421,11 @@ public class LeaderboardCommandTests
     public async Task GetGlobalBentoLeaderboardAsync_PageDescriptionContainsBentoData()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Users.Add(new User { UserId = 1, Username = "BentoKing", Discriminator = "0001", Level = 1, Xp = 0 });
             db.Bentos.Add(new Bento { UserId = 1, Bento1 = 100, BentoDate = DateTime.UtcNow });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);
@@ -440,7 +440,7 @@ public class LeaderboardCommandTests
     public async Task GetGlobalRpsLeaderboardAsync_PageDescriptionContainsWinRate()
     {
         var factory = new InMemoryDbFactory();
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Users.Add(new User { UserId = 1, Username = "RpsChamp", Discriminator = "0001", Level = 1, Xp = 0 });
             db.RpsGames.Add(new RpsGame
@@ -450,7 +450,7 @@ public class LeaderboardCommandTests
                 PaperWins = 0, PaperTies = 0, PaperLosses = 0,
                 ScissorWins = 0, ScissorsTies = 0, ScissorsLosses = 0
             });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var command = CreateLeaderboardCommand(factory);

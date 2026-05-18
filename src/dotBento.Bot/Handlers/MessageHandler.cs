@@ -5,7 +5,6 @@ using dotBento.Domain;
 using dotBento.Infrastructure.Interfaces;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
-using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
@@ -13,7 +12,6 @@ namespace dotBento.Bot.Handlers;
 public sealed class MessageHandler : IDisposable
 {
     private readonly GatewayClient _client;
-    private readonly IMemoryCache _cache;
     private readonly UserService _userService;
     private readonly GuildService _guildService;
     private readonly CommandService<CommandContext> _commands;
@@ -23,7 +21,6 @@ public sealed class MessageHandler : IDisposable
     private readonly TagsCommand _tagsCommand;
 
     public MessageHandler(GatewayClient client,
-        IMemoryCache cache,
         UserService userService,
         GuildService guildService,
         CommandService<CommandContext> commands,
@@ -33,7 +30,6 @@ public sealed class MessageHandler : IDisposable
         TagsCommand tagsCommand)
     {
         _client = client;
-        _cache = cache;
         _userService = userService;
         _guildService = guildService;
         _commands = commands;
@@ -198,27 +194,6 @@ public sealed class MessageHandler : IDisposable
         }
     }
     */
-
-    private bool CheckUserRateLimit(ulong discordUserId)
-    {
-        var cacheKey = $"{discordUserId}-rateLimit";
-        if (_cache.TryGetValue(cacheKey, out int requestsInLastMinute))
-        {
-            if (requestsInLastMinute > 35)
-            {
-                return false;
-            }
-
-            requestsInLastMinute++;
-            _cache.Set(cacheKey, requestsInLastMinute, TimeSpan.FromSeconds(60 - requestsInLastMinute));
-        }
-        else
-        {
-            _cache.Set(cacheKey, 1, TimeSpan.FromMinutes(1));
-        }
-
-        return true;
-    }
 
     public void Dispose()
     {

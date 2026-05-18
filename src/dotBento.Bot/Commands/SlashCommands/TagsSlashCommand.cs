@@ -1,6 +1,5 @@
 using CSharpFunctionalExtensions;
 using NetCord;
-using NetCord.Gateway;
 using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.AutoCompleteHandlers;
@@ -129,12 +128,17 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
     [GuildOnly]
     public async Task ListCommand(
         [SlashCommandParameter(Name = "top", Description = "List the most used tags")] bool top = false,
-        [SlashCommandParameter(Name = "by-author", Description = "List tags by tags author")] GuildUser? user = null,
+        [SlashCommandParameter(Name = "by-author", Description = "List tags by tags author")] User? user = null,
         [SlashCommandParameter(Name = "hide", Description = "Only the result of the message to you")] bool? hide = null
-    ) =>
+    )
+    {
+        var guildUser = user != null
+            ? (await memberLookup.GetOrFetchAsync(Context.Guild!.Id, user.Id, Context.Guild)).AsMaybe()
+            : Maybe<GuildUser>.None;
         await Context.SendResponse(interactiveService,
-            await tagsCommand.ListTagsAsync((long)Context.Guild!.Id, top, user.AsMaybe()),
+            await tagsCommand.ListTagsAsync((long)Context.Guild!.Id, top, guildUser),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+    }
 
     [SubSlashCommand("info", "Get info about a tag")]
     [GuildOnly]

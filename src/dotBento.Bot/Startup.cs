@@ -179,7 +179,14 @@ public sealed class Startup
         {
             while (true)
             {
-                await File.WriteAllTextAsync(healthCheckPath, DateTimeOffset.UtcNow.ToString("O"));
+                try
+                {
+                    await File.WriteAllTextAsync(healthCheckPath, DateTimeOffset.UtcNow.ToString("O"));
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to write healthcheck file");
+                }
                 await Task.Delay(TimeSpan.FromSeconds(30));
             }
         });
@@ -200,9 +207,7 @@ public sealed class Startup
             new GatewayClientConfiguration
             {
                 // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
-                Intents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
-                          GatewayIntents.GuildMessageReactions | GatewayIntents.GuildUsers |
-                          GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions
+                Intents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.GuildUsers
             });
 
         services

@@ -45,7 +45,7 @@ public sealed class GuildMemberRemoveHandler : IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private async Task GuildMemberRemoved(ulong guildId, ulong userId)
+    internal async Task GuildMemberRemoved(ulong guildId, ulong userId)
     {
         Statistics.DiscordEvents.WithLabels(nameof(GuildMemberRemoved)).Inc();
         _memberLookup.Invalidate(guildId, userId);

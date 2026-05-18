@@ -4,10 +4,10 @@ using NetCord.Gateway;
 using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
@@ -81,13 +81,13 @@ public sealed class LastFmTextCommand(
                             }
                             else
                             {
-                                await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                                 return;
                             }
                         }
                         else
                         {
-                            await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                             return;
                         }
                     }
@@ -95,7 +95,7 @@ public sealed class LastFmTextCommand(
                 var guildMemberForUserCmd23 = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd23.Id).AsMaybe() ?? Maybe<GuildUser>.None;
                 if (guildMemberForUserCmd23.HasNoValue)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
                 var memberForUserCmd23 = guildMemberForUserCmd23.Value;
@@ -123,13 +123,13 @@ public sealed class LastFmTextCommand(
                             }
                             else
                             {
-                                await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                                 return;
                             }
                         }
                         else
                         {
-                            await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                             return;
                         }
                     }
@@ -137,7 +137,7 @@ public sealed class LastFmTextCommand(
                 var guildMemberForUserCmd2 = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd2.Id).AsMaybe() ?? Maybe<GuildUser>.None;
                 if (guildMemberForUserCmd2.HasNoValue)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
                 var memberForUserCmd2 = guildMemberForUserCmd2.Value;
@@ -170,13 +170,13 @@ public sealed class LastFmTextCommand(
                             }
                             else
                             {
-                                await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                                 return;
                             }
                         }
                         else
                         {
-                            await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                             return;
                         }
                     }
@@ -184,7 +184,7 @@ public sealed class LastFmTextCommand(
                 var guildMemberForUserCmd = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd.Id).AsMaybe() ?? Maybe<GuildUser>.None;
                 if (guildMemberForUserCmd.HasNoValue)
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
                 var memberForUserCmd = guildMemberForUserCmd.Value;
@@ -200,7 +200,7 @@ public sealed class LastFmTextCommand(
 
         if (args.Length > 1 && period == null)
         {
-            await Context.SendResponse(interactiveService, ErrorEmbed($"Your time period {args[1]} is not valid"));
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed($"Your time period {args[1]} is not valid"));
             return;
         }
 
@@ -222,13 +222,14 @@ public sealed class LastFmTextCommand(
                     else
                     {
                         // TODO: insert env var for name or something
-                        await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not recognised by Bento"));
+                        await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not recognised by Bento"));
                         return;
                     }
                 }
                 else
                 {
-                    await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not recognised by Bento"));
+                    // TODO: insert env var for name or something
+                    await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not recognised by Bento"));
                     return;
                 }
             }
@@ -237,7 +238,7 @@ public sealed class LastFmTextCommand(
         var user = Context.Guild?.Users.GetValueOrDefault(getUser.Id).AsMaybe() ?? Maybe<GuildUser>.None;
         if (user.HasNoValue)
         {
-            await Context.SendResponse(interactiveService, ErrorEmbed("The user you inserted is not in this server"));
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
             return;
         }
 
@@ -287,7 +288,7 @@ public sealed class LastFmTextCommand(
                         size = "6x6";
                         break;
                     default:
-                        await Context.SendResponse(interactiveService, ErrorEmbed("Invalid size for collage. Please use `lastfm help` for a list of commands."));
+                        await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Invalid size for collage. Please use `lastfm help` for a list of commands."));
                         return;
                 }
 
@@ -303,23 +304,16 @@ public sealed class LastFmTextCommand(
                         await Context.SendResponse(interactiveService, await lastFmCommand.GetTopTracksCollage((long)guildMember.Id, userAvatar, period ?? "Overall", size));
                         break;
                     default:
-                        await Context.SendResponse(interactiveService, ErrorEmbed("Invalid type. Please use `lastfm help` for a list of commands."));
+                        await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Invalid type. Please use `lastfm help` for a list of commands."));
                         break;
                 }
                 break;
             }
             default:
                 await Context.SendResponse(interactiveService,
-                    ErrorEmbed("Invalid command. Please use `lastfm help` for a list of commands."));
+                    GenericEmbedService.ErrorEmbed("Invalid command. Please use `lastfm help` for a list of commands."));
                 break;
         }
     }
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(new Color(0xFF0000));
-        return embed;
-    }
 }

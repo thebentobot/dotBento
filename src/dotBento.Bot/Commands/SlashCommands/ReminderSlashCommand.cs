@@ -3,9 +3,9 @@ using NetCord;
 using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
@@ -25,7 +25,7 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         if (convertDate.HasNoValue)
         {
             await Context.SendResponse(interactiveService,
-                ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."));
+                GenericEmbedService.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."));
             return;
         }
         await Context.SendResponse(
@@ -62,7 +62,7 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
             {
                 await Context.SendResponse(
                     interactiveService,
-                    ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."),
+                    GenericEmbedService.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."),
                     true);
                 return;
             }
@@ -104,11 +104,4 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         );
     }
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(new Color(0xFF0000));
-        return embed;
-    }
 }

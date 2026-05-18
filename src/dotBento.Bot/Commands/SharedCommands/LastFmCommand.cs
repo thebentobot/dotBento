@@ -27,20 +27,14 @@ public sealed class LastFmCommand(
         var lastFmUser = await lastFmService.GetLastFmAsync(userId);
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var response = await lastFmCommands.NowPlaying(lastFmUser.Value.Lastfm1, config.Value.LastFmApiKey);
         if (response.IsFailure)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: " + response.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + response.Error);
         }
 
         var bentoLastFmRecentTracks = response.Value.RecentTracks;
@@ -75,13 +69,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topArtistsResponse =
@@ -89,12 +78,7 @@ public sealed class LastFmCommand(
 
         if (topArtistsResponse.IsFailure)
         {
-            embed.Embed
-                .WithTitle("Error: " + topArtistsResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + topArtistsResponse.Error);
         }
 
         var topArtists = topArtistsResponse.Value;
@@ -155,13 +139,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topAlbumsResponse =
@@ -169,12 +148,7 @@ public sealed class LastFmCommand(
 
         if (topAlbumsResponse.IsFailure)
         {
-            embed.Embed
-                .WithTitle("Error: " + topAlbumsResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + topAlbumsResponse.Error);
         }
 
         var topAlbums = topAlbumsResponse.Value;
@@ -232,13 +206,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topTracksResponse =
@@ -246,12 +215,7 @@ public sealed class LastFmCommand(
 
         if (topTracksResponse.IsFailure)
         {
-            embed.Embed
-                .WithTitle("Error: " + topTracksResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + topTracksResponse.Error);
         }
 
         var topTracks = topTracksResponse.Value;
@@ -311,25 +275,15 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var userInfoResponse = await lastFmCommands.GetUserInfo(lastFmUser.Value.Lastfm1, config.Value.LastFmApiKey);
 
         if (userInfoResponse.IsFailure)
         {
-            embed.Embed
-                .WithTitle("Error: " + userInfoResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + userInfoResponse.Error);
         }
 
         var userInfo = userInfoResponse.Value;
@@ -370,13 +324,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            embed.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var recentTracksResponse =
@@ -384,12 +333,7 @@ public sealed class LastFmCommand(
 
         if (recentTracksResponse.IsFailure)
         {
-            embed.Embed
-                .WithTitle("Error: " + recentTracksResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error: " + recentTracksResponse.Error);
         }
 
         var recentTracks = recentTracksResponse.Value;
@@ -495,12 +439,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topArtistsResponse = await lastFmCommands.GetTopArtists(lastFmUser.Value.Lastfm1,
@@ -509,12 +449,7 @@ public sealed class LastFmCommand(
 
         if (topArtistsResponse.IsFailure)
         {
-            result.Embed
-                .WithTitle("Error: " + topArtistsResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            result.ResponseType = ResponseType.Embed;
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + topArtistsResponse.Error);
         }
 
         var topArtists = topArtistsResponse.Value;
@@ -542,12 +477,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithTitle("Error: " + image.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;
@@ -572,12 +502,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topAlbumsResponse = await lastFmCommands.GetTopAlbums(lastFmUser.Value.Lastfm1,
@@ -586,12 +512,7 @@ public sealed class LastFmCommand(
 
         if (topAlbumsResponse.IsFailure)
         {
-            result.Embed
-                .WithTitle("Error: " + topAlbumsResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            result.ResponseType = ResponseType.Embed;
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + topAlbumsResponse.Error);
         }
 
         var topAlbums = topAlbumsResponse.Value;
@@ -604,12 +525,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithTitle("Error: " + image.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;
@@ -634,12 +550,8 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithTitle("Error: No Last.fm username saved")
-                .WithDescription("Please save your Last.fm username with either the slash command or the text command");
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+                "Please save your Last.fm username with either the slash command or the text command");
         }
 
         var topTracksResponse = await lastFmCommands.GetTopTracks(lastFmUser.Value.Lastfm1,
@@ -648,12 +560,7 @@ public sealed class LastFmCommand(
 
         if (topTracksResponse.IsFailure)
         {
-            result.Embed
-                .WithTitle("Error: " + topTracksResponse.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            result.ResponseType = ResponseType.Embed;
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + topTracksResponse.Error);
         }
 
         var topTracks = topTracksResponse.Value;
@@ -681,12 +588,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithTitle("Error: " + image.Error)
-                .WithColor(new NetCord.Color(255, 0, 0));
-
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;

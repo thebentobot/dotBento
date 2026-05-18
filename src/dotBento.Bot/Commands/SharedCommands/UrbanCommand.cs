@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Services.Api;
 
@@ -20,10 +21,9 @@ public sealed class UrbanCommand(UrbanDictionaryService urbanDictionaryService)
         var urbanList = urbanResult?.List;
         if (urbanList == null || urbanList.Count == 0)
         {
-            embed.Embed.WithTitle($"No results found for \"{query}\"")
-                .WithColor(new NetCord.Color(255, 0, 0))
-                .WithAuthor(embedAuthor);
-            return embed;
+            var errorEmbed = GenericEmbedService.ErrorEmbed($"No results found for \"{query}\"");
+            errorEmbed.Embed.WithAuthor(embedAuthor);
+            return errorEmbed;
         }
 
         var result = urbanList.First();

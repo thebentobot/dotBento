@@ -2,8 +2,8 @@ using NetCord;
 using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
+using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
@@ -25,10 +25,7 @@ public sealed class ServerSlashCommand(InteractiveService interactiveService, Se
         var guildMember = await memberLookup.GetOrFetchAsync(Context.Guild!.Id, user.Id, Context.Guild);
         if (guildMember is null)
         {
-            var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-            embed.Embed.WithTitle("The user you inserted is not in this server")
-                .WithColor(new Color(0xFF0000));
-            await Context.SendResponse(interactiveService, embed, true);
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"), true);
             return;
         }
         await Context.SendResponse(interactiveService, await serverCommand.UserServerCommand(guildMember, Context.Guild!), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));

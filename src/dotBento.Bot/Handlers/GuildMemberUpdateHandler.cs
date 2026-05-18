@@ -32,7 +32,7 @@ public sealed class GuildMemberUpdateHandler : IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private async Task GuildUserUpdated(GuildUser member)
+    internal async Task GuildUserUpdated(GuildUser member)
     {
         if (member.IsBot) return;
         _memberLookup.Update(member);

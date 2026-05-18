@@ -5,6 +5,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Dto.Tags;
 using Fergun.Interactive;
@@ -18,11 +19,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         if (content.MessageContent == null && content.Attachments.Length == 0)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Tag content cannot be empty.\nPlease provide message content or attachment.");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "Tag content cannot be empty.\nPlease provide message content or attachment.");
         }
         var tagContent = string.Empty;
         if (content.MessageContent != null)
@@ -35,20 +32,12 @@ public sealed class TagsCommand(TagCommands tagCommands)
         }
         if (name.Contains(' '))
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Tag name cannot contain spaces.");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "Tag name cannot contain spaces.");
         }
         var result = await tagCommands.CreateTagAsync(userId, guildId, name, tagContent);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
 
         embed.Embed
@@ -63,11 +52,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.DeleteTagAsync(userId, guildId, name, hasMessageEditPerms);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
 
         embed.Embed
@@ -81,21 +66,13 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         if (tagContent.MessageContent == null && tagContent.Attachments.Length == 0)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Tag content cannot be empty.\nPlease provide message content or attachment.");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "Tag content cannot be empty.\nPlease provide message content or attachment.");
         }
         var existingTag = await tagCommands.FindTagAsync(guildId, name);
         // TODO: ask the user if they want to create the tag if it doesn't exist
         if (existingTag.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(existingTag.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", existingTag.Error);
         }
         var content = string.Empty;
         if (tagContent.MessageContent != null)
@@ -109,11 +86,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.UpdateTagAsync(userId, guildId, name, content, hasMessageEditPerms);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
 
         embed.Embed
@@ -127,20 +100,12 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         if (newName.Contains(' '))
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Tag name cannot contain spaces.");
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", "Tag name cannot contain spaces.");
         }
         var result = await tagCommands.RenameTagAsync(userId, guildId, oldName, newName, hasMessageEditPerms);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
 
         embed.Embed
@@ -154,12 +119,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.GetRandomTagAsync(userId, guildId);
         if (result.IsFailure)
         {
-            var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
-            errorEmbed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return errorEmbed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var resultEmbed = new ResponseModel
         {
@@ -175,12 +135,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.FindTagAsync(guildId, name);
         if (result.IsFailure)
         {
-            var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
-            errorEmbed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return errorEmbed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var resultEmbed = new ResponseModel
         {
@@ -214,23 +169,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.FindTagsAsync(guildId, top, authorId);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Something went wrong while fetching tags. Please try again later.");
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
-        }
-        if (result.Value.Count == 0)
-        {
-            embed.Embed
-                .WithColor(DiscordConstants.BentoYellow)
-                .WithTitle("No tags found")
-                .WithDescription(author.HasValue
-                    ? "This user has not created any tags on this server yet."
-                    : "This server has no tags yet. Create one with `/tag create`.");
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var tags = result.Value;
 
@@ -273,11 +212,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var result = await tagCommands.FindTagAsync(guildId, name);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var tag = result.Value;
         var description = tag.Content + $"Created by <@{tag.UserId}>";
@@ -306,25 +241,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var tagsResults = await tagCommands.SearchTagsAsync(guildId, query);
         if (tagsResults.IsFailure)
         {
-            embed.Embed
-                .WithColor(new Color(255, 0, 0))
-                .WithTitle("Error")
-                .WithDescription("Something went wrong while searching tags. Please try again later.");
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
-        }
-        if (tagsResults.Value.Count == 0)
-        {
-            var anyTags = await tagCommands.FindTagsAsync(guildId, false, Maybe<long>.None);
-            var hasAnyTags = anyTags.IsSuccess && anyTags.Value.Count > 0;
-            embed.Embed
-                .WithColor(DiscordConstants.BentoYellow)
-                .WithTitle("No tags found")
-                .WithDescription(hasAnyTags
-                    ? $"No tags match \"{query}\" on this server."
-                    : "This server has no tags yet. Create one with `/tag create`.");
-            embed.ResponseType = ResponseType.Embed;
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", tagsResults.Error);
         }
         var tags = tagsResults.Value;
 

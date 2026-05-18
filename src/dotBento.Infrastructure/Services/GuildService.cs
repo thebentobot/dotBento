@@ -59,6 +59,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
     public async Task AddGuildAsync(DiscordGuild guild)
     {
+        if (cache.TryGetValue(CacheKeyForGuild(guild.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseGuild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)guild.Id);
 
@@ -73,12 +76,16 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             };
             await db.Guilds.AddAsync(databaseGuild);
             await db.SaveChangesAsync();
-            await AddGuildToCache(databaseGuild);
         }
+
+        await AddGuildToCache(databaseGuild);
     }
 
     public async Task AddGuildMemberAsync(NetCord.GuildUser guildUser)
     {
+        if (cache.TryGetValue(CacheKeyForGuildMember(guildUser.GuildId, guildUser.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var guildMember = await db.GuildMembers
             .AsQueryable()
@@ -96,8 +103,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             };
             await db.GuildMembers.AddAsync(guildMember);
             await db.SaveChangesAsync();
-            await AddGuildMemberToCache(guildMember);
         }
+
+        await AddGuildMemberToCache(guildMember);
     }
 
     private Task AddGuildMemberToCache(GuildMember guildMember)
@@ -186,7 +194,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (user != null)
         {
-            user.AvatarUrl = GetGuildAvatarUrl(guildMember) ?? GetGlobalAvatarUrl(guildMember);
+            var newAvatarUrl = GetGuildAvatarUrl(guildMember) ?? GetGlobalAvatarUrl(guildMember);
+            if (user.AvatarUrl == newAvatarUrl) return;
+            user.AvatarUrl = newAvatarUrl;
             await db.SaveChangesAsync();
             await RemoveGuildMemberFromCache((ulong)user.GuildId, (ulong)user.UserId);
             await AddGuildMemberToCache(user);

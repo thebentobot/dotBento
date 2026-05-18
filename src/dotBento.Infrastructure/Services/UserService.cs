@@ -114,6 +114,9 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task CreateOrAddUserToCache(NetCord.User discordUser)
     {
+        if (cache.TryGetValue(UserDiscordIdCacheKey((long)discordUser.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()
@@ -140,6 +143,9 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task CreateOrAddUserToCache(NetCord.GuildUser discordUser)
     {
+        if (cache.TryGetValue(UserDiscordIdCacheKey((long)discordUser.Id), out _))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()

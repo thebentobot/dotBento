@@ -53,5 +53,10 @@
       <ProjectReference Include="..\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+        <_Parameter1>dotBento.Bot.Tests</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
 
 </Project>

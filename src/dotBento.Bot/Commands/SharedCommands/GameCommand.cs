@@ -3,6 +3,7 @@ using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
 using dotBento.Domain.Enums.Games;
 using dotBento.Domain.Extensions.Games;
 using dotBento.Infrastructure.Commands;
@@ -59,29 +60,20 @@ public sealed class GameCommand(GameCommands gameCommands)
 
     private static Task<(int min, int max, bool failedValidation, ResponseModel error)> ValidateUserInput(int? userMin, int? userMax)
     {
-        var errorEmbed = new ResponseModel { ResponseType = ResponseType.Embed };
         if (int.TryParse(userMin.ToString(), out var min).Equals(false))
         {
-            errorEmbed.Embed.WithTitle("The minimum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")
-                .WithColor(new Color(0xFF0000));
-            return Task.FromResult((0, 0, true, errorEmbed));
+            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
         }
         if (int.TryParse(userMax.ToString(), out var max).Equals(false))
         {
-            errorEmbed.Embed.WithTitle("The maximum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")
-                .WithColor(new Color(0xFF0000));
-            return Task.FromResult((0, 0, true, errorEmbed));
+            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The maximum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
         }
         if (min > max)
         {
-            errorEmbed.Embed.WithTitle("The minimum number cannot be greater than the maximum number")
-                .WithColor(new Color(0xFF0000));
-            return Task.FromResult((0, 0, true, errorEmbed));
+            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum number cannot be greater than the maximum number")));
         }
 
-        if (min <= 1000 && max <= 1000) return Task.FromResult<(int min, int max, bool failedValidation, ResponseModel error)>((min, max, false, errorEmbed));
-        errorEmbed.Embed.WithTitle("The minimum or maximum number cannot be greater than 1000")
-            .WithColor(new Color(0xFF0000));
-        return Task.FromResult((0, 0, true, errorEmbed));
+        if (min <= 1000 && max <= 1000) return Task.FromResult<(int min, int max, bool failedValidation, ResponseModel error)>((min, max, false, new ResponseModel()));
+        return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum or maximum number cannot be greater than 1000")));
     }
 }

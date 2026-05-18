@@ -28,7 +28,7 @@ public sealed class UserUpdateHandler : IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private async Task UserUpdated(GuildUser user)
+    internal async Task UserUpdated(GuildUser user)
     {
         if (user.IsBot) return;
         var getUserFromDatabaseAsync = await _userService.GetUserFromDatabaseAsync(user.Id);

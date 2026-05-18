@@ -46,7 +46,7 @@ public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveServi
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
                 .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency.TotalMilliseconds} ms\n**Database** Connection was not established.")
-                .WithColor(new Color(0xFF0000));
+                .WithColor(DiscordConstants.ErrorRed);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
             Context.LogCommandUsed(CommandResponse.Error);
             Log.Error(e, "Ping Slash Command failed");

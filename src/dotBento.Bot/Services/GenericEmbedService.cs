@@ -2,12 +2,23 @@ using System.Text;
 using NetCord.Rest;
 using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
+using dotBento.Bot.Enums;
+using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 
 namespace dotBento.Bot.Services;
 
 public static class GenericEmbedService
 {
+    public static ResponseModel ErrorEmbed(string title, string? description = null)
+    {
+        var embed = new ResponseModel { ResponseType = ResponseType.Embed };
+        embed.Embed.WithColor(DiscordConstants.ErrorRed).WithTitle(title);
+        if (description is not null)
+            embed.Embed.WithDescription(description);
+        return embed;
+    }
+
     public static void HelpResponse(this EmbedProperties embed, ICommandInfo<CommandContext> commandInfo, string prefix, string username)
     {
         var primaryAlias = commandInfo.Aliases.FirstOrDefault() ?? string.Empty;

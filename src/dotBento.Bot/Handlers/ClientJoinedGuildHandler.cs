@@ -32,7 +32,7 @@ public sealed class ClientJoinedGuildHandler : IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private async Task ClientJoinedGuild(DiscordGuild guild)
+    internal async Task ClientJoinedGuild(DiscordGuild guild)
     {
         Statistics.DiscordEvents.WithLabels(nameof(ClientJoinedGuild)).Inc();
 

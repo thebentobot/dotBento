@@ -34,9 +34,6 @@ public sealed class BackgroundService(UserService userService,
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
 
-        Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
-        RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
-
         Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
 
@@ -217,11 +214,6 @@ public sealed class BackgroundService(UserService userService,
             Log.Error(e, nameof(UpdateMetrics));
             throw;
         }
-    }
-
-    public void ClearUserCache()
-    {
-        Log.Information("Discord user cache clearing is not supported in NetCord");
     }
 
     public async Task UpdateGuildMemberCounts()
@@ -471,8 +463,6 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Error(ex, $"Failed to delete user {userId}");
                     }
-
-                    await Task.Delay(100);
                 }
 
                 Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {deletedCount} users ({usersWithNoGuilds.Count - deletedCount} already deleted)");

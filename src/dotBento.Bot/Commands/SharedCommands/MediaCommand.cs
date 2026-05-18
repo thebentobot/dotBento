@@ -194,7 +194,7 @@ public sealed class MediaCommand(
         else
         {
             response.Embed
-                .WithColor(new NetCord.Color(255, 0, 0))
+                .WithColor(DiscordConstants.ErrorRed)
                 .WithTitle("Failed to fetch media")
                 .WithDescription(error);
         }

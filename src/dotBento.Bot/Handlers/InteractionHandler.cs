@@ -199,7 +199,7 @@ public sealed class InteractionHandler : IDisposable
         Statistics.ButtonExecuted.Inc();
     }
 
-    private async Task EnsureGuildAndUserExists(ApplicationCommandContext context)
+    internal async Task EnsureGuildAndUserExists(ApplicationCommandContext context)
     {
         if (context.Guild != null && !context.User.IsBot)
         {
@@ -218,7 +218,7 @@ public sealed class InteractionHandler : IDisposable
     /// if so, ensures the interaction was sent from a guild. Returns false (and sends an
     /// ephemeral reply) when the command requires a guild but <c>context.Guild</c> is null.
     /// </summary>
-    private async Task<bool> CheckGuildOnly(ApplicationCommandContext context, SlashCommandInteraction slashCommand)
+    internal async Task<bool> CheckGuildOnly(ApplicationCommandContext context, SlashCommandInteraction slashCommand)
     {
         if (context.Guild != null)
         {

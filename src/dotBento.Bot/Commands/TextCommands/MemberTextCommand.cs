@@ -3,10 +3,10 @@ using NetCord;
 using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 
@@ -30,10 +30,7 @@ public sealed class MemberTextCommand(
         var guildMember = (Context.Guild?.Users.GetValueOrDefault(user.Id)).AsMaybe();
         if (guildMember.HasNoValue)
         {
-            var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-            embed.Embed.WithTitle($"The user you inserted is not in this server")
-                .WithColor(new Color(0xFF0000));
-            await Context.SendResponse(interactiveService, embed);
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
             return;
         }
         await Context.SendResponse(interactiveService, await serverCommand.UserServerCommand(guildMember.Value, Context.Guild!));

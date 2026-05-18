@@ -31,7 +31,7 @@ public sealed class ClientLeftGuildHandler : IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private async Task ClientLeftGuild(ulong guildId)
+    internal async Task ClientLeftGuild(ulong guildId)
     {
         var keepData = false;
 
@@ -40,7 +40,7 @@ public sealed class ClientLeftGuildHandler : IDisposable
         {
             keepData = true;
         }
-        if (_client.Cache.User?.Id == Constants.BotDevelopmentId)
+        if (_client.Cache?.User?.Id == Constants.BotDevelopmentId)
         {
             keepData = true;
         }

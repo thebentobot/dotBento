@@ -95,6 +95,7 @@ public static class InteractionContextExtensions
                         .WithEmbeds([response.Embed])
                         .WithFlags(flags)
                         .WithComponents(response.Components)));
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
