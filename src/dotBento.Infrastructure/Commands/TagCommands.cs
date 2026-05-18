@@ -96,7 +96,7 @@ public sealed class TagCommands(TagService tagService)
     public async Task<Result<List<BentoTags>>> FindTagsAsync(long guildId, bool top, Maybe<long> authorId)
     {
         var tags = await tagService.FindTagsAsync(guildId, top, authorId);
-        return tags.IsSuccess
+        return tags.IsSuccess && tags.Value.Count != 0
             ? Result.Success(tags.Value.Select(x => x.ToBentoTag()).ToList())
             : Result.Failure<List<BentoTags>>("No tags found.");
     }
@@ -115,7 +115,9 @@ public sealed class TagCommands(TagService tagService)
             .DistinctBy(t => t.TagId)
             .Select(x => x.ToBentoTag())
             .ToList();
-        return Result.Success(tags);
+        return tags.Count != 0
+            ? Result.Success(tags)
+            : Result.Failure<List<BentoTags>>("No tags found.");
     }
     
     public async Task IncrementTagUsageAsync(long tagId)
