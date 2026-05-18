@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Sockets;
 using CSharpFunctionalExtensions;
 using NetCord;
 using NetCord.Gateway;
@@ -9,7 +10,9 @@ using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -125,7 +128,18 @@ public sealed class BackgroundService(UserService userService,
     public async Task SendRemindersToUsers()
     {
         Log.Information($"Running {nameof(SendRemindersToUsers)}");
-        var reminders = await reminderCommands.GetAllRecentRemindersAsync();
+
+        Result<List<Domain.Entities.Reminder>> reminders;
+        try
+        {
+            reminders = await reminderCommands.GetAllRecentRemindersAsync();
+        }
+        catch (Exception ex) when (IsTransientDatabaseException(ex))
+        {
+            Log.Warning(ex, "Skipping {JobName} because the database is temporarily unavailable", nameof(SendRemindersToUsers));
+            return;
+        }
+
         if (reminders.IsFailure)
         {
             return;
@@ -133,25 +147,25 @@ public sealed class BackgroundService(UserService userService,
 
         foreach (var reminder in reminders.Value)
         {
-            var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
-            if (checkIfBentoUser.HasNoValue)
-            {
-                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
-                continue;
-            }
-
-            var user = await userResolver.GetUserAsync((ulong)reminder.UserId);
-            if (user is null)
-            {
-                Log.Warning(
-                    "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
-                    reminder.UserId, reminder.Id);
-                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
-                continue;
-            }
-
             try
             {
+                var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
+                if (checkIfBentoUser.HasNoValue)
+                {
+                    await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                    continue;
+                }
+
+                var user = await userResolver.GetUserAsync((ulong)reminder.UserId);
+                if (user is null)
+                {
+                    Log.Warning(
+                        "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
+                        reminder.UserId, reminder.Id);
+                    await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                    continue;
+                }
+
                 var result = await dmSender.SendReminderAsync((ulong)reminder.UserId, reminder.Content);
                 switch (result)
                 {
@@ -165,6 +179,11 @@ public sealed class BackgroundService(UserService userService,
                         await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
                         break;
                 }
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                Log.Warning(ex, "Stopping {JobName} because the database became temporarily unavailable", nameof(SendRemindersToUsers));
+                return;
             }
             catch (Exception ex)
             {
@@ -187,14 +206,14 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"Running {nameof(UpdateMetrics)}");
 
-        Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
-        var discordUserCount = await userService.GetTotalDiscordUserCountAsync();
-        Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
-        Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
-        Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
-
         try
         {
+            Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
+            var discordUserCount = await userService.GetTotalDiscordUserCountAsync();
+            Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
+            Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
+            Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
+
             if (client.Cache.Guilds.Count == 0)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateMetrics)}");
@@ -209,11 +228,38 @@ public sealed class BackgroundService(UserService userService,
                 Statistics.DiscordServerCount.Set(client.Cache.Guilds.Count);
             }
         }
+        catch (Exception e) when (IsTransientDatabaseException(e))
+        {
+            Log.Warning(e, "Skipping {JobName} because the database is temporarily unavailable", nameof(UpdateMetrics));
+        }
         catch (Exception e)
         {
             Log.Error(e, nameof(UpdateMetrics));
             throw;
         }
+    }
+
+    private static bool IsTransientDatabaseException(Exception exception)
+    {
+        var sawDatabaseException = false;
+
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            sawDatabaseException |= current is RetryLimitExceededException or NpgsqlException or PostgresException;
+
+            if (current is PostgresException postgresException
+                && postgresException.SqlState == PostgresErrorCodes.CannotConnectNow)
+            {
+                return true;
+            }
+
+            if (sawDatabaseException && current is IOException or SocketException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task UpdateGuildMemberCounts()
