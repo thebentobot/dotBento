@@ -7,7 +7,9 @@ namespace dotBento.Bot.Resources;
 public sealed class DiscordConstants
 {
     public static Color BentoYellow = new(253, 224, 71);
-    
+
+    public static Color ErrorRed = new(255, 0, 0);
+
     public static Color LastFmColorRed = new(186, 0, 0);
 
     public static Color WarningColorOrange = new(255, 174, 66);

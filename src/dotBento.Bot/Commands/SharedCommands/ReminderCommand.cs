@@ -3,6 +3,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Commands;
 using Fergun.Interactive;
 
@@ -16,11 +17,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.CreateReminderAsync(userId, content, date);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         embed.Embed
             .WithColor(Color.Green)
@@ -35,11 +32,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.DeleteReminderAsync(userId, reminderId);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         embed.Embed
             .WithColor(Color.Green)
@@ -54,11 +47,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.UpdateReminderAsync(userId, reminderId, newContent, newDate);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var description = $"Reminder with ID `{reminderId}` has been updated.";
         if (newContent != null)
@@ -82,11 +71,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.GetReminderAsync(userId, reminderId);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var reminder = result.Value;
         embed.Embed
@@ -102,11 +87,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.GetRemindersAsync(userId);
         if (result.IsFailure)
         {
-            embed.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription(result.Error);
-            return embed;
+            return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var reminders = result.Value;
 

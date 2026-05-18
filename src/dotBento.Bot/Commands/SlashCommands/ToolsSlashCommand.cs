@@ -2,9 +2,9 @@ using Discord;
 using Discord.Interactions;
 using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
-using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 
@@ -33,7 +33,7 @@ public sealed class ToolsSlashCommand(InteractiveService interactiveService, Too
         var effectiveHide = hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id);
         if (string.IsNullOrWhiteSpace(url))
         {
-            await Context.SendResponse(interactiveService, ErrorEmbed("Please provide a URL or attach an image to the command."), effectiveHide);
+            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide a URL or attach an image to the command."), effectiveHide);
             return;
         }
 
@@ -55,11 +55,4 @@ public sealed class ToolsSlashCommand(InteractiveService interactiveService, Too
             await toolsCommand.GetTimezone(timezone, compare, Context.User.Id),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 
-    private static ResponseModel ErrorEmbed(string error)
-    {
-        var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        embed.Embed.WithTitle(error)
-            .WithColor(Color.Red);
-        return embed;
-    }
 }

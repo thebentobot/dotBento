@@ -161,7 +161,7 @@ public sealed class MediaCommand(
         else
         {
             response.Embed
-                .WithColor(Color.Red)
+                .WithColor(DiscordConstants.ErrorRed)
                 .WithTitle("Failed to fetch media")
                 .WithDescription(error);
         }

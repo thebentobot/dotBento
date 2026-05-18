@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
@@ -44,12 +45,7 @@ public sealed class UserCommand(
         var user = await userService.GetUserAsync((ulong)userId);
         if (user.HasNoValue)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription("Failed to create or retrieve user from database. Please try again later or contact support.");
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error", "Failed to create or retrieve user from database. Please try again later or contact support.");
         }
         var imageServerHost = config.Value.ImageServer.Url;
         var lastFmApiKey = config.Value.LastFmApiKey;
@@ -58,12 +54,7 @@ public sealed class UserCommand(
 
         if (profile.IsFailure)
         {
-            result.ResponseType = ResponseType.Embed;
-            result.Embed
-                .WithColor(Color.Red)
-                .WithTitle("Error")
-                .WithDescription("Something went wrong while trying to get the profile. Please try again later. Feel free to contact support if the issue persists.");
-            return result;
+            return GenericEmbedService.ErrorEmbed("Error", "Something went wrong while trying to get the profile. Please try again later. Feel free to contact support if the issue persists.");
         }
         
         result.Stream = profile.Value;
