@@ -90,9 +90,9 @@ public sealed class UserService(IMemoryCache cache,
     public async Task<Maybe<int>> GetTotalDiscordUserCountAsync()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-        var memberCount = db.Guilds
+        var memberCount = await db.Guilds
             .AsQueryable()
-            .SumAsync(s => s.MemberCount).Result;
+            .SumAsync(s => s.MemberCount);
 
         return memberCount.AsMaybe();
     }
