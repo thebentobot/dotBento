@@ -88,7 +88,8 @@ public static class InteractionContextExtensions
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+            {
+                await using var imageWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
                 var imageWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
@@ -98,10 +99,11 @@ public static class InteractionContextExtensions
                         .WithEmbeds([response.Embed])
                         .WithFlags(flags)
                         .WithComponents(response.Components)));
-                await imageWithEmbedStream.DisposeAsync();
                 break;
+            }
             case ResponseType.ImageOnly:
-                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+            {
+                await using var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
                 var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
@@ -109,10 +111,11 @@ public static class InteractionContextExtensions
                             (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename,
                             imageOnlyStream))
                         .WithFlags(flags)));
-                await imageOnlyStream.DisposeAsync();
                 break;
+            }
             case ResponseType.FileWithEmbed:
-                var fileWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
+            {
+                await using var fileWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
                 var fileWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
                 await context.Interaction.SendResponseAsync(InteractionCallback.Message(
                     new InteractionMessageProperties()
@@ -122,8 +125,8 @@ public static class InteractionContextExtensions
                         .WithEmbeds([response.Embed])
                         .WithFlags(flags)
                         .WithComponents(response.Components)));
-                await fileWithEmbedStream.DisposeAsync();
                 break;
+            }
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -162,7 +165,8 @@ public static class InteractionContextExtensions
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var followupImageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+            {
+                await using var followupImageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
                 var followupImageEmbedFilename = (response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed")).ReplaceInvalidChars().TruncateLongString(60);
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
@@ -171,20 +175,22 @@ public static class InteractionContextExtensions
                     .WithEmbeds([response.Embed])
                     .WithFlags(flags)
                     .WithComponents(response.Components));
-                await followupImageEmbedStream.DisposeAsync();
                 break;
+            }
             case ResponseType.ImageOnly:
-                var followupImageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+            {
+                await using var followupImageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
                 var followupImageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
                         (response.Spoiler ? "SPOILER_" : "") + followupImageOnlyFilename,
                         followupImageOnlyStream))
                     .WithFlags(flags));
-                await followupImageOnlyStream.DisposeAsync();
                 break;
+            }
             case ResponseType.FileWithEmbed:
-                var followupFileEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
+            {
+                await using var followupFileEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
                 var followupFileEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
                 await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
                     .AddAttachments(new AttachmentProperties(
@@ -193,8 +199,8 @@ public static class InteractionContextExtensions
                     .WithEmbeds([response.Embed])
                     .WithFlags(flags)
                     .WithComponents(response.Components));
-                await followupFileEmbedStream.DisposeAsync();
                 break;
+            }
             default:
                 throw new ArgumentOutOfRangeException();
         }
