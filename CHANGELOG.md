@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.19.7](https://github.com/thebentobot/dotBento/compare/v1.19.6...v1.19.7) (2026-05-20)
+
+
+### Bug Fixes
+
+* enable xunit test discovery ([06e43d1](https://github.com/thebentobot/dotBento/commit/06e43d13fbdcb147a9ac2df1700e77d7c2646931))
+* enable xunit test discovery ([f6c2b6f](https://github.com/thebentobot/dotBento/commit/f6c2b6f245f068c69d4b6d894341132ff9f212cb))
+* handle empty paginator command results ([cdcfa55](https://github.com/thebentobot/dotBento/commit/cdcfa55945b0b739daa20f458b49e31390dcbd8e))
+* handle empty tag pagination results ([c352f06](https://github.com/thebentobot/dotBento/commit/c352f0675f3520b0bbce07ddec3bf7f10a3db731))
+* handle transient postgres recovery in background jobs ([56404c6](https://github.com/thebentobot/dotBento/commit/56404c69e4a78016e9cb10667597e128201e2b48))
+* handle transient postgres recovery in jobs ([1eb06f1](https://github.com/thebentobot/dotBento/commit/1eb06f12d61d979198b93e6db9f1e9f0257c5ace))
+* install gssapi runtime dependency ([282ff11](https://github.com/thebentobot/dotBento/commit/282ff114094691d9efe01a1a9538b8a362f301eb))
+* reduce bot memory pressure ([524714d](https://github.com/thebentobot/dotBento/commit/524714dc02fe18524678443e7eac548febf0e4dc))
+* reduce bot memory pressure ([448546b](https://github.com/thebentobot/dotBento/commit/448546b779cd99db618a8c8c617936f9817d3ec2))
+* resolve all compiler warnings (excluding EntityFramework) ([f94a6f1](https://github.com/thebentobot/dotBento/commit/f94a6f1e5f3bfe3f9791a923a2a138ddb0d7ae4f))
+* resolve all compiler warnings excluding EntityFramework ([b389b89](https://github.com/thebentobot/dotBento/commit/b389b8945019912acb89446304e5f7e86bbea153))
+* stream media responses on Discord.Net ([a9a3096](https://github.com/thebentobot/dotBento/commit/a9a309692934e86bc55cdda37b71bda841766e7f))
+* stream media responses to reduce memory spikes ([8e07e7a](https://github.com/thebentobot/dotBento/commit/8e07e7ad98e2990d406ecf2bd9b8f45f0a8440bf))
+* stream media responses to reduce memory spikes ([9f3a3f2](https://github.com/thebentobot/dotBento/commit/9f3a3f2d8bedc0c600c8ab09236e5aacdbb21686))
+
 ## [1.19.6](https://github.com/thebentobot/dotBento/compare/v1.19.5...v1.19.6) (2026-05-17)
 
 
