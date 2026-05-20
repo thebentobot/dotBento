@@ -1,26 +1,24 @@
-using Fergun.Interactive;
-using NetCord;
-using NetCord.Rest;
-using NetCord.Services.Commands;
+using Discord;
+using Discord.Commands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
 using dotBento.Domain.Enums;
+using Fergun.Interactive;
 using Serilog;
 
 namespace dotBento.Bot.Extensions;
 
 public static class CommandContextExtensions
 {
-    public static void LogCommandUsed(this CommandContext context, CommandResponse commandResponse = CommandResponse.Ok)
+    public static void LogCommandUsed(this ICommandContext context, CommandResponse commandResponse = CommandResponse.Ok)
     {
         Log.Information("CommandUsed: {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} | {MessageContent}",
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, context.Message.Content);
-
     }
-
-    public static async Task HandleCommandException(this CommandContext context, Exception exception, string? message = null, bool sendReply = true)
+    
+    public static async Task HandleCommandException(this ICommandContext context, Exception exception, string? message = null, bool sendReply = true)
     {
         var referenceId = StringUtilities.GenerateRandomCode();
 
@@ -31,62 +29,53 @@ public static class CommandContextExtensions
         {
             if (exception.Message.Contains("error 50013"))
             {
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .WithContent("Sorry, something went wrong because the bot is missing permissions. Make sure the bot has `Embed links` and `Attach Files`.\n" +
-                                 $"*Reference id: `{referenceId}`*")
-                    .WithAllowedMentions(AllowedMentionsProperties.None));
+                await context.Channel.SendMessageAsync("Sorry, something went wrong because the bot is missing permissions. Make sure the bot has `Embed links` and `Attach Files`.\n" +
+                                                       $"*Reference id: `{referenceId}`*", allowedMentions: AllowedMentions.None);
             }
             else
             {
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .WithContent("Sorry, something went wrong. Please try again later.\n" +
-                                 $"*Reference id: `{referenceId}`*")
-                    .WithAllowedMentions(AllowedMentionsProperties.None));
+                await context.Channel.SendMessageAsync("Sorry, something went wrong. Please try again later.\n" +
+                                                       $"*Reference id: `{referenceId}`*", allowedMentions: AllowedMentions.None);
             }
         }
 
     }
 
-    public static async Task SendResponse(this CommandContext context, InteractiveService interactiveService, ResponseModel response)
+    public static async Task SendResponse(this ICommandContext context, InteractiveService interactiveService, ResponseModel response)
     {
         switch (response.ResponseType)
         {
             case ResponseType.Text:
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .WithContent(response.Text)
-                    .WithAllowedMentions(AllowedMentionsProperties.None)
-                    .WithComponents(response.Components));
+                await context.Channel.SendMessageAsync(response.Text, allowedMentions: AllowedMentions.None, components: response.Components?.Build());
                 break;
             case ResponseType.Embed:
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .AddEmbeds(response.Embed)
-                    .WithComponents(response.Components));
+                await context.Channel.SendMessageAsync("", false, response.Embed.Build(), components: response.Components?.Build());
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.ComponentPaginator ?? throw new InvalidOperationException(),
-                    context.Channel ?? throw new InvalidOperationException("Channel required for paginator"),
-                    TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds));
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
+                    context.Channel,
+                    TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds));
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
-                var imageEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + imageEmbedFilename,
-                        imageEmbedStream))
-                    .AddEmbeds(response.Embed)
-                    .WithComponents(response.Components));
-                await imageEmbedStream.DisposeAsync();
+                var imageEmbedFilename = response.FileName;
+                await context.Channel.SendFileAsync(
+                    response.Stream,
+                    imageEmbedFilename,
+                    null,
+                    false,
+                    response.Embed.Build(),
+                    isSpoiler: response.Spoiler,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
-                var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
-                await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
-                    .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename + ".png",
-                        imageOnlyStream)));
-                await imageOnlyStream.DisposeAsync();
+                var imageFilename = response.FileName;
+                await context.Channel.SendFileAsync(
+                    response.Stream,
+                    imageFilename + ".png",
+                    isSpoiler: response.Spoiler);
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

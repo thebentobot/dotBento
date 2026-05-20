@@ -1,5 +1,4 @@
-using NetCord;
-using NetCord.Services.ApplicationCommands;
+using Discord.Interactions;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -14,11 +13,11 @@ using Serilog;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService, UserSettingService userSettingService)
-    : ApplicationCommandModule<ApplicationCommandContext>
+    : InteractionModuleBase<SocketInteractionContext>
 {
     [SlashCommand("ping", "Test Bento's latency")]
     public async Task PingCommand(
-    [SlashCommandParameter(Name = "hide", Description = "Only show the result for you")] bool? hide = null)
+    [Summary("hide", "Only show the result for you")] bool? hide = null)
     {
         var effectiveHide = hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id);
         var messageTimeStart = DateTime.UtcNow;
@@ -37,7 +36,7 @@ public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveServi
 
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
-                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency.TotalMilliseconds} ms\n**Database** {dbTime} ms")
+                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
                 .WithColor(DiscordConstants.BentoYellow);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
         }
@@ -45,7 +44,7 @@ public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveServi
         {
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
-                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency.TotalMilliseconds} ms\n**Database** Connection was not established.")
+                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
                 .WithColor(DiscordConstants.ErrorRed);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
             Context.LogCommandUsed(CommandResponse.Error);

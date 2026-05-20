@@ -1,10 +1,11 @@
 using CSharpFunctionalExtensions;
-using NetCord.Gateway;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using DiscordGuild = NetCord.Gateway.Guild;
 
 namespace dotBento.Infrastructure.Services;
 
@@ -34,7 +35,7 @@ public sealed class UserService(IMemoryCache cache,
     {
         cache.Remove(UserDiscordIdCacheKey(user.UserId));
     }
-
+    
     private Task AddUserToCache(User user)
     {
         var discordUserIdCacheKey = UserDiscordIdCacheKey(user.UserId);
@@ -46,7 +47,7 @@ public sealed class UserService(IMemoryCache cache,
     {
         return $"user-{discordUserId}";
     }
-
+    
     public async Task<Dictionary<long, User>> GetMultipleUsers(HashSet<int> userIds)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -55,7 +56,7 @@ public sealed class UserService(IMemoryCache cache,
             .Where(w => userIds.Contains((int)w.UserId))
             .ToDictionaryAsync(d => d.UserId, d => d);
     }
-
+    
     public async Task<List<User>> GetAllDiscordUserIds()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -63,22 +64,19 @@ public sealed class UserService(IMemoryCache cache,
             .AsNoTracking()
             .ToListAsync();
     }
-
-    public static Task<string> GetNameAsync(DiscordGuild? guild, NetCord.User user)
+    
+    public static async Task<string> GetNameAsync(IGuild? guild, IUser user)
     {
         if (guild == null)
         {
-            return Task.FromResult(user.GlobalName ?? user.Username);
+            return user.GlobalName ?? user.Username;
         }
 
-        if (guild.Users.TryGetValue(user.Id, out var guildMember))
-        {
-            return Task.FromResult(guildMember.Nickname ?? guildMember.GlobalName ?? guildMember.Username);
-        }
+        var guildUser = await guild.GetUserAsync(user.Id);
 
-        return Task.FromResult(user.GlobalName ?? user.Username);
+        return guildUser?.DisplayName ?? user.GlobalName ?? user.Username;
     }
-
+    
     public async Task<int> GetTotalDatabaseUserCountAsync()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -93,7 +91,7 @@ public sealed class UserService(IMemoryCache cache,
         var memberCount = db.Guilds
             .AsQueryable()
             .SumAsync(s => s.MemberCount).Result;
-
+        
         return memberCount.AsMaybe();
     }
 
@@ -112,11 +110,8 @@ public sealed class UserService(IMemoryCache cache,
         }
     }
 
-    public async Task CreateOrAddUserToCache(NetCord.User discordUser)
+    public async Task CreateOrAddUserToCache(SocketUser discordUser)
     {
-        if (cache.TryGetValue(UserDiscordIdCacheKey((long)discordUser.Id), out _))
-            return;
-
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()
@@ -128,8 +123,8 @@ public sealed class UserService(IMemoryCache cache,
             {
                 UserId = (long)discordUser.Id,
                 Username = discordUser.Username,
-                Discriminator = discordUser.Discriminator.ToString(),
-                AvatarUrl = GetAvatarUrl(discordUser),
+                Discriminator = discordUser.Discriminator,
+                AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
                 Level = 1,
                 Xp = 0
             };
@@ -137,15 +132,12 @@ public sealed class UserService(IMemoryCache cache,
             db.Users.Add(databaseUser);
             await db.SaveChangesAsync();
         }
-
+        
         await AddUserToCache(databaseUser);
     }
-
-    public async Task CreateOrAddUserToCache(NetCord.GuildUser discordUser)
+    
+    public async Task CreateOrAddUserToCache(SocketGuildUser discordUser)
     {
-        if (cache.TryGetValue(UserDiscordIdCacheKey((long)discordUser.Id), out _))
-            return;
-
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()
@@ -157,8 +149,8 @@ public sealed class UserService(IMemoryCache cache,
             {
                 UserId = (long)discordUser.Id,
                 Username = discordUser.Username,
-                Discriminator = discordUser.Discriminator.ToString(),
-                AvatarUrl = GetAvatarUrl(discordUser),
+                Discriminator = discordUser.Discriminator,
+                AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
                 Level = 1,
                 Xp = 0
             };
@@ -166,11 +158,11 @@ public sealed class UserService(IMemoryCache cache,
             db.Users.Add(databaseUser);
             await db.SaveChangesAsync();
         }
-
+        
         await AddUserToCache(databaseUser);
     }
 
-    public async Task UpdateUserAvatarAsync(NetCord.User newUser)
+    public async Task UpdateUserAvatarAsync(SocketUser newUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
@@ -179,14 +171,14 @@ public sealed class UserService(IMemoryCache cache,
 
         if (user != null)
         {
-            user.AvatarUrl = GetAvatarUrl(newUser);
+            user.AvatarUrl = newUser.GetAvatarUrl(ImageFormat.Auto, 512);
             await db.SaveChangesAsync();
             RemoveUserFromCache(user);
             await AddUserToCache(user);
         }
     }
 
-    public async Task UpdateUserUsernameAsync(NetCord.User newUser)
+    public async Task UpdateUserUsernameAsync(SocketUser newUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
@@ -211,7 +203,7 @@ public sealed class UserService(IMemoryCache cache,
 
         return patreon.AsMaybe();
     }
-
+    
     // TODO change to long instead of casting it at this level as we usually cast at an upper level
     public async Task<Maybe<User>> GetUserAsync(ulong userId)
     {
@@ -220,7 +212,7 @@ public sealed class UserService(IMemoryCache cache,
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.UserId == (long)userId);
         var maybeUser = user.AsMaybe();
-
+        
         if (maybeUser.HasValue)
         {
             await AddUserToCache(maybeUser.Value);
@@ -229,54 +221,54 @@ public sealed class UserService(IMemoryCache cache,
         return maybeUser;
     }
 
-    public async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
+    public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)userId);
+            .FirstOrDefaultAsync(f => f.UserId == (long)context.User.Id);
         var guildMember = await db.GuildMembers
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)userId && f.GuildId == (long)guildId);
-
+            .FirstOrDefaultAsync(f => f.UserId == (long)context.User.Id && f.GuildId == (long)context.Guild.Id);
+        
         if (user == null || guildMember == null) return;
 
         var experiencePoints = 23;
-
+        
         if (patreonUser.HasValue)
         {
             experiencePoints = GetExperiencePointsForPatreonUser(patreonUser.Value);
         }
-
+        
         user.Xp += experiencePoints;
         guildMember.Xp += experiencePoints;
-
+        
         var neededExperienceUser = GetNeededExperienceByLevel(user.Level);
         var neededExperienceGuildMember = GetNeededExperienceByLevel(guildMember.Level);
-
+        
         if (user.Xp >= neededExperienceUser)
         {
             user.Level++;
             user.Xp = 0;
         }
-
+        
         if (guildMember.Xp >= neededExperienceGuildMember)
         {
             guildMember.Level++;
             guildMember.Xp = 0;
         }
-
+        
         await db.SaveChangesAsync();
     }
-
+    
     public async Task<Maybe<int>> GetUserRankAsync(long userId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-
+    
         var user = await db.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.UserId == userId);
-
+    
         if (user == null)
         {
             return Maybe<int>.None;
@@ -289,7 +281,7 @@ public sealed class UserService(IMemoryCache cache,
 
         return rank + 1;
     }
-
+    
     private int GetNeededExperienceByLevel(int level)
     {
         return level * level * 100;
@@ -390,7 +382,7 @@ public sealed class UserService(IMemoryCache cache,
     /// <summary>
     /// Updates user information (username, discriminator, avatar) from Discord.
     /// </summary>
-    public async Task<bool> SyncUserFromDiscordAsync(User dbUser, NetCord.User discordUser)
+    public async Task<bool> SyncUserFromDiscordAsync(User dbUser, IUser discordUser)
     {
         var hasChanges = false;
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -399,7 +391,7 @@ public sealed class UserService(IMemoryCache cache,
 
         if (user == null) return false;
 
-        var newAvatarUrl = GetAvatarUrl(discordUser);
+        var newAvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512);
         if (user.AvatarUrl != newAvatarUrl)
         {
             user.AvatarUrl = newAvatarUrl;
@@ -412,9 +404,9 @@ public sealed class UserService(IMemoryCache cache,
             hasChanges = true;
         }
 
-        if (user.Discriminator != discordUser.Discriminator.ToString())
+        if (user.Discriminator != discordUser.Discriminator)
         {
-            user.Discriminator = discordUser.Discriminator.ToString();
+            user.Discriminator = discordUser.Discriminator;
             hasChanges = true;
         }
 
@@ -426,7 +418,7 @@ public sealed class UserService(IMemoryCache cache,
 
         return hasChanges;
     }
-
+    
     public async Task<List<long>> GetUsersWithoutGuilds()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -436,9 +428,4 @@ public sealed class UserService(IMemoryCache cache,
             .Select(u => u.UserId)
             .ToListAsync();
     }
-
-    private static string? GetAvatarUrl(NetCord.User user) =>
-        user.AvatarHash != null
-            ? $"https://cdn.discordapp.com/avatars/{user.Id}/{user.AvatarHash}.{(user.AvatarHash.StartsWith("a_") ? "gif" : "webp")}?size=512"
-            : null;
 }

@@ -1,65 +1,62 @@
-using dotBento.Bot.Services;
+using Discord.WebSocket;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
-using NetCord.Gateway;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
 public sealed class GuildMemberRemoveHandler : IDisposable
 {
-    private readonly GatewayClient _client;
+    private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
     private readonly UserService _userService;
-    private readonly GuildMemberLookupService _memberLookup;
 
-    public GuildMemberRemoveHandler(GatewayClient client,
-        GuildService guildService, UserService userService,
-        GuildMemberLookupService memberLookup)
+    public GuildMemberRemoveHandler(DiscordSocketClient client,
+        GuildService guildService, UserService userService)
     {
         _userService = userService;
         _client = client;
         _guildService = guildService;
-        _memberLookup = memberLookup;
-        _client.GuildUserRemove += GuildMemberRemovedEvent;
-        _client.GuildBanAdd += GuildMemberBannedEvent;
+        _client.UserLeft += GuildMemberRemovedEvent;
+        _client.UserBanned += GuildMemberBannedEvent;
     }
 
-    private ValueTask GuildMemberRemovedEvent(GuildUserRemoveEventArgs args)
+    private Task GuildMemberRemovedEvent(SocketGuild guild, SocketUser user)
     {
         _ = Task.Run(async () =>
         {
-            try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
+            try { await GuildMemberRemoved(guild, user); }
             catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberRemoved handler"); }
         });
-        return ValueTask.CompletedTask;
+        return Task.CompletedTask;
     }
 
-    private ValueTask GuildMemberBannedEvent(GuildBanEventArgs args)
+    private Task GuildMemberBannedEvent(SocketUser user, SocketGuild guild)
     {
         _ = Task.Run(async () =>
         {
-            try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
+            try { await GuildMemberRemoved(guild, user); }
             catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberBanned handler"); }
         });
-        return ValueTask.CompletedTask;
+        return Task.CompletedTask;
     }
 
-    internal async Task GuildMemberRemoved(ulong guildId, ulong userId)
+    private async Task GuildMemberRemoved(SocketGuild guild, SocketUser discordUser)
     {
+        if (discordUser.IsBot) return;
+
         Statistics.DiscordEvents.WithLabels(nameof(GuildMemberRemoved)).Inc();
-        _memberLookup.Invalidate(guildId, userId);
-        await _guildService.DeleteGuildMember(guildId, userId);
-        var guildsForUser = await _guildService.FindGuildsForUser(userId);
+        await _guildService.DeleteGuildMember(guild.Id, discordUser.Id);
+        var guildsForUser = _guildService.FindGuildsForUser(discordUser.Id).Result;
         if (guildsForUser.Count == 0)
         {
-            await _userService.DeleteUserAsync(userId);
+            await _userService.DeleteUserAsync(discordUser.Id);
         }
     }
 
     public void Dispose()
     {
-        _client.GuildUserRemove -= GuildMemberRemovedEvent;
-        _client.GuildBanAdd -= GuildMemberBannedEvent;
+        _client.UserLeft -= GuildMemberRemovedEvent;
+        _client.UserBanned -= GuildMemberBannedEvent;
     }
 }

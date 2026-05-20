@@ -1,43 +1,41 @@
-using Fergun.Interactive;
-using Fergun.Interactive.Pagination;
-using NetCord;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
-using NetCord.Services.ComponentInteractions;
+using Discord;
+using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
 using dotBento.Domain.Enums;
 using dotBento.Domain.Extensions;
+using Fergun.Interactive;
 using Serilog;
 
 namespace dotBento.Bot.Extensions;
 
 public static class InteractionContextExtensions
 {
-    public static void LogCommandUsed(this ApplicationCommandContext context, CommandResponse commandResponse = CommandResponse.Ok)
+    public static void LogCommandUsed(this IInteractionContext context, CommandResponse commandResponse = CommandResponse.Ok)
     {
         string? commandName = null;
-        if (context.Interaction is SlashCommandInteraction slashCommand)
+        if (context.Interaction is SocketSlashCommand socketSlashCommand)
         {
-            commandName = slashCommand.Data.Name;
+            commandName = socketSlashCommand.CommandName;
         }
 
         Log.Information("SlashCommandUsed: {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} | {MessageContent}",
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, commandName);
-
     }
 
-    public static async Task HandleCommandException(this ApplicationCommandContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false)
+    public static async Task HandleCommandException(this IInteractionContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false)
     {
         var referenceId = StringUtilities.GenerateRandomCode();
 
         var commandName = context.Interaction switch
         {
-            SlashCommandInteraction slashCommand => slashCommand.Data.Name,
-            UserCommandInteraction userCommand => userCommand.Data.Name,
-            _ => "ButtonInteraction"
+            SocketSlashCommand socketSlashCommand => socketSlashCommand.CommandName,
+            SocketUserCommand socketUserCommand => socketUserCommand.CommandName,
+            // TODO: Add support for ButtonInteraction and SelectMenuInteraction
+            SocketInteraction socketInteraction => "ButtonInteraction",
+            _ => null
         };
 
         Log.Error(exception, "SlashCommandUsed: Error {ReferenceId} | {DiscordUserName} / {DiscordUserId} | {GuildName} / {GuildId} | {CommandResponse} ({Message}) | {MessageContent}",
@@ -47,178 +45,172 @@ public static class InteractionContextExtensions
         {
             if (deferFirst)
             {
-                await context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage(MessageFlags.Ephemeral));
+                await context.Interaction.DeferAsync(ephemeral: true);
             }
 
-            await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                .WithContent($"Sorry, something went wrong while trying to process `{commandName}`. Please try again later.\n" +
-                             $"*Reference id: `{referenceId}`*")
-                .WithFlags(MessageFlags.Ephemeral));
+            await context.Interaction.FollowupAsync($"Sorry, something went wrong while trying to process `{commandName}`. Please try again later.\n" +
+                                                    $"*Reference id: `{referenceId}`*", ephemeral: true);
         }
 
     }
 
-    public static async Task SendResponse(this ApplicationCommandContext context, InteractiveService interactiveService, ResponseModel response, bool ephemeral = false)
+    public static async Task SendResponse(this IInteractionContext context, InteractiveService interactiveService, ResponseModel response, bool ephemeral = false)
     {
-        var flags = ephemeral ? MessageFlags.Ephemeral : (MessageFlags?)null;
-
         switch (response.ResponseType)
         {
             case ResponseType.Text:
-                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                    new InteractionMessageProperties()
-                        .WithContent(response.Text)
-                        .WithAllowedMentions(AllowedMentionsProperties.None)
-                        .WithFlags(flags)
-                        .WithComponents(response.Components)));
+                await context.Interaction.RespondAsync(response.Text, allowedMentions: AllowedMentions.None, ephemeral: ephemeral, components: response.Components?.Build());
                 break;
             case ResponseType.Embed:
-                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                    new InteractionMessageProperties()
-                        .WithEmbeds([response.Embed])
-                        .WithFlags(flags)
-                        .WithComponents(response.Components)));
+                await context.Interaction.RespondAsync(null, new[] { response.Embed.Build() }, ephemeral: ephemeral, components: response.Components?.Build());
                 break;
             case ResponseType.Paginator:
                 _ = interactiveService.SendPaginatorAsync(
-                    response.ComponentPaginator ?? throw new InvalidOperationException(),
-                    context.Interaction,
-                    TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds),
-                    InteractionCallbackType.Message,
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
+                    (SocketInteraction)context.Interaction,
+                    TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var imageWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
-                var imageWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
-                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                    new InteractionMessageProperties()
-                        .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + imageWithEmbedFilename,
-                            imageWithEmbedStream))
-                        .WithEmbeds([response.Embed])
-                        .WithFlags(flags)
-                        .WithComponents(response.Components)));
-                await imageWithEmbedStream.DisposeAsync();
+                var imageEmbedFilename =
+                    response.FileName;
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageEmbedFilename,
+                    null,
+                    [response.Embed.Build()],
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
                 break;
             case ResponseType.ImageOnly:
-                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
-                var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
-                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                    new InteractionMessageProperties()
-                        .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename,
-                            imageOnlyStream))
-                        .WithFlags(flags)));
-                await imageOnlyStream.DisposeAsync();
+                var imageName = response.FileName;
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageName,
+                    ephemeral: ephemeral);
+                await response.Stream.DisposeAsync();
                 break;
             case ResponseType.FileWithEmbed:
-                var fileWithEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
-                var fileWithEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
-                await context.Interaction.SendResponseAsync(InteractionCallback.Message(
-                    new InteractionMessageProperties()
-                        .AddAttachments(new AttachmentProperties(
-                            (response.Spoiler ? "SPOILER_" : "") + fileWithEmbedFilename,
-                            fileWithEmbedStream))
-                        .WithEmbeds([response.Embed])
-                        .WithFlags(flags)
-                        .WithComponents(response.Components)));
-                await fileWithEmbedStream.DisposeAsync();
+                await context.Interaction.RespondWithFileAsync(response.Stream,
+                    (response.Spoiler ? "SPOILER_" : "") + response.FileName,
+                    null,
+                    [response.Embed.Build()],
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    /// <summary>Sends a deferred "thinking…" response, optionally ephemeral.</summary>
-    public static Task DeferResponseAsync(this ApplicationCommandContext context, bool ephemeral = false) =>
-        context.Interaction.SendResponseAsync(
-            InteractionCallback.DeferredMessage(ephemeral ? MessageFlags.Ephemeral : null));
-
-    public static async Task SendFollowUpResponse(this ApplicationCommandContext context, InteractiveService interactiveService, ResponseModel response, bool ephemeral = false)
+    public static async Task SendFollowUpResponse(this IInteractionContext context, InteractiveService interactiveService, ResponseModel response, bool ephemeral = false)
     {
-        var flags = ephemeral ? MessageFlags.Ephemeral : (MessageFlags?)null;
-
         switch (response.ResponseType)
         {
             case ResponseType.Text:
-                await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                    .WithContent(response.Text)
-                    .WithAllowedMentions(AllowedMentionsProperties.None)
-                    .WithFlags(flags)
-                    .WithComponents(response.Components));
+                await context.Interaction.FollowupAsync(response.Text, allowedMentions: AllowedMentions.None, ephemeral: ephemeral, components: response.Components?.Build());
                 break;
             case ResponseType.Embed:
-                await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                    .WithEmbeds([response.Embed])
-                    .WithFlags(flags)
-                    .WithComponents(response.Components));
+                await context.Interaction.FollowupAsync(null, new[] { response.Embed.Build() }, ephemeral: ephemeral, components: response.Components?.Build());
                 break;
             case ResponseType.Paginator:
                 await interactiveService.SendPaginatorAsync(
-                    response.ComponentPaginator ?? throw new InvalidOperationException(),
-                    context.Interaction,
-                    response.PaginatorTimeout ?? TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds),
-                    InteractionCallbackType.DeferredMessage,
+                    response.StaticPaginator ?? throw new InvalidOperationException(),
+                    (SocketInteraction)context.Interaction,
+                    response.PaginatorTimeout ?? TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds),
+                    InteractionResponseType.DeferredChannelMessageWithSource,
                     ephemeral: ephemeral);
                 break;
             case ResponseType.ImageWithEmbed:
-                var followupImageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
-                var followupImageEmbedFilename = (response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed")).ReplaceInvalidChars().TruncateLongString(60);
-                await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                    .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + followupImageEmbedFilename,
-                        followupImageEmbedStream))
-                    .WithEmbeds([response.Embed])
-                    .WithFlags(flags)
-                    .WithComponents(response.Components));
-                await followupImageEmbedStream.DisposeAsync();
+                var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
+                await context.Interaction.FollowupWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageEmbedFilename +
+                    ".png",
+                    null,
+                    new[] { response.Embed.Build() },
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             case ResponseType.ImageOnly:
-                var followupImageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
-                var followupImageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
-                await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                    .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + followupImageOnlyFilename,
-                        followupImageOnlyStream))
-                    .WithFlags(flags));
-                await followupImageOnlyStream.DisposeAsync();
+                var imageName = response.FileName;
+                await context.Interaction.FollowupWithFileAsync(response.Stream,
+                (response.Spoiler
+                    ? "SPOILER_"
+                    : "") +
+                imageName,
+                ephemeral: ephemeral);
+                await response.Stream.DisposeAsync();
                 break;
             case ResponseType.FileWithEmbed:
-                var followupFileEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for FileWithEmbed");
-                var followupFileEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for FileWithEmbed");
-                await context.Interaction.SendFollowupMessageAsync(new InteractionMessageProperties()
-                    .AddAttachments(new AttachmentProperties(
-                        (response.Spoiler ? "SPOILER_" : "") + followupFileEmbedFilename,
-                        followupFileEmbedStream))
-                    .WithEmbeds([response.Embed])
-                    .WithFlags(flags)
-                    .WithComponents(response.Components));
-                await followupFileEmbedStream.DisposeAsync();
+                var fileEmbedFilename = response.FileName ?? throw new InvalidOperationException();
+                await context.Interaction.FollowupWithFileAsync(
+                    response.Stream,
+                    (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,
+                    null,
+                    new[] { response.Embed.Build() },
+                    ephemeral: ephemeral,
+                    components: response.Components?.Build());
+                if (response.Stream != null) await response.Stream.DisposeAsync();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-}
+    public static async Task UpdateInteractionEmbed(this IInteractionContext context, ResponseModel response, InteractiveService? interactiveService = null)
+    {
+        var message = (context.Interaction as SocketMessageComponent)?.Message;
 
-public static class ComponentInteractionContextExtensions
-{
-    /// <summary>
-    /// Modifies the original component message in-place using the embed and components from
-    /// <paramref name="response"/>. Use this as the standard way to update a settings panel.
-    /// </summary>
-    public static Task UpdateResponseAsync(this ComponentInteractionContext context, ResponseModel response) =>
-        context.Interaction.SendResponseAsync(InteractionCallback.ModifyMessage(m =>
+        if (message == null)
         {
-            m.Embeds = [response.Embed];
-            m.Components = response.Components;
-        }));
+            return;
+        }
 
-    /// <summary>Sends a short ephemeral text reply to a component interaction.</summary>
-    public static Task EphemeralResponseAsync(this ComponentInteractionContext context, string content) =>
-        context.Interaction.SendResponseAsync(InteractionCallback.Message(
-            new InteractionMessageProperties()
-                .WithContent(content)
-                .WithFlags(MessageFlags.Ephemeral)));
+        if (response.ResponseType == ResponseType.Paginator)
+        {
+            if (interactiveService != null) await ModifyPaginator(interactiveService, message, response);
+            return;
+        }
+
+        await context.ModifyMessage(message, response);
+    }
+
+    public static async Task UpdateMessageEmbed(this IInteractionContext context, ResponseModel response, string messageId)
+    {
+        var parsedMessageId = ulong.Parse(messageId);
+        var msg = await context.Channel.GetMessageAsync(parsedMessageId);
+
+        if (msg is not IUserMessage message)
+        {
+            return;
+        }
+
+        await context.ModifyMessage(message, response);
+    }
+
+    private static async Task ModifyMessage(this IInteractionContext context, IUserMessage message, ResponseModel response)
+    {
+        await message.ModifyAsync(m =>
+        {
+            if (response.Components != null) m.Components = response.Components.Build();
+            m.Embed = response.Embed.Build();
+        });
+
+        await context.Interaction.DeferAsync();
+    }
+
+    private static async Task ModifyPaginator(InteractiveService interactiveService, IUserMessage message, ResponseModel response) =>
+        await interactiveService.SendPaginatorAsync(
+            response.StaticPaginator ?? throw new InvalidOperationException(),
+            message,
+            TimeSpan.FromMinutes(DiscordConstants.PaginationTimeoutInSeconds));
 }

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Gateway;
+using Discord;
+using Discord.WebSocket;
 using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
@@ -16,7 +16,7 @@ namespace dotBento.Bot.Services;
 
 public sealed class BackgroundService(UserService userService,
     GuildService guildService,
-    GatewayClient client,
+    DiscordSocketClient client,
     SupporterService supporterService,
     BotListService botListService,
     ReminderCommands reminderCommands,
@@ -33,6 +33,9 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
+        RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
@@ -93,20 +96,20 @@ public sealed class BackgroundService(UserService userService,
     public async Task UpdateStatus()
     {
         Log.Information($"Running {nameof(UpdateStatus)}");
-        var statusText = GetRandomActivityStatus(client);
-        await client.UpdatePresenceAsync(new PresenceProperties(UserStatusType.Online)
-            .WithActivities([new UserActivityProperties(statusText, UserActivityType.Watching)]));
+        var activity = GetRandomActivityStatus(client);
+        await client.SetActivityAsync(activity);
     }
 
-    private static string GetRandomActivityStatus(GatewayClient client)
+    private static Game GetRandomActivityStatus(DiscordSocketClient client)
     {
-        var guildCount = client.Cache.Guilds.Count;
-        var userCount = client.Cache.Guilds.Values.Sum(x => x.UserCount);
+        var guildCount = client.Guilds.Count;
+        var userCount = client.Guilds.Sum(x => x.MemberCount);
 
         var formattedUserCount = FormatThousandsCount(userCount);
         var formattedGuildCount = FormatThousandsCount(guildCount);
 
-        return $"{formattedUserCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
+        var statusText = $"{formattedUserCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
+        return new Game(statusText, ActivityType.Watching);
     }
 
     private static string FormatThousandsCount(int count) =>
@@ -152,7 +155,7 @@ public sealed class BackgroundService(UserService userService,
 
             try
             {
-                var result = await dmSender.SendReminderAsync((ulong)reminder.UserId, reminder.Content);
+                var result = await dmSender.SendReminderAsync(user, reminder.Content);
                 switch (result)
                 {
                     case DmSendResult.Success:
@@ -178,9 +181,7 @@ public sealed class BackgroundService(UserService userService,
 
     public async Task UpdateMetrics()
     {
-        var environment = botSettings.Value.Environment;
-        if (!string.Equals(environment, "production", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(environment, "staging", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -195,7 +196,7 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Cache.Guilds.Count == 0)
+            if (client.Guilds?.Count == null)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateMetrics)}");
                 return;
@@ -206,7 +207,7 @@ public sealed class BackgroundService(UserService userService,
 
             if (startTime.Minutes > 8)
             {
-                Statistics.DiscordServerCount.Set(client.Cache.Guilds.Count);
+                Statistics.DiscordServerCount.Set(client.Guilds.Count);
             }
         }
         catch (Exception e)
@@ -216,24 +217,30 @@ public sealed class BackgroundService(UserService userService,
         }
     }
 
+    public void ClearUserCache()
+    {
+        client.PurgeUserCache();
+        Log.Information("Purged discord user cache");
+    }
+
     public async Task UpdateGuildMemberCounts()
     {
         Log.Information($"Running {nameof(UpdateGuildMemberCounts)}");
 
         try
         {
-            if (client.Cache.Guilds.Count == 0)
+            if (client.Guilds?.Count == null)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateGuildMemberCounts)}");
                 return;
             }
 
-            foreach (var guild in client.Cache.Guilds.Values)
+            foreach (var guild in client.Guilds)
             {
-                await guildService.UpdateGuildMemberCountAsync(guild.Id, guild.UserCount);
+                await guildService.UpdateGuildMemberCountAsync(guild.Id, guild.MemberCount);
             }
 
-            Log.Information($"Updated member counts for {client.Cache.Guilds.Count} guilds");
+            Log.Information($"Updated member counts for {client.Guilds.Count} guilds");
         }
         catch (Exception e)
         {
@@ -262,9 +269,7 @@ public sealed class BackgroundService(UserService userService,
             {
                 try
                 {
-                    var discordUser = client.Cache.Guilds.Values
-                        .Select(g => g.Users.GetValueOrDefault((ulong)user.UserId))
-                        .FirstOrDefault(u => u is not null);
+                    var discordUser = client.GetUser((ulong)user.UserId);
                     if (discordUser == null) continue;
                     await userService.UpdateUserAvatarAsync(discordUser);
                     updatedCount++;
@@ -283,10 +288,10 @@ public sealed class BackgroundService(UserService userService,
             throw;
         }
     }
-
+    
     public async Task UpdateBotLists()
     {
-        await botListService.UpdateBotLists(client.Cache.Guilds.Count);
+        await botListService.UpdateBotLists(client.Guilds.Count);
     }
 
     /// <summary>
@@ -320,7 +325,8 @@ public sealed class BackgroundService(UserService userService,
                 {
                     totalProcessed++;
 
-                    var guild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuild.GuildId).AsMaybe();
+                    // client.GetGuild is a cache lookup, no REST call — no delay needed
+                    var guild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
                     if (guild.HasNoValue)
                     {
                         Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
@@ -375,7 +381,8 @@ public sealed class BackgroundService(UserService userService,
                 {
                     totalProcessed++;
 
-                    var guild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuildMember.GuildId).AsMaybe();
+                    // client.GetGuild is a cache lookup, no REST call — no delay needed
+                    var guild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
                     if (guild.HasNoValue)
                     {
                         // Guild no longer exists in bot's guild list - safe to delete
@@ -385,15 +392,16 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
-                        // Use REST API call instead of cache lookup to verify membership
+                        // Use GetUserAsync to make a REST API call instead of cache lookup
                         // This ensures we don't delete valid members who just aren't in cache
-                        var guildUser = await client.Rest.GetGuildUserAsync((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                        // Cast to IGuild to access the async REST method
+                        var guildUser = await ((IGuild)guild.Value).GetUserAsync((ulong)dbGuildMember.UserId);
                         if (guildUser == null)
                         {
                             guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
                         }
                     }
-                    catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    catch (Discord.Net.HttpException ex) when (ex.HttpCode == System.Net.HttpStatusCode.NotFound)
                     {
                         // User not found in guild - safe to delete
                         guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
@@ -404,7 +412,6 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to verify guild member {dbGuildMember.GuildMemberId} in guild {dbGuildMember.GuildId}");
                     }
 
-                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -463,6 +470,8 @@ public sealed class BackgroundService(UserService userService,
                     {
                         Log.Error(ex, $"Failed to delete user {userId}");
                     }
+
+                    await Task.Delay(100);
                 }
 
                 Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {deletedCount} users ({usersWithNoGuilds.Count - deletedCount} already deleted)");
@@ -525,7 +534,6 @@ public sealed class BackgroundService(UserService userService,
                         Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
                     }
 
-                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -574,7 +582,8 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
-                        var discordGuild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuild.GuildId).AsMaybe();
+                        // client.GetGuild is a cache lookup, no REST call — no delay needed
+                        var discordGuild = client.GetGuild((ulong)dbGuild.GuildId).AsMaybe();
                         if (discordGuild.HasValue)
                         {
                             var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild.Value);
@@ -634,11 +643,12 @@ public sealed class BackgroundService(UserService userService,
 
                     try
                     {
-                        var discordGuild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuildMember.GuildId).AsMaybe();
+                        var discordGuild = client.GetGuild((ulong)dbGuildMember.GuildId).AsMaybe();
                         if (discordGuild.HasValue)
                         {
-                            // Use REST API call instead of cache lookup
-                            var discordGuildUser = await client.Rest.GetGuildUserAsync((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                            // Use GetUserAsync to make a REST API call instead of cache lookup
+                            // Cast to IGuild to access the async REST method
+                            var discordGuildUser = await ((IGuild)discordGuild.Value).GetUserAsync((ulong)dbGuildMember.UserId);
                             if (discordGuildUser != null)
                             {
                                 var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser);
@@ -649,18 +659,11 @@ public sealed class BackgroundService(UserService userService,
                             }
                         }
                     }
-                    catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    {
-                        // Member no longer in guild — remove stale record
-                        await guildService.DeleteGuildMember((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
-                        Log.Information($"Removed stale guild member {dbGuildMember.UserId} from guild {dbGuildMember.GuildId} during sync");
-                    }
                     catch (Exception ex)
                     {
                         Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
                     }
 
-                    // Rate-limit REST API calls to Discord
                     await Task.Delay(10000);
                 }
 
@@ -680,12 +683,13 @@ public sealed class BackgroundService(UserService userService,
 
     private bool HasClientNoGuilds(string jobName)
     {
-        if (client.Cache.Guilds.Count == 0)
+        var clientGuilds = client.Guilds.AsMaybe();
+        if (clientGuilds.HasNoValue)
         {
             Log.Information($"Client guilds not available, cancelling {jobName}");
             return true;
         }
-
+        
         return false;
     }
 }

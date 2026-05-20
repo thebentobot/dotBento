@@ -1,6 +1,5 @@
 using System.Globalization;
-using NetCord;
-using NetCord.Services.ApplicationCommands;
+using Discord.Interactions;
 using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -10,14 +9,14 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-[SlashCommand("remind", "Manage reminders for yourself")]
+[Group("remind", "Manage reminders for yourself")]
 public sealed class ReminderSlashCommand(InteractiveService interactiveService, ReminderCommand reminderCommand)
-    : ApplicationCommandModule<ApplicationCommandContext>
+    : InteractionModuleBase<SocketInteractionContext>
 {
-    [SubSlashCommand("create", "Create a reminder")]
+    [SlashCommand("create", "Create a reminder")]
     public async Task CreateCommand(
-        [SlashCommandParameter(Name = "content", Description = "What do you need to be reminded of")] string content,
-        [SlashCommandParameter(Name = "date", Description = "Write a date for the reminder")] string date
+        [Summary("content", "What do you need to be reminded of")] string content,
+        [Summary("date", "Write a date for the reminder")] string date
     )
     {
         var parseDate = date.ToString(CultureInfo.InvariantCulture);
@@ -35,9 +34,9 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         );
     }
 
-    [SubSlashCommand("delete", "Delete a reminder")]
+    [SlashCommand("delete", "Delete a reminder")]
     public async Task DeleteCommand(
-        [SlashCommandParameter(Name = "reminder-id", Description = "Select a reminder", AutocompleteProviderType = typeof(SearchRemindersAutoComplete))] string reminder
+        [Summary("reminderId", "Select a reminder")] [Autocomplete(typeof(SearchRemindersAutoComplete))] string reminder
     )
     {
         var reminderId = int.Parse(reminder.Split(",")[0]);
@@ -48,11 +47,11 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         );
     }
 
-    [SubSlashCommand("update", "Update a reminder")]
+    [SlashCommand("update", "Update a reminder")]
     public async Task UpdateCommand(
-        [SlashCommandParameter(Name = "reminder-id", Description = "Select a reminder", AutocompleteProviderType = typeof(SearchRemindersAutoComplete))] string reminder,
-        [SlashCommandParameter(Name = "new-content", Description = "Write a new content for the reminder")] string? newContent = null,
-        [SlashCommandParameter(Name = "new-date", Description = "Write a new date for the reminder")] string? newDate = null
+        [Summary("reminderId", "Select a reminder")] [Autocomplete(typeof(SearchRemindersAutoComplete))] string reminder,
+        [Summary("newContent", "Write a new content for the reminder")] string? newContent = null,
+        [Summary("newDate", "Write a new date for the reminder")] string? newDate = null
     )
     {
         if (newDate != null)
@@ -83,17 +82,17 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         }
     }
 
-    [SubSlashCommand("list", "List all your reminders")]
+    [SlashCommand("list", "List all your reminders")]
     public async Task ListCommand() =>
         await Context.SendResponse(
             interactiveService,
             await reminderCommand.GetRemindersAsync((long)Context.User.Id),
             true
         );
-
-    [SubSlashCommand("info", "Get information about a reminder")]
+    
+    [SlashCommand("info", "Get information about a reminder")]
     public async Task InfoCommand(
-        [SlashCommandParameter(Name = "reminder-id", Description = "Select a reminder", AutocompleteProviderType = typeof(SearchRemindersAutoComplete))] string reminder
+        [Summary("reminderId", "Select a reminder")] [Autocomplete(typeof(SearchRemindersAutoComplete))] string reminder
     )
     {
         var reminderId = int.Parse(reminder.Split(",")[0]);
@@ -103,5 +102,5 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
             true
         );
     }
-
+    
 }

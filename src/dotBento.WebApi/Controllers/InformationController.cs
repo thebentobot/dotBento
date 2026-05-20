@@ -22,7 +22,8 @@ public class InformationController(
     public async Task<ActionResult<UsageStatsDto>> GetUsageStats()
     {
         var memberCount = await dbContext.Guilds
-            .SumAsync(x => x.MemberCount ?? 0);
+            .Where(x => x.MemberCount.HasValue)
+            .SumAsync(x => x.MemberCount.Value);
 
         var serverCount = await dbContext.Guilds.CountAsync();
 

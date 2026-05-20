@@ -1,5 +1,4 @@
-using NetCord;
-using NetCord.Services.Commands;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -12,18 +11,18 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Rps")]
+[Name("Rps")]
 public sealed class RpsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     GameCommand gameCommand) : BaseCommandModule(botSettings)
 {
-    [Command("rps")]
+    [Command("rps", RunMode = RunMode.Async)]
     [Summary("Play Rock Paper Scissors")]
     [Examples("rps rock", "rps paper", "rps scissors")]
     public async Task RpsCommand(string userChoice)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
+        _ = Context.Channel.TriggerTypingAsync();
         if (!Enum.TryParse<RpsGameChoice>(userChoice, true, out var rpsChoice))
         {
             await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Error \ud83e\udea8 \ud83e\uddfb \u2702\ufe0f",

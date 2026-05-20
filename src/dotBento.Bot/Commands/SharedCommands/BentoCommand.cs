@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
-using NetCord;
+using Discord;
+using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
@@ -13,13 +14,13 @@ public sealed class BentoCommand(
     UserService userService
     )
 {
-    public async Task<ResponseModel> GiveBentoCommand(User sender, User receiver)
+    public async Task<ResponseModel> GiveBentoCommand(SocketUser sender, SocketUser receiver)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         if (sender.Id == receiver.Id)
         {
             embed.Embed
-                .WithColor(new Color(0xFF0000))
+                .WithColor(Color.Red)
                 .WithTitle("Sorry")
                 .WithDescription("You're supposed to serve a Bento Box 🍱 to someone else, not yourself 🤨");
             return embed;
@@ -39,7 +40,7 @@ public sealed class BentoCommand(
         }
         var now = DateTime.UtcNow;
         var difference = now - then;
-
+        
         if (difference.TotalHours < 12)
         {
             var whenAgain = new DateTimeOffset(then.AddHours(12)).ToUnixTimeSeconds();
@@ -50,46 +51,46 @@ public sealed class BentoCommand(
                 .WithDescription(description);
             return embed;
         }
-
+        
         await userService.CreateOrAddUserToCache(receiver);
         var (hasValue, patreon) = await supporterService.GetPatreonAsync((long)receiver.Id);
         var amount = 1;
-        var bentoReceiverText = $"<@{receiver.Id}>";
+        var bentoReceiverText = $"{receiver.Mention}";
         if (hasValue)
         {
             if (patreon.Follower)
             {
                 amount = 2;
-                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Follower 🌟 <@{receiver.Id}>";
+                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Follower 🌟 {receiver.Mention}";
             }
             else if (patreon.Enthusiast)
             {
                 amount = 3;
-                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Enthusiast 🌟 <@{receiver.Id}>";
+                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Enthusiast 🌟 {receiver.Mention}";
             }
             else if (patreon.Disciple)
             {
                 amount = 4;
-                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Disciple 🌟 <@{receiver.Id}>";
+                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Disciple 🌟 {receiver.Mention}";
             }
             else if (patreon.Sponsor)
             {
                 amount = 5;
-                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Sponsor 🌟 <@{receiver.Id}>";
+                bentoReceiverText = $"🌟 Official Patreon Bento 🍱 Sponsor 🌟 {receiver.Mention}";
             }
         }
         var bentoDataReceiver = await bentoService.UpsertBentoAsync((long)receiver.Id, amount);
         await bentoService.UpdateBentoDateAsync((long)sender.Id, now);
-
+        
         embed.Embed
             .WithColor(DiscordConstants.BentoYellow)
             .WithDescription(
-                $"<@{sender.Id}> just gave **{amount} Bento {(amount > 1 ? "Boxes" : "Box")} to {bentoReceiverText}**\n<@{receiver.Id}> has received **{bentoDataReceiver.Bento1} Bento {(bentoDataReceiver.Bento1 > 1 ? "Boxes" : "Box")}** over time \ud83d\ude0b\n<@{sender.Id}> can serve a Bento Box again <t:{new DateTimeOffset(now.AddHours(12)).ToUnixTimeSeconds()}:R>");
-
+                $"{sender.Mention} just gave **{amount} Bento {(amount > 1 ? "Boxes" : "Box")} to {bentoReceiverText}**\n{receiver.Mention} has received **{bentoDataReceiver.Bento1} Bento {(bentoDataReceiver.Bento1 > 1 ? "Boxes" : "Box")}** over time \ud83d\ude0b\n{sender.Mention} can serve a Bento Box again <t:{new DateTimeOffset(now.AddHours(12)).ToUnixTimeSeconds()}:R>");
+        
         return embed;
     }
 
-    public async Task<ResponseModel> CheckBentoCommand(User user)
+    public async Task<ResponseModel> CheckBentoCommand(SocketUser user)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         var bentoUser = await bentoService.FindBentoAsync((long)user.Id);
@@ -101,7 +102,7 @@ public sealed class BentoCommand(
                                  "\nTry it! Try to serve a Bento Box \ud83c\udf71 to a friend, I'm sure they'll be happy \u263a\ufe0f");
             return embed;
         }
-
+        
         var bentoData = bentoUser.Value;
         var then = bentoData.BentoDate;
         var now = DateTime.UtcNow;

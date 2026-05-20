@@ -1,4 +1,4 @@
-using NetCord.Services.Commands;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -8,20 +8,21 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("ServerInfo")]
+[Name("ServerInfo")]
 public sealed class ServerInfoTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ServerCommand serverCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("serverInfo", "guildInfo")]
+    [Command("serverInfo", RunMode = RunMode.Async)]
     [Summary("Show info for a server")]
+    [Alias("guildInfo")]
     [Examples("serverInfo", "guildInfo")]
     [GuildOnly]
     public async Task ServerInfoCommand()
     {
-        _ = Context.Channel?.TriggerTypingAsync();
-        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild!));
+        _ = Context.Channel.TriggerTypingAsync();
+        await Context.SendResponse(interactiveService, await serverCommand.ServerInfoCommand(Context.Guild));
     }
 }

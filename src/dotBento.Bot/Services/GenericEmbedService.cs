@@ -1,6 +1,6 @@
 using System.Text;
-using NetCord.Rest;
-using NetCord.Services.Commands;
+using Discord;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
@@ -19,26 +19,18 @@ public static class GenericEmbedService
         return embed;
     }
 
-    public static void HelpResponse(this EmbedProperties embed, ICommandInfo<CommandContext> commandInfo, string prefix, string username)
+    public static void HelpResponse(this EmbedBuilder embed, CommandInfo commandInfo, string prefix, string username)
     {
-        var primaryAlias = commandInfo.Aliases.FirstOrDefault() ?? string.Empty;
-
         embed.WithColor(DiscordConstants.InformationColorBlue);
-        embed.WithTitle($"Information about '{prefix}{primaryAlias}' for {username}");
-        embed.WithFooter(new EmbedFooterProperties().WithText("<> = required, [] = optional"));
+        embed.WithTitle($"Information about '{prefix}{commandInfo.Name}' for {username}");
+        embed.WithFooter("<> = required, [] = optional");
 
-        var summaryAttribute = commandInfo.Attributes
-            .GetValueOrDefault(typeof(SummaryAttribute))
-            ?.OfType<SummaryAttribute>()
-            .FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(summaryAttribute?.Summary))
+        if (!string.IsNullOrWhiteSpace(commandInfo.Summary))
         {
-            embed.WithDescription(summaryAttribute.Summary.Replace("{{prefix}}", prefix));
+            embed.WithDescription(commandInfo.Summary.Replace("{{prefix}}", prefix));
         }
 
-        var options = commandInfo.Attributes
-            .GetValueOrDefault(typeof(OptionsAttribute))
-            ?.OfType<OptionsAttribute>()
+        var options = commandInfo.Attributes.OfType<OptionsAttribute>()
             .FirstOrDefault();
         if (options?.Options != null && options.Options.Any())
         {
@@ -48,12 +40,10 @@ public static class GenericEmbedService
                 optionsString.AppendLine($"- {option}");
             }
 
-            embed.AddFields([new EmbedFieldProperties().WithName("Options").WithValue(optionsString.ToString())]);
+            embed.AddField("Options", optionsString.ToString());
         }
 
-        var examples = commandInfo.Attributes
-            .GetValueOrDefault(typeof(ExamplesAttribute))
-            ?.OfType<ExamplesAttribute>()
+        var examples = commandInfo.Attributes.OfType<ExamplesAttribute>()
             .FirstOrDefault();
         if (examples?.Examples != null && examples.Examples.Any())
         {
@@ -63,10 +53,10 @@ public static class GenericEmbedService
                 examplesString.AppendLine($"`{prefix}{example}`");
             }
 
-            embed.AddFields([new EmbedFieldProperties().WithName("Examples").WithValue(examplesString.ToString())]);
+            embed.AddField("Examples", examplesString.ToString());
         }
 
-        var aliases = commandInfo.Aliases.Skip(1).ToList();
+        var aliases = commandInfo.Aliases.Where(a => a != commandInfo.Name).ToList();
         if (aliases.Any())
         {
             var aliasesString = new StringBuilder();
@@ -80,7 +70,7 @@ public static class GenericEmbedService
                 aliasesString.Append($"`{prefix}{alias}`");
             }
 
-            embed.AddFields([new EmbedFieldProperties().WithName("Aliases").WithValue(aliasesString.ToString())]);
+            embed.AddField("Aliases", aliasesString.ToString());
         }
     }
 }

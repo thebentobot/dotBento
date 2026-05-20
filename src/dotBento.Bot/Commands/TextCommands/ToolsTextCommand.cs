@@ -1,5 +1,4 @@
-using NetCord;
-using NetCord.Services.Commands;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -12,52 +11,55 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Tools")]
+[Name("Tools")]
 public sealed class ToolsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     ToolsCommand toolsCommand) : BaseCommandModule(botSettings)
 {
-    [Command("colour", "color", "colors", "colours", "hex", "rgb")]
+    [Command("colour", RunMode = RunMode.Async)]
     [Summary("Get the colour of a hex code or RGB")]
+    [Alias("color", "colors", "colours", "hex", "rgb")]
     [Examples(
         "colour #FF0000",
         "color 255,0,0"
     )]
-    public async Task GetColourCommand([CommandParameter(Remainder = true)] string colour) =>
+    public async Task GetColourCommand([Remainder] string colour) =>
         await Context.SendResponse(interactiveService, await toolsCommand.GetColour(colour));
-
-    [Command("dominantColour", "dominantColor")]
+    
+    [Command("dominantColour", RunMode = RunMode.Async)]
     [Summary("Get the dominant colour of an image, either by URL or by attachment")]
+    [Alias("dominantColor")]
     [Examples(
         "dominantColour",
         "dominantColor https://example.com/image.jpg"
     )]
-    public async Task GetDominantColourCommand([CommandParameter(Remainder = true)] string? url = null)
+    public async Task GetDominantColourCommand([Remainder] string? url = null)
     {
         var attachment = Context.Message.Attachments.FirstOrDefault();
         if (attachment != null)
         {
             url = attachment.Url;
         }
-
+        
         if (string.IsNullOrWhiteSpace(url))
         {
             await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide a URL or attach an image to the command."));
             return;
         }
-
+        
         await Context.SendResponse(interactiveService, await toolsCommand.GetDominantColour(url));
     }
-
-    [Command("timezone", "tz", "time")]
+    
+    [Command("timezone", RunMode = RunMode.Async)]
     [Summary("Show the current time in a timezone. Optionally provide a second timezone to compare against.")]
+    [Alias("tz", "time")]
     [Examples(
         "timezone Europe/Copenhagen",
         "timezone Europe/Copenhagen America/New_York",
         "tz Asia/Tokyo Europe/London"
     )]
-    public async Task GetTimezoneCommand([CommandParameter(Remainder = true)] string input)
+    public async Task GetTimezoneCommand([Remainder] string input)
     {
         var parts = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 

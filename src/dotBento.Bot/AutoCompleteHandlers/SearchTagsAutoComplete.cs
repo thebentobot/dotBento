@@ -1,34 +1,35 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
+using Discord;
+using Discord.Interactions;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : IAutocompleteProvider<AutocompleteInteractionContext>
+public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : AutocompleteHandler
 {
-    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
+        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
         var results = new List<string>();
-        var tags = await tagCommands.FindTagsAsync((long)context.Guild!.Id, true, Maybe<long>.None);
+        var tags = await tagCommands.FindTagsAsync((long)context.Guild.Id, true, Maybe<long>.None);
         if (tags.IsFailure)
         {
-            return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+            return await Task.FromResult(AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
         }
-
-        if (option.Value == null || string.IsNullOrWhiteSpace(option.Value.ToString()))
+        
+        if (autocompleteInteraction.Data?.Current?.Value == null ||
+            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
         {
             results.ReplaceOrAddToList(tags.Value.Select(s => s.Command));
         }
         else
         {
-            var searchValue = option.Value.ToString();
+            var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
             results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
         }
 
-        return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+        return await Task.FromResult(
+            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
     }
 }

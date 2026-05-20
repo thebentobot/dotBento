@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using NetCord.Gateway;
-using NetCord.Rest;
+using Discord;
+using Discord.WebSocket;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -20,7 +20,7 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
     private readonly Timer _flushTimer;
     private readonly MessageTemplateTextFormatter _formatter;
 
-    private GatewayClient? _client;
+    private ITextChannel? _channel;
     private bool _isActivated;
     private bool _isDisabled;
     private bool _isDisposed;
@@ -45,19 +45,33 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
     /// <summary>
     /// Activates the sink with the Discord client. Called when the client is ready.
     /// </summary>
-    public void Activate(GatewayClient client)
+    public void Activate(DiscordSocketClient client)
     {
         if (_isActivated || _isDisabled || _channelId == 0)
             return;
 
-        _client = client;
-        _isActivated = true;
+        try
+        {
+            var channel = client.GetChannel(_channelId);
+            if (channel is not ITextChannel textChannel)
+            {
+                _isDisabled = true;
+                return;
+            }
 
-        // Start the flush timer
-        _flushTimer.Change(FlushIntervalMs, FlushIntervalMs);
+            _channel = textChannel;
+            _isActivated = true;
 
-        // Trigger initial flush for queued events
-        _ = FlushAsync();
+            // Start the flush timer
+            _flushTimer.Change(FlushIntervalMs, FlushIntervalMs);
+
+            // Trigger initial flush for queued events
+            _ = FlushAsync();
+        }
+        catch
+        {
+            _isDisabled = true;
+        }
     }
 
     /// <summary>
@@ -71,8 +85,8 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
         if (logEvent.Level < _minimumLevel)
             return;
 
-        // Prevent infinite loops by filtering NetCord-related logs
-        if (IsNetCordRelatedLog(logEvent))
+        // Prevent infinite loops by filtering Discord-related logs
+        if (IsDiscordRelatedLog(logEvent))
             return;
 
         // Limit queue size to prevent memory issues
@@ -91,16 +105,19 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
         }
     }
 
-    private static bool IsNetCordRelatedLog(LogEvent logEvent)
+    private static bool IsDiscordRelatedLog(LogEvent logEvent)
     {
-        // Check source context for NetCord-related namespaces to avoid infinite loops
+        // Check source context for Discord-related namespaces to avoid infinite loops
         if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext))
         {
             var source = sourceContext.ToString().Trim('"');
 
-            if (source.StartsWith("NetCord.", StringComparison.OrdinalIgnoreCase) ||
-                source.StartsWith("NetCord.Gateway", StringComparison.OrdinalIgnoreCase) ||
-                source.StartsWith("NetCord.Rest", StringComparison.OrdinalIgnoreCase) ||
+            // Known Discord library namespaces
+            if (source.StartsWith("Discord.", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Net", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.WebSocket", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Rest", StringComparison.OrdinalIgnoreCase) ||
+                source.StartsWith("Discord.Commands", StringComparison.OrdinalIgnoreCase) ||
                 source.Contains("DiscordChannelSink", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
@@ -112,7 +129,7 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
 
     private async Task FlushAsync()
     {
-        if (!_isActivated || _isDisabled || _client == null || _pendingEvents.IsEmpty)
+        if (!_isActivated || _isDisabled || _channel == null || _pendingEvents.IsEmpty)
             return;
 
         if (!await _sendLock.WaitAsync(0))
@@ -120,18 +137,18 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
 
         try
         {
-            var embedList = new List<EmbedProperties>();
+            var embeds = new List<Embed>();
             var eventCount = 0;
 
             while (_pendingEvents.TryDequeue(out var logEvent) && eventCount < MaxEmbedsPerFlush)
             {
-                embedList.Add(FormatEmbed(logEvent));
+                embeds.Add(FormatEmbed(logEvent));
                 eventCount++;
             }
 
-            if (embedList.Count > 0)
+            if (embeds.Count > 0)
             {
-                await _client.Rest.SendMessageAsync(_channelId, new MessageProperties { Embeds = embedList });
+                await _channel.SendMessageAsync(embeds: embeds.ToArray());
             }
         }
         catch
@@ -146,17 +163,17 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
         }
     }
 
-    private EmbedProperties FormatEmbed(LogEvent logEvent)
+    private Embed FormatEmbed(LogEvent logEvent)
     {
         var color = logEvent.Level switch
         {
-            LogEventLevel.Fatal => new NetCord.Color(0x8B0000),
-            LogEventLevel.Error => new NetCord.Color(0xFF0000),
-            LogEventLevel.Warning => new NetCord.Color(0xFFD700),
-            LogEventLevel.Information => new NetCord.Color(0x0000FF),
-            LogEventLevel.Debug => new NetCord.Color(0xD3D3D3),
-            LogEventLevel.Verbose => new NetCord.Color(0xA9A9A9),
-            _ => new NetCord.Color(0x000000)
+            LogEventLevel.Fatal => Color.DarkRed,
+            LogEventLevel.Error => Color.Red,
+            LogEventLevel.Warning => Color.Gold,
+            LogEventLevel.Information => Color.Blue,
+            LogEventLevel.Debug => Color.LightGrey,
+            LogEventLevel.Verbose => Color.DarkGrey,
+            _ => Color.Default
         };
 
         var levelEmoji = logEvent.Level switch
@@ -179,7 +196,7 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
             message = string.Concat(message.AsSpan(0, maxMessageLength - 3), "...");
         }
 
-        var embed = new EmbedProperties()
+        var builder = new EmbedBuilder()
             .WithColor(color)
             .WithTitle($"{levelEmoji} {logEvent.Level}")
             .WithDescription($"```\n{message}\n```")
@@ -193,7 +210,7 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
             var shortSource = source.Contains('.')
                 ? source[(source.LastIndexOf('.') + 1)..]
                 : source;
-            embed.WithFooter(new EmbedFooterProperties().WithText(shortSource));
+            builder.WithFooter(shortSource);
         }
 
         // Add exception details if present
@@ -205,10 +222,10 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
             {
                 exceptionText = string.Concat(exceptionText.AsSpan(0, maxExceptionLength - 3), "...");
             }
-            embed.WithFields([new EmbedFieldProperties().WithName("Exception").WithValue($"```\n{exceptionText}\n```")]);
+            builder.AddField("Exception", $"```\n{exceptionText}\n```");
         }
 
-        return embed;
+        return builder.Build();
     }
 
     private string RenderMessage(LogEvent logEvent)

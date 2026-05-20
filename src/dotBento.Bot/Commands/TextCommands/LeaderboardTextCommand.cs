@@ -1,5 +1,6 @@
-using NetCord;
-using NetCord.Services.Commands;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
@@ -13,14 +14,15 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Leaderboard")]
+[Name("Leaderboard")]
 public sealed class LeaderboardTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     LeaderboardCommand leaderboardCommand) : BaseCommandModule(botSettings)
 {
-    [Command("leaderboard", "lb", "ranking", "rankings")]
+    [Command("leaderboard", RunMode = RunMode.Async)]
     [Summary("View leaderboards for XP, bento, and RPS")]
+    [Alias("lb", "ranking", "rankings")]
     [Examples(
         "leaderboard",
         "leaderboard global",
@@ -32,14 +34,14 @@ public sealed class LeaderboardTextCommand(
         "leaderboard rps global paper losses",
         "leaderboard user @someone")]
     [GuildOnly]
-    public async Task LeaderboardCommand([CommandParameter(Remainder = true)] string? input = null)
+    public async Task LeaderboardCommand([Remainder] string? input = null)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
+        _ = Context.Channel.TriggerTypingAsync();
 
-        var guildId = (long)Context.Guild!.Id;
+        var guildId = (long)Context.Guild.Id;
         var guildName = Context.Guild.Name;
-        var guildIconUrl = Context.Guild.IconHash != null ? $"https://cdn.discordapp.com/icons/{Context.Guild.Id}/{Context.Guild.IconHash}.png" : null;
-        var botAvatarUrl = Context.Client.Cache.User?.GetAvatarUrl()?.ToString(1024) ?? string.Empty;
+        var guildIconUrl = Context.Guild.IconUrl;
+        var botAvatarUrl = Context.Client.CurrentUser.GetDisplayAvatarUrl();
 
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -118,7 +120,7 @@ public sealed class LeaderboardTextCommand(
 
     private async Task HandleUserCommand(string[] args)
     {
-        User user;
+        SocketUser user;
         if (args.Length > 1)
         {
             var mentionedUser = Context.Message.MentionedUsers.FirstOrDefault();
@@ -128,7 +130,7 @@ public sealed class LeaderboardTextCommand(
             }
             else if (ulong.TryParse(args[1], out var userId))
             {
-                var resolvedUser = Context.Guild?.Users.GetValueOrDefault(userId);
+                var resolvedUser = Context.Client.GetUser(userId);
                 if (resolvedUser == null)
                 {
                     await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("User not found."));
@@ -147,10 +149,10 @@ public sealed class LeaderboardTextCommand(
             user = Context.User;
         }
 
-        var guild = Context.Guild!;
-        var guildUser = guild.Users.GetValueOrDefault(user.Id);
+        var guild = Context.Guild;
+        var guildUser = guild.Users.FirstOrDefault(x => x.Id == user.Id);
         var displayName = guildUser?.Nickname ?? user.GlobalName ?? user.Username;
-        var avatarUrl = guildUser?.GetGuildAvatarUrl()?.ToString(1024) ?? user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
+        var avatarUrl = guildUser?.GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
 
         await Context.SendResponse(interactiveService,
             await leaderboardCommand.GetUserSummaryAsync(

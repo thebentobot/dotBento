@@ -1,13 +1,13 @@
 using CSharpFunctionalExtensions;
 using dotBento.Infrastructure.Extensions;
 using SkiaSharp;
-using SystemColor = System.Drawing.Color;
+using Color = System.Drawing.Color;
 
 namespace dotBento.Infrastructure.Utilities;
 
 public sealed class StylingUtilities(HttpClient httpClient)
 {
-    public async Task<NetCord.Color> GetDominantColorAsync(string imageUrl)
+    public async Task<Discord.Color> GetDominantColorAsync(string imageUrl)
     {
         await using var stream = await httpClient.GetStreamAsync(imageUrl);
         using var bitmap = SKBitmap.Decode(stream)
@@ -15,7 +15,7 @@ public sealed class StylingUtilities(HttpClient httpClient)
         return CalculateDominantColor(bitmap).ColorToDiscordColor();
     }
 
-    public async Task<Result<NetCord.Color>> TryGetDominantColorAsync(string imageUrl)
+    public async Task<Result<Discord.Color>> TryGetDominantColorAsync(string imageUrl)
     {
         try
         {
@@ -23,11 +23,11 @@ public sealed class StylingUtilities(HttpClient httpClient)
         }
         catch (Exception e)
         {
-            return Result.Failure<NetCord.Color>(e.Message);
+            return Result.Failure<Discord.Color>(e.Message);
         }
     }
 
-    internal static SystemColor CalculateDominantColor(SKBitmap bitmap)
+    internal static Color CalculateDominantColor(SKBitmap bitmap)
     {
         double r = 0, g = 0, b = 0;
         var total = 0;
@@ -44,6 +44,6 @@ public sealed class StylingUtilities(HttpClient httpClient)
             }
         }
 
-        return SystemColor.FromArgb((int)(r / total), (int)(g / total), (int)(b / total));
+        return Color.FromArgb((int)(r / total), (int)(g / total), (int)(b / total));
     }
 }

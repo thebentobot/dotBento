@@ -1,7 +1,5 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Gateway;
-using NetCord.Services.Commands;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -14,15 +12,16 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("LastFm")]
+[Name("LastFm")]
 public sealed class LastFmTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     LastFmCommand lastFmCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("lastfm", "fm")]
+    [Command("lastfm", RunMode = RunMode.Async)]
     [Summary("LastFm commands to check what you're listening to, top artists, albums, tracks, etc.")]
+    [Alias("fm")]
     [Examples("lastfm",
         "lastfm nowplaying",
         "fm np",
@@ -41,23 +40,23 @@ public sealed class LastFmTextCommand(
         "fm user @Adam"
     )]
     [GuildOnly]
-    public async Task LastFmCommand([CommandParameter(Remainder = true)] string? input = null)
+    public async Task LastFmCommand([Remainder] string? input = null)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
-
+        _ = Context.Channel.TriggerTypingAsync();
+    
         var args = input?.Split(' ') ?? [];
         var mentions = Context.Message.MentionedUsers;
-
+            
         if (args.Length == 0)
         {
-            var noArgGuildMember = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
+            var noArgGuildMember = Context.Guild.Users.Single(guildUser => guildUser.Id == Context.User.Id);
             await Context.SendResponse(interactiveService,
                 await lastFmCommand.GetNowPlaying((long)Context.User.Id,
-                    noArgGuildMember?.Nickname ?? noArgGuildMember?.GlobalName ?? Context.User.GlobalName ?? Context.User.Username,
-                    noArgGuildMember?.GetGuildAvatarUrl()?.ToString(1024) ?? noArgGuildMember?.GetAvatarUrl()?.ToString(1024) ?? Context.User.GetAvatarUrl()?.ToString(1024) ?? Context.User.DefaultAvatarUrl.ToString()));
+                    noArgGuildMember.Nickname ?? noArgGuildMember.GlobalName,
+                    noArgGuildMember.GetGuildAvatarUrl() ?? noArgGuildMember.GetDisplayAvatarUrl()));
             return;
         }
-
+            
         switch (args[0])
         {
             case "recent":
@@ -72,18 +71,10 @@ public sealed class LastFmTextCommand(
                     }
                     else
                     {
-                        if (ulong.TryParse(args[1], out var parsedId23))
+                        var tryGetUserForUserCmd = Context.Client.GetUser(Convert.ToUInt64(args[1]));
+                        if (tryGetUserForUserCmd != null)
                         {
-                            var tryGetUserForUserCmd = Context.Guild?.Users.GetValueOrDefault(parsedId23);
-                            if (tryGetUserForUserCmd != null)
-                            {
-                                getUserForUserCmd23 = tryGetUserForUserCmd;
-                            }
-                            else
-                            {
-                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
-                                return;
-                            }
+                            getUserForUserCmd23 = tryGetUserForUserCmd;
                         }
                         else
                         {
@@ -92,16 +83,16 @@ public sealed class LastFmTextCommand(
                         }
                     }
                 }
-                var guildMemberForUserCmd23 = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd23.Id).AsMaybe() ?? Maybe<GuildUser>.None;
-                if (guildMemberForUserCmd23.HasNoValue)
+                var userForUserCmd23 = Context.Guild.GetUser(getUserForUserCmd23.Id).AsMaybe();
+                if (userForUserCmd23.HasNoValue)
                 {
                     await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
-                var memberForUserCmd23 = guildMemberForUserCmd23.Value;
-                var userAvatarForUserCmd23 = memberForUserCmd23.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd23.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd23.DefaultAvatarUrl.ToString();
-                var usernameForUserCmd23 = memberForUserCmd23.Nickname ?? memberForUserCmd23.GlobalName ?? memberForUserCmd23.Username;
-                await Context.SendResponse(interactiveService, await lastFmCommand.GetRecentTracks((long)memberForUserCmd23.Id, usernameForUserCmd23, userAvatarForUserCmd23));
+                var guildMemberForUserCmd23 = userForUserCmd23.Value;
+                var userAvatarForUserCmd23 = guildMemberForUserCmd23.GetGuildAvatarUrl() ?? guildMemberForUserCmd23.GetDisplayAvatarUrl();
+                var usernameForUserCmd23 = guildMemberForUserCmd23.Nickname ?? guildMemberForUserCmd23.GlobalName;
+                await Context.SendResponse(interactiveService, await lastFmCommand.GetRecentTracks((long)guildMemberForUserCmd23.Id, usernameForUserCmd23, userAvatarForUserCmd23));
                 return;
             case "np":
             case "nowplaying":
@@ -114,18 +105,10 @@ public sealed class LastFmTextCommand(
                     }
                     else
                     {
-                        if (ulong.TryParse(args[1], out var parsedId2))
+                        var tryGetUserForUserCmd = Context.Client.GetUser(Convert.ToUInt64(args[1]));
+                        if (tryGetUserForUserCmd != null)
                         {
-                            var tryGetUserForUserCmd = Context.Guild?.Users.GetValueOrDefault(parsedId2);
-                            if (tryGetUserForUserCmd != null)
-                            {
-                                getUserForUserCmd2 = tryGetUserForUserCmd;
-                            }
-                            else
-                            {
-                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
-                                return;
-                            }
+                            getUserForUserCmd2 = tryGetUserForUserCmd;
                         }
                         else
                         {
@@ -134,16 +117,16 @@ public sealed class LastFmTextCommand(
                         }
                     }
                 }
-                var guildMemberForUserCmd2 = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd2.Id).AsMaybe() ?? Maybe<GuildUser>.None;
-                if (guildMemberForUserCmd2.HasNoValue)
+                var userForUserCmd2 = Context.Guild.GetUser(getUserForUserCmd2.Id).AsMaybe();
+                if (userForUserCmd2.HasNoValue)
                 {
                     await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
-                var memberForUserCmd2 = guildMemberForUserCmd2.Value;
-                var userAvatarForUserCmd2 = memberForUserCmd2.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd2.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd2.DefaultAvatarUrl.ToString();
-                var usernameForUserCmd2 = memberForUserCmd2.Nickname ?? memberForUserCmd2.GlobalName ?? memberForUserCmd2.Username;
-                await Context.SendResponse(interactiveService, await lastFmCommand.GetNowPlaying((long)memberForUserCmd2.Id, usernameForUserCmd2, userAvatarForUserCmd2));
+                var guildMemberForUserCmd2 = userForUserCmd2.Value;
+                var userAvatarForUserCmd2 = guildMemberForUserCmd2.GetGuildAvatarUrl() ?? guildMemberForUserCmd2.GetDisplayAvatarUrl();
+                var usernameForUserCmd2 = guildMemberForUserCmd2.Nickname ?? guildMemberForUserCmd2.GlobalName;
+                await Context.SendResponse(interactiveService, await lastFmCommand.GetNowPlaying((long)guildMemberForUserCmd2.Id, usernameForUserCmd2, userAvatarForUserCmd2));
                 return;
             case "save":
                 await Context.SendResponse(interactiveService, await lastFmCommand.SaveLastFmUser((long)Context.User.Id, args[1]));
@@ -161,18 +144,10 @@ public sealed class LastFmTextCommand(
                     }
                     else
                     {
-                        if (ulong.TryParse(args[1], out var parsedId))
+                        var tryGetUserForUserCmd = Context.Client.GetUser(Convert.ToUInt64(args[1]));
+                        if (tryGetUserForUserCmd != null)
                         {
-                            var tryGetUserForUserCmd = Context.Guild?.Users.GetValueOrDefault(parsedId);
-                            if (tryGetUserForUserCmd != null)
-                            {
-                                getUserForUserCmd = tryGetUserForUserCmd;
-                            }
-                            else
-                            {
-                                await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
-                                return;
-                            }
+                            getUserForUserCmd = tryGetUserForUserCmd;
                         }
                         else
                         {
@@ -181,21 +156,21 @@ public sealed class LastFmTextCommand(
                         }
                     }
                 }
-                var guildMemberForUserCmd = Context.Guild?.Users.GetValueOrDefault(getUserForUserCmd.Id).AsMaybe() ?? Maybe<GuildUser>.None;
-                if (guildMemberForUserCmd.HasNoValue)
+                var userForUserCmd = Context.Guild.GetUser(getUserForUserCmd.Id).AsMaybe();
+                if (userForUserCmd.HasNoValue)
                 {
                     await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
                     return;
                 }
-                var memberForUserCmd = guildMemberForUserCmd.Value;
-                var userAvatarForUserCmd = memberForUserCmd.GetGuildAvatarUrl()?.ToString(1024) ?? memberForUserCmd.GetAvatarUrl()?.ToString(1024) ?? memberForUserCmd.DefaultAvatarUrl.ToString();
-                var usernameForUserCmd = memberForUserCmd.Nickname ?? memberForUserCmd.GlobalName ?? memberForUserCmd.Username;
-                await Context.SendResponse(interactiveService, await lastFmCommand.GetUserInfo((long)memberForUserCmd.Id, usernameForUserCmd, userAvatarForUserCmd));
+                var guildMemberForUserCmd = userForUserCmd.Value;
+                var userAvatarForUserCmd = guildMemberForUserCmd.GetGuildAvatarUrl() ?? guildMemberForUserCmd.GetDisplayAvatarUrl();
+                var usernameForUserCmd = guildMemberForUserCmd.Nickname ?? guildMemberForUserCmd.GlobalName;
+                await Context.SendResponse(interactiveService, await lastFmCommand.GetUserInfo((long)guildMemberForUserCmd.Id, usernameForUserCmd, userAvatarForUserCmd));
                 return;
         }
 
         var getUser = Context.User;
-
+            
         var period = args.Length > 1 ? LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionTextCommand(args[1]) : null;
 
         if (args.Length > 1 && period == null)
@@ -212,19 +187,10 @@ public sealed class LastFmTextCommand(
             }
             else
             {
-                if (ulong.TryParse(args[2], out var parsedId))
+                var tryGetUserForUserCmd = Context.Client.GetUser(Convert.ToUInt64(args[2]));
+                if (tryGetUserForUserCmd != null)
                 {
-                    var tryGetUserForUserCmd = Context.Guild?.Users.GetValueOrDefault(parsedId);
-                    if (tryGetUserForUserCmd != null)
-                    {
-                        getUser = tryGetUserForUserCmd;
-                    }
-                    else
-                    {
-                        // TODO: insert env var for name or something
-                        await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not recognised by Bento"));
-                        return;
-                    }
+                    getUser = tryGetUserForUserCmd;
                 }
                 else
                 {
@@ -235,18 +201,18 @@ public sealed class LastFmTextCommand(
             }
         }
 
-        var user = Context.Guild?.Users.GetValueOrDefault(getUser.Id).AsMaybe() ?? Maybe<GuildUser>.None;
+        var user = Context.Guild.GetUser(getUser.Id).AsMaybe();
         if (user.HasNoValue)
         {
             await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"));
             return;
         }
-
+            
         var guildMember = user.Value;
-
-        var userAvatar = guildMember.GetGuildAvatarUrl()?.ToString(1024) ?? guildMember.GetAvatarUrl()?.ToString(1024) ?? guildMember.DefaultAvatarUrl.ToString();
-
-        var username = guildMember.Nickname ?? guildMember.GlobalName ?? guildMember.Username;
+    
+        var userAvatar = guildMember.GetGuildAvatarUrl() ?? guildMember.GetDisplayAvatarUrl();
+                
+        var username = guildMember.Nickname ?? guildMember.GlobalName;
 
         switch (args.FirstOrDefault())
         {
@@ -291,7 +257,7 @@ public sealed class LastFmTextCommand(
                         await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Invalid size for collage. Please use `lastfm help` for a list of commands."));
                         return;
                 }
-
+                
                 switch (args[4])
                 {
                     case "topartists":
@@ -309,7 +275,7 @@ public sealed class LastFmTextCommand(
                 }
                 break;
             }
-            default:
+            default: 
                 await Context.SendResponse(interactiveService,
                     GenericEmbedService.ErrorEmbed("Invalid command. Please use `lastfm help` for a list of commands."));
                 break;

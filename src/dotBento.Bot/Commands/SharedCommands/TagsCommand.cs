@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Rest;
+using Discord;
+using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -41,7 +41,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         }
 
         embed.Embed
-            .WithColor(new Color(50, 205, 50))
+            .WithColor(Color.Green)
             .WithTitle($"The tag \"{name}\" has been created successfully");
         return embed;
     }
@@ -56,7 +56,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         }
 
         embed.Embed
-            .WithColor(new Color(50, 205, 50))
+            .WithColor(Color.Green)
             .WithTitle($"The tag \"{name}\" has been deleted successfully");
         return embed;
     }
@@ -90,7 +90,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         }
 
         embed.Embed
-            .WithColor(new Color(50, 205, 50))
+            .WithColor(Color.Green)
             .WithTitle($"The tag \"{name}\" has been updated successfully");
         return embed;
     }
@@ -109,7 +109,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         }
 
         embed.Embed
-            .WithColor(new Color(50, 205, 50))
+            .WithColor(Color.Green)
             .WithTitle($"The tag \"{oldName}\" has successfully been renamed to \"{newName}\"");
         return embed;
     }
@@ -145,7 +145,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         await tagCommands.IncrementTagUsageAsync(result.Value.TagId);
         return resultEmbed;
     }
-
+    
     public async Task<Maybe<ResponseModel>> MaybeFindTagAsync(long guildId, string name)
     {
         var result = await tagCommands.FindTagAsync(guildId, name);
@@ -162,7 +162,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         return resultEmbed;
     }
 
-    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<GuildUser> author)
+    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<SocketGuildUser> author)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Paginator };
         var authorId = author.HasValue ? (long)author.Value.Id : Maybe<long>.None;
@@ -174,24 +174,24 @@ public sealed class TagsCommand(TagCommands tagCommands)
         var tags = result.Value;
 
         var tagsPageChunks = tags.ChunkBy(10);
-
+        
         var title = top ? "Top Tags" : "Tags";
-
+        
         var pages = tagsPageChunks
             .Select(tagsPageChunk =>
             {
                 if (!author.HasValue)
                     return new PageBuilder().WithTitle(title)
                         .WithColor(DiscordConstants.BentoYellow)
-                        .WithFooter($"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found")
+                        .WithFooter(new EmbedFooterBuilder()
+                            { Text = $"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found" })
                         .WithDescription(string.Join("\n", tagsPageChunk.Select(x => x.Command)));
                 {
-                    var authorUser = author.Value;
-                    var authorDisplayName = authorUser.Nickname ?? authorUser.GlobalName ?? authorUser.Username;
-                    var authorAvatarUrl = authorUser.GetGuildAvatarUrl()?.ToString(1024) ?? authorUser.GetAvatarUrl()?.ToString(1024);
-                    var embedAuthor = new EmbedAuthorProperties()
-                        .WithName(authorDisplayName)
-                        .WithIconUrl(authorAvatarUrl);
+                    var embedAuthor = new EmbedAuthorBuilder
+                    {
+                        Name = author.Value.DisplayName,
+                        IconUrl = author.Value.GetDisplayAvatarUrl()
+                    };
                     return new PageBuilder().WithTitle(title)
                         .WithAuthor(embedAuthor)
                         .WithColor(DiscordConstants.BentoYellow)
@@ -200,9 +200,9 @@ public sealed class TagsCommand(TagCommands tagCommands)
             })
             .ToList();
 
-        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
-
+        
         return embed;
     }
 
@@ -244,22 +244,22 @@ public sealed class TagsCommand(TagCommands tagCommands)
             return GenericEmbedService.ErrorEmbed("Error", tagsResults.Error);
         }
         var tags = tagsResults.Value;
-
+        
         var tagsPageChunks = tags.ChunkBy(10);
-
+        
         var pages = tagsPageChunks
             .Select(tagsPageChunk =>
             {
                 return new PageBuilder().WithTitle("Search Results")
                     .WithColor(DiscordConstants.BentoYellow)
-                    .WithFooter($"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found")
+                    .WithFooter(new EmbedFooterBuilder(){Text = $"{tags.Count} {(tags.Count != 1 ? "tags" : "tag")} found"})
                     .WithDescription(string.Join("\n", tagsPageChunk.Select(x => x.Command)));
             })
             .ToList();
-
-        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
+        
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         embed.ResponseType = ResponseType.Paginator;
-
+        
         return embed;
     }
 }

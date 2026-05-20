@@ -1,40 +1,36 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Gateway;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
-using dotBento.Bot.Extensions;
+using Discord;
+using Discord.Interactions;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : IAutocompleteProvider<AutocompleteInteractionContext>
+public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : AutocompleteHandler
 {
-    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
+        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
         var results = new List<string>();
-        var guildUser = context.Guild?.Users.GetValueOrDefault(context.User.Id);
-        var userId = guildUser is not null && context.Guild is not null && guildUser.HasGuildPermission(context.Guild, Permissions.ManageMessages)
-            ? (long)context.User.Id
-            : Maybe<long>.None;
-        var tags = await tagCommands.FindTagsAsync((long)context.Guild!.Id, true, userId);
+        var userId = context.Guild.GetUserAsync(context.User.Id).Result.GuildPermissions.ManageMessages ? (long) context.User.Id : Maybe<long>.None;
+        var tags = await tagCommands.FindTagsAsync((long)context.Guild.Id, true, userId);
         if (tags.IsFailure)
         {
-            return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+            return await Task.FromResult(AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
         }
-
-        if (option.Value == null || string.IsNullOrWhiteSpace(option.Value.ToString()))
+        
+        if (autocompleteInteraction.Data?.Current?.Value == null ||
+            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
         {
             results.ReplaceOrAddToList(tags.Value.Select(s => s.Command));
         }
         else
         {
-            var searchValue = option.Value.ToString();
+            var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
             results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
         }
 
-        return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+        return await Task.FromResult(
+            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
     }
 }

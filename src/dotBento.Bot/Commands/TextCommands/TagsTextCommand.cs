@@ -1,7 +1,6 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Gateway;
-using NetCord.Services.Commands;
+using Discord.Commands;
+using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -14,14 +13,15 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Tags")]
+[Name("Tags")]
 public sealed class TagsTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     TagsCommand tagsCommand) : BaseCommandModule(botSettings)
 {
-    [Command("tags", "tag")]
+    [Command("tags", RunMode = RunMode.Async)]
     [Summary("Create, get or search, and manage tags. Tags are custom text responses that can be created and used by anyone in the server. It can be used to store information, links, or anything you want to share with others. It can be both text and image attachments.")]
+    [Alias("tag")]
     [Examples(
         "tags create <tag name> <tag content>",
         "tags add <tag name> <tag content>",
@@ -37,22 +37,21 @@ public sealed class TagsTextCommand(
         "tags random"
         )]
     [GuildOnly]
-    public async Task TagsCommand([CommandParameter(Remainder = true)] string? input = null)
+    public async Task TagsCommand([Remainder] string? input = null)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
             await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide an argument to the command. You can check the usage of the command with the `tags help` command."));
             return;
         }
-
-        _ = Context.Channel?.TriggerTypingAsync();
+        
+        _ = Context.Channel.TriggerTypingAsync();
 
         var args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var command = args[0].ToLower();
         var userId = (long)Context.User.Id;
-        var guildId = (long)Context.Guild!.Id;
-        var contextGuildUser = Context.Guild?.Users.GetValueOrDefault(Context.User.Id);
-        var hasMessageEditPerms = contextGuildUser != null && Context.Guild != null && contextGuildUser.HasGuildPermission(Context.Guild, Permissions.ManageMessages);
+        var guildId = (long)Context.Guild.Id;
+        var hasMessageEditPerms = Context.Guild.Users.Single(x => x.Id == Context.User.Id).GuildPermissions.ManageMessages;
 
         switch (command)
         {
@@ -110,14 +109,14 @@ public sealed class TagsTextCommand(
 
             case "list":
                 var top = args.Length > 1 && args[1].Equals("top", StringComparison.OrdinalIgnoreCase);
-                var author = Maybe<GuildUser>.None;
+                var author = Maybe<SocketGuildUser>.None;
                 if (args.Length > 1 && !top)
                 {
                     var mentionedUser = Context.Message.MentionedUsers.FirstOrDefault();
                     if (mentionedUser != null)
                     {
-                        var guildUser = Context.Guild?.Users.GetValueOrDefault(mentionedUser.Id);
-                        if (guildUser != null) author = guildUser;
+                        var guildUser = Context.Guild.Users.Single(x => x.Id == mentionedUser.Id);
+                        author = guildUser;
                     }
                 }
                 await Context.SendResponse(
@@ -182,5 +181,5 @@ public sealed class TagsTextCommand(
                 break;
         }
     }
-
+    
 }

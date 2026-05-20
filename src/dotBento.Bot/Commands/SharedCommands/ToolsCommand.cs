@@ -1,5 +1,4 @@
-using NetCord;
-using NetCord.Rest;
+using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.Discord;
@@ -19,7 +18,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
         var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, colour);
-
+        
         if (colourImage.IsFailure)
         {
             return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
@@ -31,50 +30,46 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         if (colourImage.Value.IsHex)
         {
             var (r, g, b) = HexToRgb(colour);
-
+        
             embed.Embed
                 .WithTitle($"Colour `{(colourImage.Value.IsHex ? colour : $"{r},{g},{b}")}`")
-                .WithFooter(new EmbedFooterProperties().WithText($"{(colourImage.Value.IsHex ? $"RGB: {HexToRgb(colour)}" : $"Hex: {RgbToHex([r, g, b])}")} | HSV: {RgbToHsv(r, g, b)}"))
-                .WithImage(new EmbedImageProperties("attachment://colour.png"))
-                .WithColor(new Color(Convert.ToInt32(colour.Replace("#", ""), 16)));
-
-            return embed;
+                .WithFooter($"{(colourImage.Value.IsHex ? $"RGB: {HexToRgb(colour)}" : $"Hex: {RgbToHex([r, g, b])}")} | HSV: {RgbToHsv(r, g, b)}")
+                .WithImageUrl($"attachment://colour.png")
+                .WithColor(new Color(Convert.ToUInt32(colour.Replace("#", ""), 16)));
+        
+            return embed;   
         }
         else
         {
             var (r, g, b) = RgbStringToRgb(colour);
             embed.Embed
                 .WithTitle($"Colour `{colour}`")
-                .WithFooter(new EmbedFooterProperties().WithText($"Hex: #{RgbToHex([r, g, b])} | HSV: {RgbToHsv(r, g, b)}"))
-                .WithImage(new EmbedImageProperties("attachment://colour.png"))
-                .WithColor(new Color((byte)r, (byte)g, (byte)b));
-
+                .WithFooter($"Hex: #{RgbToHex([r, g, b])} | HSV: {RgbToHsv(r, g, b)}")
+                .WithImageUrl($"attachment://colour.png")
+                .WithColor(new Color(r, g, b));
+        
             return embed;
         }
     }
-
+    
     public async Task<ResponseModel> GetDominantColour(string url)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
         var getDominantColorAsync = await stylingUtilities.TryGetDominantColorAsync(url);
-
+        
         if (getDominantColorAsync.IsFailure)
         {
             return GenericEmbedService.ErrorEmbed("Error", $"Could not get the dominant colour by your provided input: `{url}`");
         }
-
+        
         var dominantColor = getDominantColorAsync.Value;
-        var raw = dominantColor.RawValue;
-        var dr = (byte)((raw >> 16) & 0xFF);
-        var dg = (byte)((raw >> 8) & 0xFF);
-        var db = (byte)(raw & 0xFF);
-
-        var hexColor = $"#{dr:X2}{dg:X2}{db:X2}";
-        var rgbColor = $"{dr},{dg},{db}";
-        var hsvColor = RgbToHsv(dr, dg, db);
-
+        
+        var hexColor = $"#{dominantColor.R:X2}{dominantColor.G:X2}{dominantColor.B:X2}";
+        var rgbColor = $"{dominantColor.R},{dominantColor.G},{dominantColor.B}";
+        var hsvColor = RgbToHsv(dominantColor.R, dominantColor.G, dominantColor.B);
+        
         var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, hexColor);
-
+        
         if (colourImage.IsFailure)
         {
             return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
@@ -82,13 +77,13 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
 
         embed.Stream = colourImage.Value.Image;
         embed.FileName = "colour.png";
-
+        
         embed.Embed
             .WithTitle("Dominant Colour")
-            .WithFooter(new EmbedFooterProperties().WithText($"Hex: {hexColor} | RGB: {rgbColor} | HSV: {hsvColor}"))
-            .WithImage(new EmbedImageProperties("attachment://colour.png"))
+            .WithFooter($"Hex: {hexColor} | RGB: {rgbColor} | HSV: {hsvColor}")
+            .WithImageUrl($"attachment://colour.png")
             .WithColor(dominantColor);
-
+        
         return embed;
     }
 
@@ -145,7 +140,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
                 > 0 => $"{absHours:0.#} {hourWord} ahead of {compareZone.Id}",
                 _ => $"{absHours:0.#} {hourWord} behind {compareZone.Id}"
             };
-            embed.Embed.WithFooter(new EmbedFooterProperties().WithText(diffStr));
+            embed.Embed.WithFooter(diffStr);
         }
 
         return embed;
@@ -154,11 +149,11 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
     private static (int R, int G, int B) HexToRgb(string hexColor)
     {
         hexColor = hexColor.Replace("#", "");
-
+    
         var r = int.Parse(hexColor.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
         var g = int.Parse(hexColor.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
         var b = int.Parse(hexColor.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
-
+    
         return (r, g, b);
     }
 
@@ -172,7 +167,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
     {
         return rgb.Select(component => component.ToString("X2")).Aggregate((a, b) => a + b);
     }
-
+    
     private static (int R, int G, int B) RgbStringToRgb(string rgb)
     {
         var rgbArray = rgb.Split(',');

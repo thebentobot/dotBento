@@ -1,5 +1,5 @@
 using System.Text;
-using NetCord.Rest;
+using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
@@ -141,13 +141,15 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             description.AppendLine($"**Global Bento Rank:** #{summary.BentoRank} — {summary.BentoCount} Bento");
         }
 
-        var author = new EmbedAuthorProperties()
-            .WithName($"{displayName}'s Rankings")
-            .WithIconUrl(avatarUrl);
+        var author = new EmbedAuthorBuilder
+        {
+            Name = $"{displayName}'s Rankings",
+            IconUrl = avatarUrl
+        };
 
         embed.Embed
             .WithAuthor(author)
-            .WithThumbnail(avatarUrl != null ? new EmbedThumbnailProperties(avatarUrl) : null)
+            .WithThumbnailUrl(avatarUrl)
             .WithDescription(description.ToString())
             .WithColor(DiscordConstants.BentoYellow);
 
@@ -177,7 +179,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -204,7 +206,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -236,7 +238,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 

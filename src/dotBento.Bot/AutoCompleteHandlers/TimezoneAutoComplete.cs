@@ -1,18 +1,20 @@
-using NetCord;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
+using Discord;
+using Discord.Interactions;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class TimezoneAutoComplete : IAutocompleteProvider<AutocompleteInteractionContext>
+public sealed class TimezoneAutoComplete : AutocompleteHandler
 {
-    public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+        IInteractionContext context,
+        IAutocompleteInteraction autocompleteInteraction,
+        IParameterInfo parameter,
+        IServiceProvider services)
     {
         var zones = TimeZoneInfo.GetSystemTimeZones();
 
         var nowUtc = DateTimeOffset.UtcNow;
-        var query = option.Value?.ToString();
+        var query = autocompleteInteraction.Data?.Current?.Value?.ToString();
         query = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
 
         IEnumerable<TimeZoneInfo> filtered = zones;
@@ -27,10 +29,9 @@ public sealed class TimezoneAutoComplete : IAutocompleteProvider<AutocompleteInt
             let offset = z.GetUtcOffset(nowUtc)
             let abbr = z.IsDaylightSavingTime(nowUtc) ? z.DaylightName : z.StandardName
             let name = $"{z.Id} ({abbr}, {FormatOffset(offset)})"
-            select new ApplicationCommandOptionChoiceProperties(name, z.Id))
-            .AsEnumerable<ApplicationCommandOptionChoiceProperties>();
+            select new AutocompleteResult(name, z.Id)).ToList();
 
-        return ValueTask.FromResult<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(results);
+        return await Task.FromResult(AutocompletionResult.FromSuccess(results));
     }
 
     private static string FormatOffset(TimeSpan offset)
