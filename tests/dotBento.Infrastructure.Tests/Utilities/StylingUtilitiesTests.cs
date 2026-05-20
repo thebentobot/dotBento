@@ -71,6 +71,64 @@ public class StylingUtilitiesTests
     }
 
     [Fact]
+    public async Task TryGetDominantColorAsync_ReturnsFailure_WhenContentLengthExceedsLimit()
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+
+        var response = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new ByteArrayContent([])
+        };
+        response.Content.Headers.ContentLength = StylingUtilities.MaxImageBytes + 1;
+
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(response);
+
+        var httpClient = new HttpClient(mockHandler.Object);
+        var utilities = new StylingUtilities(httpClient);
+
+        var result = await utilities.TryGetDominantColorAsync("http://fake-image-url");
+
+        Assert.True(result.IsFailure);
+        Assert.Contains("Image is too large", result.Error);
+    }
+
+    [Fact]
+    public async Task TryGetDominantColorAsync_ReturnsFailure_WhenStreamExceedsLimitWithoutContentLength()
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        var stream = new OversizedImageStream(StylingUtilities.MaxImageBytes + 1);
+
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StreamContent(stream)
+            });
+
+        var httpClient = new HttpClient(mockHandler.Object);
+        var utilities = new StylingUtilities(httpClient);
+
+        var result = await utilities.TryGetDominantColorAsync("http://fake-image-url");
+
+        Assert.True(result.IsFailure);
+        Assert.Contains("Image is too large", result.Error);
+    }
+
+    [Fact]
     public void CalculateDominantColor_ReturnsAverageColor()
     {
         // Arrange
@@ -85,5 +143,47 @@ public class StylingUtilitiesTests
 
         // Assert
         Assert.Equal(System.Drawing.Color.FromArgb(150, 125, 125), result);
+    }
+
+    private sealed class OversizedImageStream(long length) : Stream
+    {
+        private long _position;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => length;
+
+        public override long Position
+        {
+            get => _position;
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_position >= length)
+            {
+                return 0;
+            }
+
+            var read = (int)Math.Min(count, length - _position);
+            Array.Fill(buffer, (byte)0x89, offset, read);
+            _position += read;
+            return read;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
+        public override void SetLength(long value) =>
+            throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
     }
 }

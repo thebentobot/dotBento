@@ -42,9 +42,9 @@ public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> option
         };
 
         var json = JsonSerializer.Serialize(postData);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await httpClient.PostAsync(requestUri, content);
+        using var response = await httpClient.PostAsync(requestUri, content);
         Log.Information(response.IsSuccessStatusCode
             ? $"{nameof(UpdateBotLists)}: Updated successfully"
             : $"{nameof(UpdateBotLists)}: Failed to post data. Status code: {response.StatusCode}");

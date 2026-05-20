@@ -301,6 +301,50 @@ public class LeaderboardServiceTests
         Assert.Equal("RpsUser3", result.Value[0].Username);
     }
 
+    [Fact]
+    public async Task GetGlobalRpsLeaderboardAsync_RespectsLimit()
+    {
+        var factory = new InMemoryDbFactory();
+        await SeedRpsGamesAsync(factory, 10);
+        var service = new LeaderboardService(factory);
+
+        var result = await service.GetGlobalRpsLeaderboardAsync(
+            RpsLeaderboardType.All,
+            RpsLeaderboardOrder.Wins,
+            3);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.Count);
+        Assert.Equal([1, 2, 3], result.Value.Select(x => x.Rank));
+    }
+
+    [Fact]
+    public async Task GetServerRpsLeaderboardAsync_ReturnsOnlyGuildMembers()
+    {
+        var factory = new InMemoryDbFactory();
+        const long guildId = 30;
+        await SeedRpsGamesAsync(factory, 5);
+
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "RpsGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 301, Level = 1, Xp = 0 });
+            db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 303, Level = 1, Xp = 0 });
+            await db.SaveChangesAsync();
+        }
+
+        var service = new LeaderboardService(factory);
+
+        var result = await service.GetServerRpsLeaderboardAsync(
+            guildId,
+            RpsLeaderboardType.All,
+            RpsLeaderboardOrder.Wins);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
+        Assert.Equal([301, 303], result.Value.Select(x => x.UserId));
+    }
+
     // --- User Summary ---
 
     [Fact]

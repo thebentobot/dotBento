@@ -99,17 +99,11 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
         long guildId, RpsLeaderboardType type, RpsLeaderboardOrder order, int limit = 50)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var guildUserIds = await context.GuildMembers
-            .Where(gm => gm.GuildId == guildId)
-            .Select(gm => gm.UserId)
-            .ToListAsync();
-
         var query = context.RpsGames
-            .Include(r => r.User)
-            .Where(r => guildUserIds.Contains(r.UserId));
+            .AsNoTracking()
+            .Where(r => context.GuildMembers.Any(gm => gm.GuildId == guildId && gm.UserId == r.UserId));
 
-        var games = await query.ToListAsync();
-        var entries = RankRpsGames(games, type, order, limit);
+        var entries = await RankRpsGamesAsync(query, type, order, limit);
 
         return Result.Success(entries);
     }
@@ -118,11 +112,7 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
         RpsLeaderboardType type, RpsLeaderboardOrder order, int limit = 50)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var games = await context.RpsGames
-            .Include(r => r.User)
-            .ToListAsync();
-
-        var entries = RankRpsGames(games, type, order, limit);
+        var entries = await RankRpsGamesAsync(context.RpsGames.AsNoTracking(), type, order, limit);
 
         return Result.Success(entries);
     }
@@ -195,36 +185,40 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
             serverBentoRank));
     }
 
-    private static List<RpsLeaderboardEntry> RankRpsGames(
-        List<EntityFramework.Entities.RpsGame> games,
+    private static async Task<List<RpsLeaderboardEntry>> RankRpsGamesAsync(
+        IQueryable<EntityFramework.Entities.RpsGame> games,
         RpsLeaderboardType type,
         RpsLeaderboardOrder order,
         int limit)
     {
         var projected = games.Select(g =>
-        {
-            var (wins, ties, losses) = type switch
+            new
             {
-                RpsLeaderboardType.Rock => (
-                    g.RockWins ?? 0,
-                    g.RockTies ?? 0,
-                    g.RockLosses ?? 0),
-                RpsLeaderboardType.Paper => (
-                    g.PaperWins ?? 0,
-                    g.PaperTies ?? 0,
-                    g.PaperLosses ?? 0),
-                RpsLeaderboardType.Scissors => (
-                    g.ScissorWins ?? 0,
-                    g.ScissorsTies ?? 0,
-                    g.ScissorsLosses ?? 0),
-                _ => (
-                    (g.RockWins ?? 0) + (g.PaperWins ?? 0) + (g.ScissorWins ?? 0),
-                    (g.RockTies ?? 0) + (g.PaperTies ?? 0) + (g.ScissorsTies ?? 0),
-                    (g.RockLosses ?? 0) + (g.PaperLosses ?? 0) + (g.ScissorsLosses ?? 0))
-            };
-
-            return new { g.UserId, Wins = wins, Ties = ties, Losses = losses, Username = g.User?.Username, Discriminator = g.User?.Discriminator };
-        });
+                g.UserId,
+                Wins = type == RpsLeaderboardType.Rock
+                    ? g.RockWins ?? 0
+                    : type == RpsLeaderboardType.Paper
+                        ? g.PaperWins ?? 0
+                        : type == RpsLeaderboardType.Scissors
+                            ? g.ScissorWins ?? 0
+                            : (g.RockWins ?? 0) + (g.PaperWins ?? 0) + (g.ScissorWins ?? 0),
+                Ties = type == RpsLeaderboardType.Rock
+                    ? g.RockTies ?? 0
+                    : type == RpsLeaderboardType.Paper
+                        ? g.PaperTies ?? 0
+                        : type == RpsLeaderboardType.Scissors
+                            ? g.ScissorsTies ?? 0
+                            : (g.RockTies ?? 0) + (g.PaperTies ?? 0) + (g.ScissorsTies ?? 0),
+                Losses = type == RpsLeaderboardType.Rock
+                    ? g.RockLosses ?? 0
+                    : type == RpsLeaderboardType.Paper
+                        ? g.PaperLosses ?? 0
+                        : type == RpsLeaderboardType.Scissors
+                            ? g.ScissorsLosses ?? 0
+                            : (g.RockLosses ?? 0) + (g.PaperLosses ?? 0) + (g.ScissorsLosses ?? 0),
+                g.User.Username,
+                g.User.Discriminator
+            });
 
         var ordered = order switch
         {
@@ -234,8 +228,11 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
             _ => projected.OrderByDescending(x => x.Wins)
         };
 
-        return ordered
+        var ranked = await ordered
             .Take(limit)
+            .ToListAsync();
+
+        return ranked
             .Select((x, i) => new RpsLeaderboardEntry(
                 i + 1,
                 x.UserId,
