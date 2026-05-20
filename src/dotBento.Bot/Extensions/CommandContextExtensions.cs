@@ -59,23 +59,35 @@ public static class CommandContextExtensions
                 break;
             case ResponseType.ImageWithEmbed:
                 var imageEmbedFilename = response.FileName;
-                await context.Channel.SendFileAsync(
-                    response.Stream,
-                    imageEmbedFilename,
-                    null,
-                    false,
-                    response.Embed.Build(),
-                    isSpoiler: response.Spoiler,
-                    components: response.Components?.Build());
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Channel.SendFileAsync(
+                        response.Stream,
+                        imageEmbedFilename,
+                        null,
+                        false,
+                        response.Embed.Build(),
+                        isSpoiler: response.Spoiler,
+                        components: response.Components?.Build());
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             case ResponseType.ImageOnly:
                 var imageFilename = response.FileName;
-                await context.Channel.SendFileAsync(
-                    response.Stream,
-                    imageFilename + ".png",
-                    isSpoiler: response.Spoiler);
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Channel.SendFileAsync(
+                        response.Stream,
+                        imageFilename + ".png",
+                        isSpoiler: response.Spoiler);
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

@@ -74,34 +74,53 @@ public static class InteractionContextExtensions
             case ResponseType.ImageWithEmbed:
                 var imageEmbedFilename =
                     response.FileName;
-                await context.Interaction.RespondWithFileAsync(response.Stream,
-                    (response.Spoiler
-                        ? "SPOILER_"
-                        : "") +
-                    imageEmbedFilename,
-                    null,
-                    [response.Embed.Build()],
-                    ephemeral: ephemeral,
-                    components: response.Components?.Build());
+                try
+                {
+                    await context.Interaction.RespondWithFileAsync(response.Stream,
+                        (response.Spoiler
+                            ? "SPOILER_"
+                            : "") +
+                        imageEmbedFilename,
+                        null,
+                        [response.Embed.Build()],
+                        ephemeral: ephemeral,
+                        components: response.Components?.Build());
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             case ResponseType.ImageOnly:
                 var imageName = response.FileName;
-                await context.Interaction.RespondWithFileAsync(response.Stream,
-                    (response.Spoiler
-                        ? "SPOILER_"
-                        : "") +
-                    imageName,
-                    ephemeral: ephemeral);
-                await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Interaction.RespondWithFileAsync(response.Stream,
+                        (response.Spoiler
+                            ? "SPOILER_"
+                            : "") +
+                        imageName,
+                        ephemeral: ephemeral);
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             case ResponseType.FileWithEmbed:
-                await context.Interaction.RespondWithFileAsync(response.Stream,
-                    (response.Spoiler ? "SPOILER_" : "") + response.FileName,
-                    null,
-                    [response.Embed.Build()],
-                    ephemeral: ephemeral,
-                    components: response.Components?.Build());
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Interaction.RespondWithFileAsync(response.Stream,
+                        (response.Spoiler ? "SPOILER_" : "") + response.FileName,
+                        null,
+                        [response.Embed.Build()],
+                        ephemeral: ephemeral,
+                        components: response.Components?.Build());
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -128,38 +147,56 @@ public static class InteractionContextExtensions
                 break;
             case ResponseType.ImageWithEmbed:
                 var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
-                await context.Interaction.FollowupWithFileAsync(response.Stream,
-                    (response.Spoiler
-                        ? "SPOILER_"
-                        : "") +
-                    imageEmbedFilename +
-                    ".png",
-                    null,
-                    new[] { response.Embed.Build() },
-                    ephemeral: ephemeral,
-                    components: response.Components?.Build());
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Interaction.FollowupWithFileAsync(response.Stream,
+                        (response.Spoiler
+                            ? "SPOILER_"
+                            : "") +
+                        imageEmbedFilename +
+                        ".png",
+                        null,
+                        new[] { response.Embed.Build() },
+                        ephemeral: ephemeral,
+                        components: response.Components?.Build());
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             case ResponseType.ImageOnly:
                 var imageName = response.FileName;
-                await context.Interaction.FollowupWithFileAsync(response.Stream,
-                (response.Spoiler
-                    ? "SPOILER_"
-                    : "") +
-                imageName,
-                ephemeral: ephemeral);
-                await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Interaction.FollowupWithFileAsync(response.Stream,
+                    (response.Spoiler
+                        ? "SPOILER_"
+                        : "") +
+                    imageName,
+                    ephemeral: ephemeral);
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             case ResponseType.FileWithEmbed:
                 var fileEmbedFilename = response.FileName ?? throw new InvalidOperationException();
-                await context.Interaction.FollowupWithFileAsync(
-                    response.Stream,
-                    (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,
-                    null,
-                    new[] { response.Embed.Build() },
-                    ephemeral: ephemeral,
-                    components: response.Components?.Build());
-                if (response.Stream != null) await response.Stream.DisposeAsync();
+                try
+                {
+                    await context.Interaction.FollowupWithFileAsync(
+                        response.Stream,
+                        (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,
+                        null,
+                        new[] { response.Embed.Build() },
+                        ephemeral: ephemeral,
+                        components: response.Components?.Build());
+                }
+                finally
+                {
+                    if (response.Stream != null) await response.Stream.DisposeAsync();
+                }
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
