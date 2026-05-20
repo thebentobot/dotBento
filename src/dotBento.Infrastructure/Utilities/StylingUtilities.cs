@@ -85,7 +85,7 @@ public sealed class StylingUtilities(HttpClient httpClient)
         return new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
     }
 
-    private sealed class MaxLengthStream(Stream innerStream, long maxBytes) : Stream
+    internal sealed class MaxLengthStream(Stream innerStream, long maxBytes) : Stream
     {
         private long _totalBytesRead;
 
