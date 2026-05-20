@@ -11,25 +11,12 @@ public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : Autocomple
     public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
         IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
-        var results = new List<string>();
-        var tags = await tagCommands.FindTagsAsync((long)context.Guild.Id, true, Maybe<long>.None);
-        if (tags.IsFailure)
-        {
-            return await Task.FromResult(AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
-        }
-        
-        if (autocompleteInteraction.Data?.Current?.Value == null ||
-            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
-        {
-            results.ReplaceOrAddToList(tags.Value.Select(s => s.Command));
-        }
-        else
-        {
-            var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
-            results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
-        }
+        var searchValue = autocompleteInteraction.Data?.Current?.Value?.ToString();
+        var results = await tagCommands.FindTagNamesForAutocompleteAsync(
+            (long)context.Guild.Id,
+            Maybe<long>.None,
+            searchValue);
 
-        return await Task.FromResult(
-            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
+        return AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s)));
     }
 }

@@ -11,26 +11,14 @@ public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : 
     public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
         IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
-        var results = new List<string>();
-        var userId = context.Guild.GetUserAsync(context.User.Id).Result.GuildPermissions.ManageMessages ? (long) context.User.Id : Maybe<long>.None;
-        var tags = await tagCommands.FindTagsAsync((long)context.Guild.Id, true, userId);
-        if (tags.IsFailure)
-        {
-            return await Task.FromResult(AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s))));
-        }
-        
-        if (autocompleteInteraction.Data?.Current?.Value == null ||
-            string.IsNullOrWhiteSpace(autocompleteInteraction.Data?.Current?.Value.ToString()))
-        {
-            results.ReplaceOrAddToList(tags.Value.Select(s => s.Command));
-        }
-        else
-        {
-            var searchValue = autocompleteInteraction.Data.Current.Value.ToString();
-            results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
-        }
+        var guildUser = await context.Guild.GetUserAsync(context.User.Id);
+        var userId = guildUser.GuildPermissions.ManageMessages ? (long)context.User.Id : Maybe<long>.None;
+        var searchValue = autocompleteInteraction.Data?.Current?.Value?.ToString();
+        var results = await tagCommands.FindTagNamesForAutocompleteAsync(
+            (long)context.Guild.Id,
+            userId,
+            searchValue);
 
-        return await Task.FromResult(
-            AutocompletionResult.FromSuccess(results.Take(25).Select(s => new AutocompleteResult(s, s))));
+        return AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s)));
     }
 }

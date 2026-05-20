@@ -95,6 +95,9 @@ public sealed class TagCommands(TagService tagService)
             ? Result.Success(tags.Value.Select(x => x.ToBentoTag()).ToList())
             : Result.Failure<List<BentoTags>>("No tags found.");
     }
+
+    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, Maybe<long> authorId, string? query) =>
+        await tagService.FindTagNamesForAutocompleteAsync(guildId, authorId, query);
     
     public async Task<Result<BentoTags>> GetRandomTagAsync(long userId, long guildId)
     {
