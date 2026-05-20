@@ -60,23 +60,11 @@ public sealed class BentoMediaServerService(HttpClient httpClient)
 
         try
         {
-            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            using var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-            {
-                response.Dispose();
                 return Result.Failure<Stream>($"Proxy returned HTTP {(int)response.StatusCode}");
-            }
-
-            try
-            {
-                var stream = await response.Content.ReadAsStreamAsync();
-                return Result.Success<Stream>(new HttpResponseMessageStream(response, stream));
-            }
-            catch
-            {
-                response.Dispose();
-                throw;
-            }
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            return Result.Success<Stream>(new MemoryStream(bytes));
         }
         catch (Exception ex)
         {

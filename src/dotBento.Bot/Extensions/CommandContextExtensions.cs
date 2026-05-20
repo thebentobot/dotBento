@@ -69,8 +69,7 @@ public static class CommandContextExtensions
                     TimeSpan.FromSeconds(DiscordConstants.PaginationTimeoutInSeconds));
                 break;
             case ResponseType.ImageWithEmbed:
-            {
-                await using var imageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
+                var imageEmbedStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageWithEmbed");
                 var imageEmbedFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageWithEmbed");
                 await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
                     .AddAttachments(new AttachmentProperties(
@@ -78,18 +77,17 @@ public static class CommandContextExtensions
                         imageEmbedStream))
                     .AddEmbeds(response.Embed)
                     .WithComponents(response.Components));
+                await imageEmbedStream.DisposeAsync();
                 break;
-            }
             case ResponseType.ImageOnly:
-            {
-                await using var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
+                var imageOnlyStream = response.Stream ?? throw new InvalidOperationException("Stream required for ImageOnly");
                 var imageOnlyFilename = response.FileName ?? throw new InvalidOperationException("FileName required for ImageOnly");
                 await context.Client.Rest.SendMessageAsync(context.Message.ChannelId, new MessageProperties()
                     .AddAttachments(new AttachmentProperties(
                         (response.Spoiler ? "SPOILER_" : "") + imageOnlyFilename + ".png",
                         imageOnlyStream)));
+                await imageOnlyStream.DisposeAsync();
                 break;
-            }
             default:
                 throw new ArgumentOutOfRangeException();
         }

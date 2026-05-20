@@ -161,26 +161,19 @@ public sealed class TagService(
     public async Task<List<Tag>> SearchTagsByCommandAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tags = context.Tags.Where(x => x.GuildId == guildId);
-
-        return IsNpgsql(context)
-            ? await tags.Where(x => EF.Functions.ILike(x.Command, $"%{query}%")).ToListAsync()
-            : await tags.Where(x => x.Command.ToLower().Contains(query.ToLower())).ToListAsync();
+        return await context.Tags
+            .Where(x => x.GuildId == guildId && EF.Functions.ILike(x.Command, $"%{query}%"))
+            .ToListAsync();
     }
 
     // TODO: use cache for search
     public async Task<List<Tag>> SearchTagsByContentAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tags = context.Tags.Where(x => x.GuildId == guildId);
-
-        return IsNpgsql(context)
-            ? await tags.Where(x => EF.Functions.ILike(x.Content, $"%{query}%")).ToListAsync()
-            : await tags.Where(x => x.Content.ToLower().Contains(query.ToLower())).ToListAsync();
+        return await context.Tags
+            .Where(x => x.GuildId == guildId && EF.Functions.ILike(x.Content, $"%{query}%"))
+            .ToListAsync();
     }
-
-    private static bool IsNpgsql(DbContext context) =>
-        context.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
 
     private void InvalidateTagCache(long guildId, string name)
     {
