@@ -6,7 +6,7 @@ namespace dotBento.Bot.Tests.Compatibility;
 /// <summary>
 /// Verifies binary compatibility between Fergun.Interactive and the installed Discord.Net version.
 ///
-/// Fergun.Interactive 1.9.1 was compiled against Discord.Net 3.18.0. If Discord.Net is upgraded
+/// Fergun.Interactive is compiled against specific Discord.Net APIs. If Discord.Net is upgraded
 /// to a version where SelectMenuBuilder's constructor signature changes, the paginator throws a
 /// MissingMethodException at runtime — breaking ALL multi-page paginator commands silently
 /// (fire-and-forget callers) or visibly (awaited callers).
@@ -20,12 +20,11 @@ public class FergunInteractiveCompatibilityTests
     [Fact]
     public void SelectMenuBuilder_HasConstructorRequiredByFergunInteractive()
     {
-        // The exact constructor Fergun.Interactive 1.9.1 calls, captured from the
-        // MissingMethodException produced when Discord.Net was upgraded to 3.19.0:
+        // The exact constructor Fergun.Interactive 1.9.2 calls through Discord.Net 3.19.1:
         //
         // Void Discord.SelectMenuBuilder..ctor(String, List`1[SelectMenuOptionBuilder],
         //   String, Int32, Int32, Boolean, ComponentType, List`1[ChannelType],
-        //   List`1[SelectMenuDefaultValue], Nullable`1[Int32])
+        //   List`1[SelectMenuDefaultValue], Nullable`1[Int32], Boolean)
         var expectedTypes = new[]
         {
             typeof(string),
@@ -38,6 +37,7 @@ public class FergunInteractiveCompatibilityTests
             typeof(List<ChannelType>),
             typeof(List<SelectMenuDefaultValue>),
             typeof(int?),
+            typeof(bool),
         };
 
         var constructor = typeof(SelectMenuBuilder).GetConstructor(
@@ -50,8 +50,8 @@ public class FergunInteractiveCompatibilityTests
         Assert.True(
             constructor is not null,
             $"Discord.Net {discordNetVersion} does not have the SelectMenuBuilder constructor " +
-            "required by Fergun.Interactive 1.9.1. This will cause a MissingMethodException " +
-            "and break all multi-page paginators at runtime. Either keep Discord.Net on 3.18.x " +
-            "or upgrade Fergun.Interactive to a version that targets the new Discord.Net.");
+            "required by Fergun.Interactive 1.9.2. This will cause a MissingMethodException " +
+            "and break all multi-page paginators at runtime. Upgrade Fergun.Interactive to a " +
+            "version that targets the new Discord.Net before proceeding.");
     }
 }
