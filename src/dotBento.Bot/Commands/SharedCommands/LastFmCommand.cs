@@ -38,11 +38,6 @@ public sealed class LastFmCommand(
         }
 
         var bentoLastFmRecentTracks = response.Value.RecentTracks;
-        if (bentoLastFmRecentTracks.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error: No recent tracks found");
-        }
-
         var description = bentoLastFmRecentTracks.Select(recentTrack =>
             $"{(recentTrack.NowPlaying ? "Now Playing" : $"<t:{recentTrack.Date?.ToUnixTimeSeconds()}:R>")}\n**{recentTrack.Artist}** - [{recentTrack.Track}]({recentTrack.Url})\nFrom the album **{recentTrack.Album}**");
         var singleDescription = string.Join("\n\n", description);
@@ -87,10 +82,6 @@ public sealed class LastFmCommand(
         }
 
         var topArtists = topArtistsResponse.Value;
-        if (topArtists.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error: No top artists found");
-        }
 
         var artistPageChunks = topArtists.ChunkBy(10);
 
@@ -161,10 +152,6 @@ public sealed class LastFmCommand(
         }
 
         var topAlbums = topAlbumsResponse.Value;
-        if (topAlbums.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error: No top albums found");
-        }
 
         var albumsPageChunks = topAlbums.ChunkBy(10);
 
@@ -232,10 +219,6 @@ public sealed class LastFmCommand(
         }
 
         var topTracks = topTracksResponse.Value;
-        if (topTracks.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error: No top tracks found");
-        }
 
         var tracksPageChunks = topTracks.ChunkBy(10);
 
@@ -354,11 +337,6 @@ public sealed class LastFmCommand(
         }
 
         var recentTracks = recentTracksResponse.Value;
-        if (recentTracks.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error: No recent tracks found");
-        }
-
         var fromDate = recentTracks.Last().Date.Humanize();
         var toDate = recentTracks.First().NowPlaying ? "Now" : recentTracks.First().Date.Humanize();
 

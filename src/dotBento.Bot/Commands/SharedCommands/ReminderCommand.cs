@@ -90,10 +90,6 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
             return GenericEmbedService.ErrorEmbed("Error", result.Error);
         }
         var reminders = result.Value;
-        if (reminders.Count == 0)
-        {
-            return GenericEmbedService.ErrorEmbed("Error", "No reminders found.");
-        }
 
         var remindersPageChunks = reminders.ChunkBy(10);
 
