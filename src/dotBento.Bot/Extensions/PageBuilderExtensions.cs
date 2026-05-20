@@ -10,8 +10,6 @@ public static class PageBuilderExtensions
 {
     public static IComponentPaginator BuildStaticPaginator(this IList<PageBuilder> pages, string? customOptionId = null, EmojiProperties? optionEmote = null)
     {
-        EnsurePagesNotEmpty(pages);
-
         var builder = new ComponentPaginatorBuilder()
             .WithPageCount(pages.Count)
             .WithActionOnTimeout(ActionOnStop.DisableInput)
@@ -44,8 +42,6 @@ public static class PageBuilderExtensions
     public static IComponentPaginator BuildStaticPaginatorWithSelectMenu(this IList<PageBuilder> pages,
         StringMenuProperties selectMenuBuilder)
     {
-        EnsurePagesNotEmpty(pages);
-
         var builder = new ComponentPaginatorBuilder()
             .WithPageCount(pages.Count)
             .WithActionOnTimeout(ActionOnStop.DisableInput)
@@ -73,8 +69,6 @@ public static class PageBuilderExtensions
 
     public static IComponentPaginator BuildSimpleStaticPaginator(this IList<PageBuilder> pages)
     {
-        EnsurePagesNotEmpty(pages);
-
         var builder = new ComponentPaginatorBuilder()
             .WithPageCount(pages.Count)
             .WithActionOnTimeout(ActionOnStop.DisableInput)
@@ -90,13 +84,5 @@ public static class PageBuilderExtensions
             });
 
         return builder.Build();
-    }
-
-    private static void EnsurePagesNotEmpty(ICollection<PageBuilder> pages)
-    {
-        if (pages.Count == 0)
-        {
-            throw new ArgumentException("Cannot build a paginator without at least one page.", nameof(pages));
-        }
     }
 }
