@@ -21,6 +21,11 @@
       {
         "matchDatasources": ["nuget"],
         "minimumReleaseAge": "3 day"
+      },
+      {
+        "matchDatasources": ["docker"],
+        "matchPackageNames": ["mcr.microsoft.com/dotnet/sdk"],
+        "versioning": "loose"
       }
     ]
 }
