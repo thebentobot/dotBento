@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.19.8](https://github.com/thebentobot/dotBento/compare/v1.19.7...v1.19.8) (2026-05-30)
+
+
+### Bug Fixes
+
+* **backgroundService:** hangfire postgres error ([e172b76](https://github.com/thebentobot/dotBento/commit/e172b76159ed6a25b162aafb32a79779fff11d6b))
+* **backgroundService:** hangfire postgres error ([4bb7847](https://github.com/thebentobot/dotBento/commit/4bb784775889d1d04d86d346222a0934386d67a4))
+* **bot:** avoid blocking ready handler ([5ce9e2d](https://github.com/thebentobot/dotBento/commit/5ce9e2d5f6cadc96e21cb2a7ed33df1bbd32567a))
+* **bot:** avoid blocking ready handler ([4a0f7f2](https://github.com/thebentobot/dotBento/commit/4a0f7f2e26689e2372bae46a1371e3c404998b71))
+
 ## [1.19.7](https://github.com/thebentobot/dotBento/compare/v1.19.6...v1.19.7) (2026-05-20)
 
 
