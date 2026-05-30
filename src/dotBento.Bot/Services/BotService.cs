@@ -26,6 +26,7 @@ public sealed class BotService(DiscordSocketClient client,
     IOptions<BotEnvConfig> config)
 {
     private MetricPusher? _metricPusher;
+    private int _readyInitialized;
 
     public async Task StartAsync()
     {
@@ -60,6 +61,8 @@ public sealed class BotService(DiscordSocketClient client,
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
 
+        client.Ready += OnReadyAsync;
+
         Log.Information("Logging into Discord");
         await client.LoginAsync(TokenType.Bot, discordToken);
 
@@ -70,16 +73,33 @@ public sealed class BotService(DiscordSocketClient client,
         backgroundService.QueueJobs();
 
         StartMetricsPusher();
+    }
 
-        client.Ready += async () =>
+    private Task OnReadyAsync()
+    {
+        if (Interlocked.Exchange(ref _readyInitialized, 1) == 1)
         {
-            Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
+            return Task.CompletedTask;
+        }
 
-            // Activate Discord channel logging sink now that client is ready
-            DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
 
-            await RegisterSlashCommands();
-        };
+                // Activate Discord channel logging sink now that client is ready
+                DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+
+                await RegisterSlashCommands();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while handling client ready event");
+            }
+        });
+
+        return Task.CompletedTask;
     }
 
     // public instead of private because of Hangfire BackgroundJob
