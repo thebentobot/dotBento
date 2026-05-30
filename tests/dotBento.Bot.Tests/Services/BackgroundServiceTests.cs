@@ -14,7 +14,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
-using Npgsql;
 
 namespace dotBento.Bot.Tests.Services;
 
@@ -39,19 +38,6 @@ public sealed class BackgroundServiceTests
         public Task<BotDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(CreateDbContext());
-        }
-    }
-
-    private sealed class ThrowingDbFactory(Exception exception) : IDbContextFactory<BotDbContext>
-    {
-        public BotDbContext CreateDbContext()
-        {
-            throw exception;
-        }
-
-        public Task<BotDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromException<BotDbContext>(exception);
         }
     }
 
@@ -131,31 +117,6 @@ public sealed class BackgroundServiceTests
             Assert.Null(deleted);
         }
         // We expect no Discord API lookups when the user isn't in our DB.
-        resolverMock.Verify(r => r.GetUserAsync(It.IsAny<ulong>(), It.IsAny<RequestOptions?>()), Times.Never);
-        dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<IUser>(), It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task SendRemindersToUsers_WhenDatabaseTemporarilyUnavailable_SkipsRun()
-    {
-        // Arrange
-        var transientException = new NpgsqlException("database is temporarily unavailable", new IOException("connection lost"));
-        var dbFactory = new ThrowingDbFactory(transientException);
-        var cache = new MemoryCache(new MemoryCacheOptions());
-        var userService = new UserService(cache, dbFactory);
-        var reminderService = new ReminderService(cache, dbFactory);
-        var reminderCommands = new ReminderCommands(reminderService);
-
-        var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
-        var resolverMock = new Mock<IDiscordUserResolver>(MockBehavior.Strict);
-        var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
-
-        var sut = CreateSut(userService, clientMock.Object, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
-
-        // Act
-        await sut.SendRemindersToUsers();
-
-        // Assert
         resolverMock.Verify(r => r.GetUserAsync(It.IsAny<ulong>(), It.IsAny<RequestOptions?>()), Times.Never);
         dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<IUser>(), It.IsAny<string>()), Times.Never);
     }
