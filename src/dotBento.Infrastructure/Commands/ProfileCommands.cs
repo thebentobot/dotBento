@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using CSharpFunctionalExtensions;
 using Discord.WebSocket;
@@ -22,6 +23,7 @@ public sealed class ProfileCommands(
     private const ulong BentoSupportServerId = 714496317522444352;
     private const long DeveloperUserId = 232584569289703424;
 
+    [ExcludeFromCodeCoverage(Justification = "Discord.NET SocketGuildUser image entry point; GenerateProfileHtml covers the render workflow.")]
     public async Task<Result<Stream>> GetProfileAsync(string imageServerHost, string lastFmApiKey, long userId,
         long guildId, SocketGuildUser guildMember, int guildMemberCount, string botAvatarUrl)
     {

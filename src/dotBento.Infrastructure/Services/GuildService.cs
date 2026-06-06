@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
@@ -57,6 +58,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuild; internal overload covers the behavior.")]
     public async Task AddGuildAsync(SocketGuild guild)
     {
         await AddGuildAsync(guild.Id, guild.Name, guild.MemberCount);
@@ -82,6 +84,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
     public async Task AddGuildMemberAsync(SocketGuildUser guildUser)
     {
         var avatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ??
@@ -189,6 +192,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         return listOfGuildsForUser;
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
     public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
     {
         var avatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512) ??
@@ -256,6 +260,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
     public async Task<Maybe<GuildMember>> GetOrCreateGuildMemberAsync(ulong discordGuildId, ulong discordUserId,
         SocketGuildUser guildUser)
     {

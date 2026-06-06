@@ -48,6 +48,8 @@ public class ProfileCommandsTests
     [InlineData("7/2", "Jul 2 🎂")]            // M/d (new syntax)
     [InlineData("7 february", "Feb 7 🎂")]     // text, lowercase month
     [InlineData("February 18", "Feb 18 🎂")]   // text, Month d
+    [InlineData("31/12", "Dec 31 🎂")]         // day-first numeric
+    [InlineData("February 18, 2000", "Feb 18 🎂")] // en-US fallback with comma
     [InlineData("20 April 2000", "Apr 20 🎂")] // text with year
     [InlineData("25 Nov", "Nov 25 🎂")]        // short month
     [InlineData("  February   1  ", "Feb 1 🎂")] // extra spaces
@@ -374,8 +376,112 @@ public class ProfileCommandsTests
         Assert.Contains("opacity: 0", html);
     }
 
+    [Fact]
+    public async Task GenerateProfileHtml_RendersXpOnlyLayoutAndTimezone()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await SeedProfileRenderDataAsync(factory);
+        var command = CreateCommand(factory);
+        var profile = DefaultProfile(10) with
+        {
+            XpBoard = true,
+            LastfmBoard = false,
+            Timezone = "UTC"
+        };
+
+        var html = await command.GenerateProfileHtml(
+            profile,
+            "lastfm-api-key",
+            100,
+            new ProfileDiscordUser("avatar.png", "0007", "DisplayName", null),
+            1234,
+            "bot.png");
+
+        Assert.Contains("height: 310px", html);
+        Assert.Contains("padding-top: 88px", html);
+        Assert.Contains("Level 3", html);
+        Assert.Contains("Level 4", html);
+        Assert.Contains("#0007", html);
+    }
+
+    [Fact]
+    public async Task GenerateProfileHtml_RendersLastFmOnlyLayout()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await SeedProfileRenderDataAsync(factory, includeLastFm: true);
+        var command = CreateCommand(factory, CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("""
+            {
+              "recenttracks": {
+                "@attr": { "page": "1", "totalPages": "1", "user": "listener", "total": "1", "perPage": "1" },
+                "track": [
+                  {
+                    "@attr": { "nowplaying": "true" },
+                    "mbid": null,
+                    "loved": null,
+                    "artist": { "url": null, "mbid": null, "#text": "Artist" },
+                    "image": [{ "#text": "small.png", "size": "small" }, { "#text": "large.png", "size": "large" }],
+                    "date": null,
+                    "url": "https://last.fm/now",
+                    "name": "Track",
+                    "album": { "mbid": null, "#text": "Album" }
+                  }
+                ]
+              }
+            }
+            """)
+        }));
+        var profile = DefaultProfile(10) with
+        {
+            XpBoard = false,
+            LastfmBoard = true
+        };
+
+        var html = await command.GenerateProfileHtml(
+            profile,
+            "lastfm-api-key",
+            100,
+            new ProfileDiscordUser("avatar.png", "0007", "DisplayName", null),
+            1234,
+            "bot.png");
+
+        Assert.Contains("height: 310px", html);
+        Assert.Contains("padding-top: 88px", html);
+        Assert.Contains("Track", html);
+        Assert.Contains("Artist", html);
+    }
+
     private static DomainProfile DefaultProfile(long userId) =>
         InvokePrivateStatic<DomainProfile>(typeof(ProfileCommands), "DefaultProfile", userId)!;
+
+    private static async Task SeedProfileRenderDataAsync(
+        InfrastructureTestDbFactory factory,
+        bool includeLastFm = false)
+    {
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        db.Users.Add(new EfUser { UserId = 10, Username = "User", Discriminator = "0001", Level = 4, Xp = 350 });
+        db.Guilds.Add(new EfGuild
+        {
+            GuildId = 100,
+            GuildName = "Guild",
+            Prefix = "!",
+            Icon = "guild.png",
+            MemberCount = 1234,
+            Leaderboard = true,
+            Media = false,
+            Tiktok = false
+        });
+        db.GuildMembers.Add(new EfGuildMember { GuildId = 100, UserId = 10, Level = 3, Xp = 250 });
+        db.Bentos.Add(new Bento { UserId = 10, Bento1 = 42, BentoDate = DateTime.UtcNow });
+        if (includeLastFm)
+        {
+            db.Lastfms.Add(new Lastfm { UserId = 10, Lastfm1 = "listener" });
+        }
+
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
 
     private static ProfileCommands CreateCommand(
         InfrastructureTestDbFactory factory,

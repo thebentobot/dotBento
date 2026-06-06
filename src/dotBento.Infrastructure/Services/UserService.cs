@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
@@ -110,6 +111,7 @@ public sealed class UserService(IMemoryCache cache,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; IUser overload covers the behavior.")]
     public async Task CreateOrAddUserToCache(SocketUser discordUser)
     {
         await CreateOrAddUserToCache((IUser)discordUser);
@@ -141,11 +143,13 @@ public sealed class UserService(IMemoryCache cache,
         await AddUserToCache(databaseUser);
     }
     
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; IUser overload covers the behavior.")]
     public async Task CreateOrAddUserToCache(SocketGuildUser discordUser)
     {
         await CreateOrAddUserToCache((IUser)discordUser);
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
     public async Task UpdateUserAvatarAsync(SocketUser newUser)
     {
         await UpdateUserAvatarAsync(newUser.Id, newUser.GetAvatarUrl(ImageFormat.Auto, 512));
@@ -167,6 +171,7 @@ public sealed class UserService(IMemoryCache cache,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
     public async Task UpdateUserUsernameAsync(SocketUser newUser)
     {
         await UpdateUserUsernameAsync(newUser.Id, newUser.Username);
@@ -215,6 +220,7 @@ public sealed class UserService(IMemoryCache cache,
         return maybeUser;
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketCommandContext; internal overload covers the behavior.")]
     public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
     {
         await AddExperienceAsync(context.User.Id, context.Guild.Id, patreonUser);

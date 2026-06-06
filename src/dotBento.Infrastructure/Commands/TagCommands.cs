@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using dotBento.Domain;
 using dotBento.Domain.Entities.Tags;
@@ -110,6 +111,7 @@ public sealed class TagCommands(TagService tagService)
         return tag.HasValue ? Result.Success(tag.Value.ToBentoTag()) : Result.Failure<BentoTags>("No tags found.");
     }
     
+    [ExcludeFromCodeCoverage(Justification = "Wraps PostgreSQL ILike tag search methods that are not supported by the EF InMemory test provider.")]
     public async Task<Result<List<BentoTags>>> SearchTagsAsync(long guildId, string query)
     {
         var tagsByCommand = await tagService.SearchTagsByCommandAsync(guildId, query);

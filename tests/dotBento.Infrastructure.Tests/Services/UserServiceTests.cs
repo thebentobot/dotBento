@@ -226,6 +226,34 @@ public class UserServiceTests
         Assert.Equal((expectedGuildLevel, expectedGuildXp), (guildMember.Level, guildMember.Xp));
     }
 
+    [Theory]
+    [InlineData(nameof(Patreon.Follower), 46)]
+    [InlineData(nameof(Patreon.Enthusiast), 69)]
+    [InlineData(nameof(Patreon.Disciple), 92)]
+    [InlineData(nameof(Patreon.Sponsor), 115)]
+    public async Task AddExperienceAsync_UsesPatreonTierPoints(string tierProperty, int expectedPoints)
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 2, Xp = 0 });
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 2, Xp = 0 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory);
+        var patreon = new Patreon { UserId = 10, Name = "Patron", Avatar = "avatar.png" };
+        typeof(Patreon).GetProperty(tierProperty)!.SetValue(patreon, true);
+
+        await service.AddExperienceAsync(10, 100, patreon.AsMaybe());
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var guildMember = await assertDb.GuildMembers.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedPoints, user.Xp);
+        Assert.Equal(expectedPoints, guildMember.Xp);
+    }
+
     [Fact]
     public async Task AddExperienceAsync_ReturnsWhenUserOrGuildMemberIsMissing()
     {

@@ -175,12 +175,14 @@ public class GuildServiceTests
         var guildCount = await service.GetTotalGuildCountAsync();
         var guildBatch = await service.GetGuildBatchAsync(batchSize: 2, skip: 1);
         var memberBatch = await service.GetGuildMemberBatchAsync(batchSize: 2, skip: 1);
+        var guildsForUser = await service.FindGuildsForUser(2);
         var rank = await service.GetGuildMemberRankAsync(3, 100);
         var missingRank = await service.GetGuildMemberRankAsync(999, 100);
 
         Assert.Equal(3, guildCount);
         Assert.Equal([200L, 300L], guildBatch.Select(g => g.GuildId));
         Assert.Equal(2, memberBatch.Count);
+        Assert.Equal([100L], guildsForUser.Select(g => g.GuildId));
         Assert.True(rank.HasValue);
         Assert.Equal(3, rank.Value);
         Assert.True(missingRank.HasNoValue);

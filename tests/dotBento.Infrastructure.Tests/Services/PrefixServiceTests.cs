@@ -24,6 +24,9 @@ public class PrefixServiceTests
 
         service.RemovePrefix(guildId);
         Assert.Equal(Constants.StartPrefix, service.GetPrefix(guildId));
+
+        service.RemovePrefix(guildId);
+        Assert.Equal(Constants.StartPrefix, service.GetPrefix(guildId));
     }
 
     [Fact]
