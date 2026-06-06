@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
@@ -151,6 +152,7 @@ public sealed class TagService(
         InvalidateTagCache(tag.GuildId, tag.Command);
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Uses PostgreSQL ILike, which is not supported by the EF InMemory test provider.")]
     public async Task<List<Tag>> SearchTagsByCommandAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -160,6 +162,7 @@ public sealed class TagService(
             .ToListAsync();
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Uses PostgreSQL ILike, which is not supported by the EF InMemory test provider.")]
     public async Task<List<Tag>> SearchTagsByContentAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

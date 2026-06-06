@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Commands;
@@ -110,7 +111,13 @@ public sealed class UserService(IMemoryCache cache,
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; IUser overload covers the behavior.")]
     public async Task CreateOrAddUserToCache(SocketUser discordUser)
+    {
+        await CreateOrAddUserToCache((IUser)discordUser);
+    }
+
+    internal async Task CreateOrAddUserToCache(IUser discordUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
@@ -136,58 +143,50 @@ public sealed class UserService(IMemoryCache cache,
         await AddUserToCache(databaseUser);
     }
     
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; IUser overload covers the behavior.")]
     public async Task CreateOrAddUserToCache(SocketGuildUser discordUser)
     {
-        await using var db = await contextFactory.CreateDbContextAsync();
-        var databaseUser = await db.Users
-            .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
-
-        if (databaseUser == null)
-        {
-            databaseUser = new User
-            {
-                UserId = (long)discordUser.Id,
-                Username = discordUser.Username,
-                Discriminator = discordUser.Discriminator,
-                AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
-                Level = 1,
-                Xp = 0
-            };
-
-            db.Users.Add(databaseUser);
-            await db.SaveChangesAsync();
-        }
-        
-        await AddUserToCache(databaseUser);
+        await CreateOrAddUserToCache((IUser)discordUser);
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
     public async Task UpdateUserAvatarAsync(SocketUser newUser)
+    {
+        await UpdateUserAvatarAsync(newUser.Id, newUser.GetAvatarUrl(ImageFormat.Auto, 512));
+    }
+
+    internal async Task UpdateUserAvatarAsync(ulong userId, string? avatarUrl)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)newUser.Id);
+            .FirstOrDefaultAsync(f => f.UserId == (long)userId);
 
         if (user != null)
         {
-            user.AvatarUrl = newUser.GetAvatarUrl(ImageFormat.Auto, 512);
+            user.AvatarUrl = avatarUrl;
             await db.SaveChangesAsync();
             RemoveUserFromCache(user);
             await AddUserToCache(user);
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
     public async Task UpdateUserUsernameAsync(SocketUser newUser)
+    {
+        await UpdateUserUsernameAsync(newUser.Id, newUser.Username);
+    }
+
+    internal async Task UpdateUserUsernameAsync(ulong userId, string username)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)newUser.Id);
+            .FirstOrDefaultAsync(f => f.UserId == (long)userId);
 
         if (user != null)
         {
-            user.Username = newUser.Username;
+            user.Username = username;
             await db.SaveChangesAsync();
             RemoveUserFromCache(user);
             await AddUserToCache(user);
@@ -221,15 +220,21 @@ public sealed class UserService(IMemoryCache cache,
         return maybeUser;
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketCommandContext; internal overload covers the behavior.")]
     public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
+    {
+        await AddExperienceAsync(context.User.Id, context.Guild.Id, patreonUser);
+    }
+
+    internal async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)context.User.Id);
+            .FirstOrDefaultAsync(f => f.UserId == (long)userId);
         var guildMember = await db.GuildMembers
             .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)context.User.Id && f.GuildId == (long)context.Guild.Id);
+            .FirstOrDefaultAsync(f => f.UserId == (long)userId && f.GuildId == (long)guildId);
         
         if (user == null || guildMember == null) return;
 

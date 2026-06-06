@@ -51,7 +51,57 @@ public sealed class StreamingApiServiceTests
         Assert.True(contentStream.IsDisposed);
     }
 
+    [Fact]
+    public async Task SushiiImageServerStream_DelegatesSyncMembersAndRejectsWrites()
+    {
+        var contentStream = new CountingStream([1, 2, 3, 4]);
+        using var httpClient = CreateHttpClient(contentStream);
+        var service = new SushiiImageServerService(httpClient);
+
+        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+
+        Assert.True(result.IsSuccess);
+        using var stream = result.Value;
+        Assert.True(stream.CanRead);
+        Assert.True(stream.CanSeek);
+        Assert.False(stream.CanWrite);
+        Assert.Equal(4, stream.Length);
+        Assert.Equal(0, stream.Position);
+
+        stream.Position = 1;
+        Assert.Equal(1, stream.Position);
+        Assert.Equal(2, stream.ReadByte());
+        Assert.Equal(0, stream.Seek(0, SeekOrigin.Begin));
+        Assert.Equal(1, stream.Read(new Span<byte>(new byte[1])));
+        Assert.Equal(1, await stream.ReadAsync(new byte[1], 0, 1, TestContext.Current.CancellationToken));
+        stream.Flush();
+        await stream.FlushAsync(TestContext.Current.CancellationToken);
+
+        Assert.Throws<NotSupportedException>(() => stream.SetLength(10));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1], 0, 1));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1]));
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            stream.WriteAsync([1], 0, 1, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+            await stream.WriteAsync(new ReadOnlyMemory<byte>([1]), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task SushiiImageServer_DisposesResponseWhenStreamCreationFails()
+    {
+        using var httpClient = CreateHttpClient(new ThrowingStreamContent());
+        var service = new SushiiImageServerService(httpClient);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400));
+    }
+
     private static HttpClient CreateHttpClient(Stream contentStream)
+    {
+        return CreateHttpClient(new StreamContent(contentStream));
+    }
+
+    private static HttpClient CreateHttpClient(HttpContent content)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
 
@@ -64,10 +114,25 @@ public sealed class StreamingApiServiceTests
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StreamContent(contentStream)
+                Content = content
             });
 
         return new HttpClient(mockHandler.Object);
+    }
+
+    private sealed class ThrowingStreamContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override Task<Stream> CreateContentReadStreamAsync() =>
+            throw new InvalidOperationException("stream failed");
     }
 
     private sealed class CountingStream(byte[] buffer) : MemoryStream(buffer)
