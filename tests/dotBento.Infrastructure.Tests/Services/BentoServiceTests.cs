@@ -66,6 +66,41 @@ public class BentoServiceTests
     }
 
     [Fact]
+    public async Task FindBentoAsync_WhenCached_ReturnsCachedValue()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        cache.Set(10L, new Bento { UserId = 10, Bento1 = 42, BentoDate = DateTime.UtcNow });
+        var service = CreateService(factory, cache);
+
+        var found = await service.FindBentoAsync(10);
+
+        Assert.True(found.HasValue);
+        Assert.Equal(42, found.Value.Bento1);
+    }
+
+    [Fact]
+    public async Task CreateBentoSenderAsync_CreatesAndCachesSender()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(factory, cache);
+        var bentoDate = new DateTime(2026, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+
+        var sender = await service.CreateBentoSenderAsync(10, bentoDate);
+
+        Assert.Equal(10, sender.UserId);
+        Assert.Equal(0, sender.Bento1);
+        Assert.Equal(bentoDate, sender.BentoDate);
+        Assert.True(cache.TryGetValue(10L, out Bento? cached));
+        Assert.Equal(bentoDate, cached!.BentoDate);
+
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var persisted = await db.Bentos.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(bentoDate, persisted.BentoDate);
+    }
+
+    [Fact]
     public async Task IncrementBentoAsync_CreatesAndUpdatesExisting()
     {
         var factory = new InfrastructureTestDbFactory();

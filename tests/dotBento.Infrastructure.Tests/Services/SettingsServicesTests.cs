@@ -28,6 +28,33 @@ public class SettingsServicesTests
     }
 
     [Fact]
+    public async Task GuildSettingService_ReturnsExistingCreatesOnUpdateAndUsesCache()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.GuildSettings.Add(new GuildSetting
+            {
+                GuildId = 10,
+                LeaderboardPublic = true
+            });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = new GuildSettingService(factory, cache);
+
+        var existing = await service.GetOrCreateGuildSettingAsync(10);
+        cache.Set("guild-setting-10", false);
+        var cached = await service.IsLeaderboardPublicAsync(10);
+        var createdByUpdate = await service.UpdateLeaderboardPublicAsync(20, true);
+
+        Assert.True(existing.LeaderboardPublic);
+        Assert.False(cached);
+        Assert.Equal(20, createdByUpdate.GuildId);
+        Assert.True(createdByUpdate.LeaderboardPublic);
+    }
+
+    [Fact]
     public async Task UserSettingService_CreatesUpdatesCachesAndListsHiddenLeaderboardUsers()
     {
         var factory = new InfrastructureTestDbFactory();
