@@ -51,6 +51,39 @@ public sealed class StreamingApiServiceTests
         Assert.True(contentStream.IsDisposed);
     }
 
+    [Fact]
+    public async Task SushiiImageServerStream_DelegatesSyncMembersAndRejectsWrites()
+    {
+        var contentStream = new CountingStream([1, 2, 3, 4]);
+        using var httpClient = CreateHttpClient(contentStream);
+        var service = new SushiiImageServerService(httpClient);
+
+        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+
+        Assert.True(result.IsSuccess);
+        using var stream = result.Value;
+        Assert.True(stream.CanRead);
+        Assert.True(stream.CanSeek);
+        Assert.False(stream.CanWrite);
+        Assert.Equal(4, stream.Length);
+        Assert.Equal(0, stream.Position);
+
+        stream.Position = 1;
+        Assert.Equal(1, stream.Position);
+        Assert.Equal(2, stream.ReadByte());
+        Assert.Equal(0, stream.Seek(0, SeekOrigin.Begin));
+        stream.Flush();
+        await stream.FlushAsync(TestContext.Current.CancellationToken);
+
+        Assert.Throws<NotSupportedException>(() => stream.SetLength(10));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1], 0, 1));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1]));
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            stream.WriteAsync([1], 0, 1, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+            await stream.WriteAsync(new ReadOnlyMemory<byte>([1]), TestContext.Current.CancellationToken));
+    }
+
     private static HttpClient CreateHttpClient(Stream contentStream)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
