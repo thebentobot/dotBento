@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace dotBento.Infrastructure.Services;
 
-public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFactory)
+public class LeaderboardService(IDbContextFactory<BotDbContext> contextFactory)
 {
-    public async Task<Result<List<LeaderboardEntry>>> GetServerXpLeaderboardAsync(long guildId, int limit = 50)
+    public virtual async Task<Result<List<LeaderboardEntry>>> GetServerXpLeaderboardAsync(long guildId, int limit = 50)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var members = await context.GuildMembers
@@ -31,7 +31,7 @@ public sealed class LeaderboardService(IDbContextFactory<BotDbContext> contextFa
         return Result.Success(entries);
     }
 
-    public async Task<Result<List<LeaderboardEntry>>> GetGlobalXpLeaderboardAsync(int limit = 50)
+    public virtual async Task<Result<List<LeaderboardEntry>>> GetGlobalXpLeaderboardAsync(int limit = 50)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var users = await context.Users

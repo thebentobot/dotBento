@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
+using dotBento.Infrastructure.Models;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
 using dotBento.WebApi.Controllers;
@@ -43,19 +44,25 @@ public class InformationControllerTests
         CreateController(context, CreateMockDiscordApiService().Object);
 
     private static InformationController CreateController(
-        BotDbContext context, DiscordApiService discordApiService)
+        BotDbContext context, DiscordApiService discordApiService,
+        LeaderboardService? leaderboardService = null)
     {
         var factory = new SingleContextFactory(context);
-        var leaderboardService = new LeaderboardService(factory);
         var guildSettingService = new GuildSettingService(factory, new MemoryCache(new MemoryCacheOptions()));
         var userSettingService = new UserSettingService(factory, Mock.Of<IDistributedCache>());
         return new InformationController(
             Mock.Of<ILogger<InformationController>>(),
             context,
-            leaderboardService,
+            leaderboardService ?? new LeaderboardService(factory),
             discordApiService,
             guildSettingService,
             userSettingService);
+    }
+
+    private static Mock<LeaderboardService> CreateMockLeaderboardService(BotDbContext context)
+    {
+        var factory = new SingleContextFactory(context);
+        return new Mock<LeaderboardService>(factory) { CallBase = true };
     }
 
     private static Mock<DiscordApiService> CreateMockDiscordApiService(
@@ -230,6 +237,226 @@ public class InformationControllerTests
         var dto = Assert.IsType<LeaderboardResponseDto>(okResult.Value);
         Assert.Equal("TestGuild", dto.GuildName);
         Assert.Equal(3, dto.Users.Count);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_Global_HiddenUsersAreAnonymized()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        context.Users.Add(new User
+        {
+            UserId = 42,
+            Username = "HiddenUser",
+            Discriminator = "1234",
+            AvatarUrl = "https://cdn.example.com/avatar.png",
+            Level = 99,
+            Xp = 1000
+        });
+        context.UserSettings.Add(new UserSetting
+        {
+            UserId = 42,
+            HideSlashCommandCalls = false,
+            ShowOnGlobalLeaderboard = false
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var controller = CreateController(context);
+
+        var result = await controller.GetLeaderboard();
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var leaderboardResponse = Assert.IsType<LeaderboardResponseDto>(okResult.Value);
+        var user = Assert.Single(leaderboardResponse.Users);
+        Assert.True(user.Private);
+        Assert.Equal(-1, user.UserId);
+        Assert.Equal("Private", user.Username);
+        Assert.Equal("0000", user.Discriminator);
+        Assert.Equal("", user.AvatarUrl);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_GlobalFailure_Returns500()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var leaderboardService = CreateMockLeaderboardService(context);
+        leaderboardService
+            .Setup(x => x.GetGlobalXpLeaderboardAsync(It.IsAny<int>()))
+            .ReturnsAsync(Result.Failure<List<LeaderboardEntry>>("global failure"));
+        var controller = CreateController(
+            context,
+            CreateMockDiscordApiService().Object,
+            leaderboardService.Object);
+
+        var result = await controller.GetLeaderboard();
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, error.StatusCode);
+        Assert.Equal("global failure", error.Value);
+    }
+
+    [Theory]
+    [InlineData("not-a-number")]
+    [InlineData("-1")]
+    public async Task GetPublicLeaderboard_InvalidGuildId_ReturnsBadRequest(string guildId)
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+
+        var result = await controller.GetPublicLeaderboard(guildId);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Invalid guild ID", badRequest.Value);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaderboard_GuildNotFound_ReturnsNotFound()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+
+        var result = await controller.GetPublicLeaderboard("100");
+
+        var notFound = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("Guild not found", notFound.Value);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaderboard_WhenLeaderboardPrivate_Returns403()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1, 2]);
+        context.GuildSettings.Add(new GuildSetting
+        {
+            GuildId = 100,
+            LeaderboardPublic = false
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var controller = CreateController(context);
+
+        var result = await controller.GetPublicLeaderboard("100");
+
+        var forbidden = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, forbidden.StatusCode);
+        var dto = Assert.IsType<LeaderboardAccessDeniedDto>(forbidden.Value);
+        Assert.Equal("not_public", dto.Reason);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaderboard_WhenLeaderboardPublic_ReturnsLeaderboard()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1, 2]);
+        context.GuildSettings.Add(new GuildSetting
+        {
+            GuildId = 100,
+            LeaderboardPublic = true
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var controller = CreateController(context);
+
+        var result = await controller.GetPublicLeaderboard("100");
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<LeaderboardResponseDto>(okResult.Value);
+        Assert.Equal("TestGuild", dto.GuildName);
+        Assert.Equal("https://cdn.example.com/icon.png", dto.Icon);
+        Assert.Equal(2, dto.Users.Count);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaderboard_LeaderboardFailure_Returns500()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1, 2]);
+        context.GuildSettings.Add(new GuildSetting
+        {
+            GuildId = 100,
+            LeaderboardPublic = true
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var leaderboardService = CreateMockLeaderboardService(context);
+        leaderboardService
+            .Setup(x => x.GetServerXpLeaderboardAsync(100, It.IsAny<int>()))
+            .ReturnsAsync(Result.Failure<List<LeaderboardEntry>>("server failure"));
+        var controller = CreateController(
+            context,
+            CreateMockDiscordApiService().Object,
+            leaderboardService.Object);
+
+        var result = await controller.GetPublicLeaderboard("100");
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, error.StatusCode);
+        Assert.Equal("server failure", error.Value);
+    }
+
+    [Fact]
+    public async Task GetLeaderboardWithAccess_PublicLeaderboard_ReturnsLeaderboard()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1, 2]);
+        context.GuildSettings.Add(new GuildSetting
+        {
+            GuildId = 100,
+            LeaderboardPublic = true
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var controller = CreateController(context, CreateMockDiscordApiService().Object);
+
+        var result = await controller.GetLeaderboardWithAccess("100", "999");
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<LeaderboardResponseDto>(okResult.Value);
+        Assert.Equal("TestGuild", dto.GuildName);
+        Assert.Equal(2, dto.Users.Count);
+    }
+
+    [Fact]
+    public async Task GetLeaderboardWithAccess_PublicLeaderboardFailure_Returns500()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1, 2]);
+        context.GuildSettings.Add(new GuildSetting
+        {
+            GuildId = 100,
+            LeaderboardPublic = true
+        });
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var leaderboardService = CreateMockLeaderboardService(context);
+        leaderboardService
+            .Setup(x => x.GetServerXpLeaderboardAsync(100, It.IsAny<int>()))
+            .ReturnsAsync(Result.Failure<List<LeaderboardEntry>>("public failure"));
+        var controller = CreateController(
+            context,
+            CreateMockDiscordApiService().Object,
+            leaderboardService.Object);
+
+        var result = await controller.GetLeaderboardWithAccess("100", "999");
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, error.StatusCode);
+        Assert.Equal("public failure", error.Value);
+    }
+
+    [Fact]
+    public async Task GetLeaderboardWithAccess_AuthorizedLeaderboardFailure_Returns500()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        SeedGuildWithMembers(context, guildId: 100, memberUserIds: [1]);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var leaderboardService = CreateMockLeaderboardService(context);
+        leaderboardService
+            .Setup(x => x.GetServerXpLeaderboardAsync(100, It.IsAny<int>()))
+            .ReturnsAsync(Result.Failure<List<LeaderboardEntry>>("authorized failure"));
+        var controller = CreateController(
+            context,
+            CreateMockDiscordApiService().Object,
+            leaderboardService.Object);
+
+        var result = await controller.GetLeaderboardWithAccess("100", "1");
+
+        var error = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, error.StatusCode);
+        Assert.Equal("authorized failure", error.Value);
     }
 
     [Fact]
