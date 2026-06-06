@@ -72,6 +72,8 @@ public sealed class StreamingApiServiceTests
         Assert.Equal(1, stream.Position);
         Assert.Equal(2, stream.ReadByte());
         Assert.Equal(0, stream.Seek(0, SeekOrigin.Begin));
+        Assert.Equal(1, stream.Read(new Span<byte>(new byte[1])));
+        Assert.Equal(1, await stream.ReadAsync(new byte[1], 0, 1, TestContext.Current.CancellationToken));
         stream.Flush();
         await stream.FlushAsync(TestContext.Current.CancellationToken);
 

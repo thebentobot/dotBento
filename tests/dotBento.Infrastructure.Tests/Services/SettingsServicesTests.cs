@@ -103,4 +103,17 @@ public class SettingsServicesTests
         Assert.True(setting.HideSlashCommandCalls);
         Assert.False(setting.ShowOnGlobalLeaderboard);
     }
+
+    [Fact]
+    public async Task UserSettingService_ShouldHideCommandsAsync_UsesCachedValue()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        var cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        await cache.SetStringAsync("user-hide-commands-10", "True", TestContext.Current.CancellationToken);
+        var service = new UserSettingService(factory, cache);
+
+        var shouldHide = await service.ShouldHideCommandsAsync(10);
+
+        Assert.True(shouldHide);
+    }
 }

@@ -169,6 +169,19 @@ public class StylingUtilitiesTests
         stream.Flush();
         Assert.Equal(1, stream.Read(new byte[1], 0, 1));
         Assert.Equal(1, stream.Position);
+        Assert.Equal(1, stream.Read(new Span<byte>(new byte[1])));
+        Assert.Equal(2, stream.Position);
+    }
+
+    [Fact]
+    public void MaxLengthStream_DisposeDisposesInnerStream()
+    {
+        var innerStream = new TrackingMemoryStream([1, 2, 3]);
+        using (new StylingUtilities.MaxLengthStream(innerStream, maxBytes: 10))
+        {
+        }
+
+        Assert.True(innerStream.IsDisposed);
     }
 
     [Fact]
@@ -238,10 +251,17 @@ public class StylingUtilitiesTests
 internal sealed class TrackingMemoryStream(byte[] buffer) : MemoryStream(buffer)
 {
     public bool IsAsyncDisposed { get; private set; }
+    public bool IsDisposed { get; private set; }
 
     public override async ValueTask DisposeAsync()
     {
         IsAsyncDisposed = true;
         await base.DisposeAsync();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        IsDisposed = true;
+        base.Dispose(disposing);
     }
 }

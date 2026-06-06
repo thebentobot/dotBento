@@ -38,4 +38,14 @@ public class GameServiceTests
         var value = typeof(EntityFramework.Entities.RpsGame).GetProperty(propertyName)!.GetValue(game);
         Assert.Equal(2, value);
     }
+
+    [Fact]
+    public async Task UpdateRpsStatsAsync_ThrowsForInvalidChoice()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        var service = new GameService(factory);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            service.UpdateRpsStatsAsync(10, (RpsGameChoice)999, RpsGameResult.Draw));
+    }
 }

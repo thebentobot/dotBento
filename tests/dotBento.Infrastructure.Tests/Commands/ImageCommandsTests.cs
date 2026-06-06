@@ -31,7 +31,8 @@ public sealed class ImageCommandsTests
 
     [Theory]
     [InlineData("not-a-colour", "valid hexcode or RGB colour")]
-    [InlineData("999, 0, 0", "valid hexcode")]
+    [InlineData("999, 0, 0", "valid RGB colour")]
+    [InlineData("999,0,0", "valid RGB colour")]
     public async Task GetColour_ReturnsValidationFailureForInvalidColours(string colour, string expectedError)
     {
         using var httpClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
