@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.19.9](https://github.com/thebentobot/dotBento/compare/v1.19.8...v1.19.9) (2026-06-06)
+
+
+### Bug Fixes
+
+* forgot import ([71d51ea](https://github.com/thebentobot/dotBento/commit/71d51ea70dbcd0ef6693814ae405a2da1ef01b2a))
+* harden command validation coverage ([91a4521](https://github.com/thebentobot/dotBento/commit/91a4521ed3c7928e827c9063f527132bfa10e268))
+* **test:** assert/cast type ([728b78a](https://github.com/thebentobot/dotBento/commit/728b78a373e9d6543d6d4722b3de5801c8b9e5ba))
+* **TimezoneAutocompleteTests:** make timezones more robust ([937877c](https://github.com/thebentobot/dotBento/commit/937877c2bb7974aff2f65f9fe18f8de513cd6f09))
+
 ## [1.19.8](https://github.com/thebentobot/dotBento/compare/v1.19.7...v1.19.8) (2026-05-30)
 
 
