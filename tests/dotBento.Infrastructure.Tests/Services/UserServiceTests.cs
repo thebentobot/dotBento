@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using Discord;
+using CSharpFunctionalExtensions;
 
 namespace dotBento.Infrastructure.Tests.Services;
 
@@ -127,6 +128,52 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task CreateOrAddUserToCache_CreatesMissingUserAndCachesExistingUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(factory, cache);
+        var discordUser = new Mock<IUser>();
+        discordUser.SetupGet(x => x.Id).Returns(10);
+        discordUser.SetupGet(x => x.Username).Returns("DiscordUser");
+        discordUser.SetupGet(x => x.Discriminator).Returns("1234");
+        discordUser.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 512)).Returns("avatar.png");
+
+        await service.CreateOrAddUserToCache(discordUser.Object);
+        await service.CreateOrAddUserToCache(discordUser.Object);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(("DiscordUser", "1234", "avatar.png"), (user.Username, user.Discriminator, user.AvatarUrl));
+        Assert.True(cache.TryGetValue("user-10", out User? cachedUser));
+        Assert.Equal(10, cachedUser!.UserId);
+    }
+
+    [Fact]
+    public async Task UpdateUserAvatarAndUsername_UpdateExistingUserAndIgnoreMissingUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(User(10));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory, cache);
+
+        await service.UpdateUserAvatarAsync(10, "new-avatar.png");
+        await service.UpdateUserUsernameAsync(10, "NewName");
+        await service.UpdateUserAvatarAsync(999, "missing.png");
+        await service.UpdateUserUsernameAsync(999, "Missing");
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(("NewName", "new-avatar.png"), (user.Username, user.AvatarUrl));
+        Assert.True(cache.TryGetValue("user-10", out User? cachedUser));
+        Assert.Equal("NewName", cachedUser!.Username);
+    }
+
+    [Fact]
     public async Task GetUserRankAsync_ReturnsRankOrNone()
     {
         var factory = new InfrastructureTestDbFactory();
@@ -143,6 +190,60 @@ public class UserServiceTests
         Assert.True(rank.HasValue);
         Assert.Equal(3, rank.Value);
         Assert.True(missing.HasNoValue);
+    }
+
+    [Theory]
+    [InlineData(false, 23, 1, 73, 1, 73)]
+    [InlineData(true, 115, 2, 0, 2, 0)]
+    public async Task AddExperienceAsync_AddsXpAndLevelsWhenThresholdIsReached(
+        bool sponsor,
+        int expectedPoints,
+        int expectedUserLevel,
+        int expectedUserXp,
+        int expectedGuildLevel,
+        int expectedGuildXp)
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 1, Xp = 50 });
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 1, Xp = 50 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory);
+        var patreon = sponsor
+            ? new Patreon { UserId = 10, Name = "Sponsor", Avatar = "avatar.png", Sponsor = true }.AsMaybe()
+            : Maybe<Patreon>.None;
+
+        await service.AddExperienceAsync(10, 100, patreon);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var guildMember = await assertDb.GuildMembers.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedPoints, sponsor ? 115 : 23);
+        Assert.Equal((expectedUserLevel, expectedUserXp), (user.Level, user.Xp));
+        Assert.Equal((expectedGuildLevel, expectedGuildXp), (guildMember.Level, guildMember.Xp));
+    }
+
+    [Fact]
+    public async Task AddExperienceAsync_ReturnsWhenUserOrGuildMemberIsMissing()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Users.Add(User(10));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory);
+
+        await service.AddExperienceAsync(10, 100, Maybe<Patreon>.None);
+        await service.AddExperienceAsync(999, 100, Maybe<Patreon>.None);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(0, user.Xp);
     }
 
     [Fact]

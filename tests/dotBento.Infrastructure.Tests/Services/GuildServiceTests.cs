@@ -78,6 +78,46 @@ public class GuildServiceTests
     }
 
     [Fact]
+    public async Task AddGuildAsync_CreatesMissingGuildAndCachesIt()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(factory, cache);
+
+        await service.AddGuildAsync(100, "New Guild", 42);
+        await service.AddGuildAsync(100, "Ignored", 99);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var guild = await assertDb.Guilds.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(("New Guild", 42), (guild.GuildName, guild.MemberCount));
+        Assert.True(cache.TryGetValue("guild-100", out Guild? cachedGuild));
+        Assert.Equal("New Guild", cachedGuild!.GuildName);
+    }
+
+    [Fact]
+    public async Task AddGuildMemberAsync_CreatesMissingMemberAndCachesIt()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(Guild(100));
+            db.Users.Add(User(10));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory, cache);
+
+        await service.AddGuildMemberAsync(100, 10, "avatar.png");
+        await service.AddGuildMemberAsync(100, 10, "ignored.png");
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var member = await assertDb.GuildMembers.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(("avatar.png", 1, 0), (member.AvatarUrl, member.Level, member.Xp));
+        Assert.True(cache.TryGetValue("guild-member-100-10", out GuildMember? cachedMember));
+        Assert.Equal("avatar.png", cachedMember!.AvatarUrl);
+    }
+
+    [Fact]
     public async Task UpdateGuildPrefixAsync_UpdatesExistingAndReturnsNoneForMissing()
     {
         var factory = new InfrastructureTestDbFactory();
@@ -162,6 +202,55 @@ public class GuildServiceTests
 
         await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         Assert.Equal(42, (await assertDb.Guilds.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).MemberCount);
+    }
+
+    [Fact]
+    public async Task UpdateGuildMemberAvatarAsync_UpdatesExistingMemberAndIgnoresMissingMember()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(Guild(100));
+            db.Users.Add(User(10));
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 1, Xp = 0, AvatarUrl = "old.png" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory, cache);
+
+        await service.UpdateGuildMemberAvatarAsync(100, 10, "new.png");
+        await service.UpdateGuildMemberAvatarAsync(100, 999, "missing.png");
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var member = await assertDb.GuildMembers.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("new.png", member.AvatarUrl);
+        Assert.True(cache.TryGetValue("guild-member-100-10", out GuildMember? cachedMember));
+        Assert.Equal("new.png", cachedMember!.AvatarUrl);
+    }
+
+    [Fact]
+    public async Task GetOrCreateGuildMemberAsync_UsesCacheDatabaseOrCreatesMember()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(Guild(100));
+            db.Users.AddRange(User(10), User(20));
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 2, Xp = 30, AvatarUrl = "existing.png" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory, cache);
+
+        var fromDatabase = await service.GetOrCreateGuildMemberAsync(100, 10, "ignored.png");
+        var fromCache = await service.GetOrCreateGuildMemberAsync(100, 10, "ignored-again.png");
+        var created = await service.GetOrCreateGuildMemberAsync(100, 20, "created.png");
+
+        Assert.True(fromDatabase.HasValue);
+        Assert.True(fromCache.HasValue);
+        Assert.True(created.HasValue);
+        Assert.Equal("existing.png", fromCache.Value.AvatarUrl);
+        Assert.Equal(("created.png", 1, 0), (created.Value.AvatarUrl, created.Value.Level, created.Value.Xp));
     }
 
     [Fact]

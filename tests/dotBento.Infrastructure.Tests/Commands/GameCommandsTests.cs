@@ -7,26 +7,22 @@ namespace dotBento.Infrastructure.Tests.Commands;
 
 public sealed class GameCommandsTests
 {
-    [Fact]
-    public async Task RockPaperScissorsAsync_ReturnsValidAiChoiceAndPersistsOneResult()
+    [Theory]
+    [InlineData(RpsGameChoice.Rock, RpsGameChoice.Scissors, RpsGameResult.Win)]
+    [InlineData(RpsGameChoice.Rock, RpsGameChoice.Paper, RpsGameResult.Loss)]
+    [InlineData(RpsGameChoice.Rock, RpsGameChoice.Rock, RpsGameResult.Draw)]
+    public async Task RockPaperScissorsAsync_ReturnsExpectedResultAndPersistsStats(
+        RpsGameChoice playerChoice,
+        RpsGameChoice aiChoice,
+        RpsGameResult expectedResult)
     {
         var factory = new InfrastructureTestDbFactory();
-        var command = new GameCommands(new GameService(factory));
+        var command = new GameCommands(new GameService(factory), (_, _) => (int)aiChoice);
 
-        var (aiChoice, result) = await command.RockPaperScissorsAsync(RpsGameChoice.Rock, 100);
+        var (actualAiChoice, result) = await command.RockPaperScissorsAsync(playerChoice, 100);
 
-        Assert.Contains(aiChoice, new[]
-        {
-            RpsGameChoice.Rock,
-            RpsGameChoice.Paper,
-            RpsGameChoice.Scissors
-        });
-        Assert.Contains(result, new[]
-        {
-            RpsGameResult.Win,
-            RpsGameResult.Loss,
-            RpsGameResult.Draw
-        });
+        Assert.Equal(aiChoice, actualAiChoice);
+        Assert.Equal(expectedResult, result);
 
         await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         var stats = await db.RpsGames.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
