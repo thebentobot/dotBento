@@ -68,6 +68,25 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task GetTotalDiscordUserCountAsync_SumsGuildMemberCounts()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.AddRange(
+                new Guild { GuildId = 100, GuildName = "One", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 10 },
+                new Guild { GuildId = 200, GuildName = "Two", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 15 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory);
+
+        var count = await service.GetTotalDiscordUserCountAsync();
+
+        Assert.True(count.HasValue);
+        Assert.Equal(25, count.Value);
+    }
+
+    [Fact]
     public async Task DeleteUserAsync_RemovesExistingUserAndCacheEntry()
     {
         var factory = new InfrastructureTestDbFactory();
@@ -191,5 +210,69 @@ public class UserServiceTests
         var name = await UserService.GetNameAsync(guild.Object, user.Object);
 
         Assert.Equal("Username", name);
+    }
+
+    [Fact]
+    public async Task SyncUserFromDiscordAsync_UpdatesChangedFieldsAndRemovesCacheEntry()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new User
+            {
+                UserId = 10,
+                Username = "Old",
+                Discriminator = "0001",
+                AvatarUrl = "old.png",
+                Level = 1,
+                Xp = 0
+            });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory, cache);
+        _ = await service.GetUserAsync(10);
+        var discordUser = new Mock<IUser>();
+        discordUser.SetupGet(x => x.Username).Returns("New");
+        discordUser.SetupGet(x => x.Discriminator).Returns("1234");
+        discordUser.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 512)).Returns("new.png");
+
+        var changed = await service.SyncUserFromDiscordAsync(new User { UserId = 10 }, discordUser.Object);
+
+        Assert.True(changed);
+        Assert.False(cache.TryGetValue("user-10", out _));
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(("New", "1234", "new.png"), (user.Username, user.Discriminator, user.AvatarUrl));
+    }
+
+    [Fact]
+    public async Task SyncUserFromDiscordAsync_ReturnsFalseForNoChangesOrMissingUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new User
+            {
+                UserId = 10,
+                Username = "Same",
+                Discriminator = "0001",
+                AvatarUrl = "same.png",
+                Level = 1,
+                Xp = 0
+            });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var service = CreateService(factory);
+        var discordUser = new Mock<IUser>();
+        discordUser.SetupGet(x => x.Username).Returns("Same");
+        discordUser.SetupGet(x => x.Discriminator).Returns("0001");
+        discordUser.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 512)).Returns("same.png");
+
+        var unchanged = await service.SyncUserFromDiscordAsync(new User { UserId = 10 }, discordUser.Object);
+        var missing = await service.SyncUserFromDiscordAsync(new User { UserId = 999 }, discordUser.Object);
+
+        Assert.False(unchanged);
+        Assert.False(missing);
     }
 }

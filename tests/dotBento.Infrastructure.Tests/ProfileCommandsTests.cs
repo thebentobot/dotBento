@@ -1,5 +1,20 @@
 using System.Reflection;
+using System.Net;
+using CSharpFunctionalExtensions;
+using dotBento.Domain.Entities;
+using dotBento.EntityFramework.Entities;
 using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Services.Api;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Moq;
+using Moq.Protected;
+using DomainProfile = dotBento.Domain.Entities.Profile;
+using EfGuild = dotBento.EntityFramework.Entities.Guild;
+using EfGuildMember = dotBento.EntityFramework.Entities.GuildMember;
+using EfUser = dotBento.EntityFramework.Entities.User;
 
 namespace dotBento.Infrastructure.Tests;
 
@@ -12,6 +27,14 @@ public class ProfileCommandsTests
         Assert.NotNull(method);
         var result = method.Invoke(null, args);
         return result is null ? default : (T)result;
+    }
+
+    private static async Task<T> InvokePrivateInstanceAsync<T>(object instance, string methodName, params object?[]? args)
+    {
+        var method = instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        var task = (Task<T>)method.Invoke(instance, args)!;
+        return await task;
     }
 
     [Theory]
@@ -96,5 +119,172 @@ public class ProfileCommandsTests
     {
         var result = InvokePrivateStatic<string>(typeof(ProfileCommands), "LastFmTextPxSize", length);
         Assert.Equal(expectedPx, result);
+    }
+
+    [Fact]
+    public async Task GetUserXpBoardHtml_ReturnsBoardWhenUserGuildAndMemberExist()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new EfUser { UserId = 10, Username = "User", Discriminator = "0001", Level = 3, Xp = 50 });
+            db.Guilds.Add(new EfGuild
+            {
+                GuildId = 100,
+                GuildName = "Guild",
+                Prefix = "!",
+                Icon = "guild.png",
+                Leaderboard = true,
+                Media = false,
+                Tiktok = false
+            });
+            db.GuildMembers.Add(new EfGuildMember { GuildId = 100, UserId = 10, Level = 2, Xp = 25 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommand(factory);
+        var profile = DefaultProfile(10);
+
+        var result = await InvokePrivateInstanceAsync<Maybe<string>>(
+            command,
+            "GetUserXpBoardHtml",
+            profile,
+            100L,
+            "bot.png");
+
+        Assert.True(result.HasValue);
+        Assert.Contains("guild.png", result.Value);
+        Assert.Contains("Level 2", result.Value);
+        Assert.Contains("bot.png", result.Value);
+        Assert.Contains("Level 3", result.Value);
+    }
+
+    [Fact]
+    public async Task GetUserEmotes_AddsSupportDeveloperAndPatreonEmotes()
+    {
+        const long developerUserId = 232584569289703424;
+        const long supportGuildId = 714496317522444352;
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new EfUser { UserId = developerUserId, Username = "Dev", Discriminator = "0001", Level = 1, Xp = 0 });
+            db.Guilds.Add(new EfGuild
+            {
+                GuildId = supportGuildId,
+                GuildName = "Support",
+                Prefix = "!",
+                Leaderboard = true,
+                Media = false,
+                Tiktok = false
+            });
+            db.GuildMembers.Add(new EfGuildMember { GuildId = supportGuildId, UserId = developerUserId, Level = 1, Xp = 0 });
+            db.Patreons.Add(new Patreon
+            {
+                UserId = developerUserId,
+                Name = "Patron",
+                Avatar = "avatar.png",
+                Sponsor = true,
+                EmoteSlot1 = "one.png",
+                EmoteSlot2 = "two.png",
+                EmoteSlot3 = "three.png",
+                EmoteSlot4 = "four.png"
+            });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommand(factory);
+
+        var emotes = await InvokePrivateInstanceAsync<string[]>(command, "GetUserEmotes", developerUserId);
+
+        Assert.Contains("🍱", emotes);
+        Assert.Contains("👨‍💻", emotes);
+        Assert.Contains("""<img src="one.png" width="24" height="24">""", emotes);
+        Assert.Contains("""<img src="two.png" width="24" height="24">""", emotes);
+        Assert.Contains("""<img src="three.png" width="24" height="24">""", emotes);
+        Assert.Contains("""<img src="four.png" width="24" height="24">""", emotes);
+    }
+
+    [Fact]
+    public async Task GetLastFmNowPlayingHtml_ReturnsBoardWhenRecentTrackExists()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new EfUser { UserId = 10, Username = "User", Discriminator = "0001", Level = 1, Xp = 0 });
+            db.Lastfms.Add(new Lastfm { UserId = 10, Lastfm1 = "listener" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommand(factory, CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("""
+            {
+              "recenttracks": {
+                "@attr": { "page": "1", "totalPages": "1", "user": "listener", "total": "1", "perPage": "2" },
+                "track": [
+                  {
+                    "@attr": { "nowplaying": "true" },
+                    "mbid": null,
+                    "loved": null,
+                    "artist": { "url": null, "mbid": null, "#text": "Artist" },
+                    "image": [{ "#text": "small.png", "size": "small" }, { "#text": "large.png", "size": "large" }],
+                    "date": null,
+                    "url": "https://last.fm/now",
+                    "name": "Track",
+                    "album": { "mbid": null, "#text": "Album" }
+                  }
+                ]
+              }
+            }
+            """)
+        }));
+        var profile = DefaultProfile(10);
+
+        var result = await InvokePrivateInstanceAsync<Maybe<LastFmHtmlBoardResult>>(
+            command,
+            "GetLastFmNowPlayingHtml",
+            profile,
+            "api-key");
+
+        Assert.True(result.HasValue);
+        Assert.Contains("Track", result.Value.LastFmHtml);
+        Assert.Contains("Artist", result.Value.LastFmHtml);
+        Assert.Contains("large.png", result.Value.LastFmHtml);
+        Assert.Equal(5, result.Value.LastFmTrackLength);
+        Assert.Equal(6, result.Value.LastFmArtistLength);
+    }
+
+    private static DomainProfile DefaultProfile(long userId) =>
+        InvokePrivateStatic<DomainProfile>(typeof(ProfileCommands), "DefaultProfile", userId)!;
+
+    private static ProfileCommands CreateCommand(
+        InfrastructureTestDbFactory factory,
+        HttpClient? lastFmClient = null,
+        HttpClient? sushiiClient = null)
+    {
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        return new ProfileCommands(
+            new ProfileService(distributedCache, factory),
+            new SushiiImageServerService(sushiiClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK })),
+            new LastFmCommands(
+                new LastFmApiService(lastFmClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK })),
+                new SushiiImageServerService(sushiiClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK }))),
+            new LastFmService(factory),
+            new UserService(memoryCache, factory),
+            new GuildService(factory, memoryCache),
+            new BentoService(memoryCache, factory));
+    }
+
+    private static HttpClient CreateHttpClient(HttpResponseMessage response)
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+
+        return new HttpClient(mockHandler.Object);
     }
 }
