@@ -1,4 +1,5 @@
 using System.Net;
+using dotBento.WebApi;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
