@@ -122,6 +122,76 @@ public class ProfileCommandsTests
     }
 
     [Fact]
+    public void MergeWithDefaults_FillsMissingProfileSettings()
+    {
+        var partial = new DomainProfile(
+            UserId: 10,
+            LastfmBoard: null,
+            XpBoard: null,
+            BackgroundUrl: null,
+            BackgroundColourOpacity: null,
+            BackgroundColour: null,
+            DescriptionColourOpacity: null,
+            DescriptionColour: null,
+            OverlayOpacity: null,
+            OverlayColour: null,
+            UsernameColour: null,
+            DiscriminatorColour: null,
+            SidebarItemServerColour: null,
+            SidebarItemGlobalColour: null,
+            SidebarItemBentoColour: null,
+            SidebarItemTimezoneColour: null,
+            SidebarValueServerColour: null,
+            SidebarValueGlobalColour: null,
+            SidebarValueBentoColour: null,
+            SidebarOpacity: null,
+            SidebarColour: null,
+            SidebarBlur: null,
+            FmDivBgOpacity: null,
+            FmDivBgColour: null,
+            FmSongTextOpacity: null,
+            FmSongTextColour: null,
+            FmArtistTextOpacity: null,
+            FmArtistTextColour: null,
+            XpDivBgOpacity: null,
+            XpDivBgColour: null,
+            XpTextOpacity: null,
+            XpTextColour: null,
+            XpText2Opacity: null,
+            XpText2Colour: null,
+            XpDoneServerColour1Opacity: null,
+            XpDoneServerColour1: null,
+            XpDoneServerColour2Opacity: null,
+            XpDoneServerColour2: null,
+            XpDoneServerColour3Opacity: null,
+            XpDoneServerColour3: null,
+            XpDoneGlobalColour1Opacity: null,
+            XpDoneGlobalColour1: null,
+            XpDoneGlobalColour2Opacity: null,
+            XpDoneGlobalColour2: null,
+            XpDoneGlobalColour3Opacity: null,
+            XpDoneGlobalColour3: null,
+            Description: "keep me",
+            Timezone: null,
+            Birthday: null,
+            XpBarOpacity: null,
+            XpBarColour: null,
+            XpBar2Opacity: null,
+            XpBar2Colour: null);
+
+        var result = InvokePrivateStatic<DomainProfile>(typeof(ProfileCommands), "MergeWithDefaults", partial)!;
+
+        Assert.False(result.LastfmBoard);
+        Assert.True(result.XpBoard);
+        Assert.Equal("#1F2937", result.BackgroundColour);
+        Assert.Equal(20, result.OverlayOpacity);
+        Assert.Equal("#ffffff", result.UsernameColour);
+        Assert.Equal("#111827", result.FmDivBgColour);
+        Assert.Equal("#374151", result.XpBarColour);
+        Assert.Equal("keep me", result.Description);
+    }
+
+    [Fact]
     public async Task GetUserXpBoardHtml_ReturnsBoardWhenUserGuildAndMemberExist()
     {
         var factory = new InfrastructureTestDbFactory();
@@ -250,6 +320,58 @@ public class ProfileCommandsTests
         Assert.Contains("large.png", result.Value.LastFmHtml);
         Assert.Equal(5, result.Value.LastFmTrackLength);
         Assert.Equal(6, result.Value.LastFmArtistLength);
+    }
+
+    [Fact]
+    public async Task GenerateProfileHtml_RendersProfileSidebarAndLayoutData()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new EfUser { UserId = 10, Username = "User", Discriminator = "0001", Level = 4, Xp = 350 });
+            db.Guilds.Add(new EfGuild
+            {
+                GuildId = 100,
+                GuildName = "Guild",
+                Prefix = "!",
+                Icon = "guild.png",
+                MemberCount = 1234,
+                Leaderboard = true,
+                Media = false,
+                Tiktok = false
+            });
+            db.GuildMembers.Add(new EfGuildMember { GuildId = 100, UserId = 10, Level = 3, Xp = 250 });
+            db.Bentos.Add(new Bento { UserId = 10, Bento1 = 42, BentoDate = DateTime.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommand(factory);
+        var profile = DefaultProfile(10) with
+        {
+            XpBoard = false,
+            BackgroundUrl = "https://cdn.example/background.png",
+            Description = "Custom description",
+            Birthday = "February 18"
+        };
+
+        var html = await command.GenerateProfileHtml(
+            profile,
+            "lastfm-api-key",
+            100,
+            new ProfileDiscordUser(null, "0007", "DisplayName", "Nickname"),
+            1234,
+            "bot.png");
+
+        Assert.Contains("https://cdn.example/background.png", html);
+        Assert.Contains("Custom description", html);
+        Assert.Contains("https://cdn.discordapp.com/embed/avatars/2.png", html);
+        Assert.Contains("DisplayName", html);
+        Assert.Contains("Nickname", html);
+        Assert.Contains("Rank 1", html);
+        Assert.Contains("Of 1234 Users", html);
+        Assert.Contains("42 🍱", html);
+        Assert.Contains("Feb 18 🎂", html);
+        Assert.Contains("height: 365px", html);
+        Assert.Contains("opacity: 0", html);
     }
 
     private static DomainProfile DefaultProfile(long userId) =>

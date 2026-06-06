@@ -28,7 +28,19 @@ public sealed class ProfileCommands(
         var profileDb = await profileService.GetProfileAsync(userId);
         var profile = profileDb.HasValue ? MergeWithDefaults(profileDb.Value.Map()) : DefaultProfile(userId);
 
-        var html = GenerateProfileHtml(profile, lastFmApiKey, guildId, guildMember, guildMemberCount, botAvatarUrl);
+        var profileUser = new ProfileDiscordUser(
+            guildMember.GetDisplayAvatarUrl(),
+            guildMember.Discriminator,
+            guildMember.DisplayName,
+            guildMember.Nickname);
+        var html = GenerateProfileHtml(
+            profile,
+            lastFmApiKey,
+            guildId,
+            profileUser,
+            guildMemberCount,
+            botAvatarUrl,
+            guildMember);
 
         var image = await sushiiImageServerService
             .GetSushiiImage(imageServerHost, await html, 600, 400);
@@ -39,20 +51,22 @@ public sealed class ProfileCommands(
     }
 
     // TODO Improve this mess of arguments
-    private async Task<string> GenerateProfileHtml(
+    internal async Task<string> GenerateProfileHtml(
         Profile profile,
         string lastFmApiKey,
         long guildId,
-        SocketGuildUser guildMember,
+        ProfileDiscordUser guildMember,
         int guildUsersAmount,
-        string botAvatarUrl)
+        string botAvatarUrl,
+        SocketGuildUser? socketGuildMember = null)
     {
         var lastFmBoard = profile.LastfmBoard == true ? await GetLastFmNowPlayingHtml(profile, lastFmApiKey) : null;
         var xpBoard = profile.XpBoard == true ? await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
         // TODO: Make one data method to avoid overfetching and make it more readable
         var bentoUser = userService.GetUserAsync((ulong)profile.UserId).Result.Value;
-        var bentoGuildUser = guildService
-            .GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, guildMember).Result.Value;
+        var bentoGuildUser = socketGuildMember is null
+            ? guildService.GetGuildMemberAsync((ulong)guildId, (ulong)profile.UserId).Result.Value
+            : guildService.GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, socketGuildMember).Result.Value;
         var bentoGameData = await bentoService.FindBentoAsync(profile.UserId);
         var bentoUserCount = await userService.GetTotalDiscordUserCountAsync();
         var bentoTotalUserCount = await bentoService.GetTotalCountOfBentoUsersAsync();
@@ -113,7 +127,7 @@ public sealed class ProfileCommands(
         var xpDoneGlobalColour3 =
             $"{profile.XpDoneGlobalColour3}{ConvertOpacityToHex(profile.XpDoneGlobalColour3Opacity)}";
 
-        var avatarUrl = guildMember.GetDisplayAvatarUrl() ??
+        var avatarUrl = guildMember.AvatarUrl ??
                         $"https://cdn.discordapp.com/embed/avatars/{int.Parse(guildMember.Discriminator ?? "0") % 5}.png";
         var usernameSlot = guildMember.DisplayName ?? "User";
         var discriminatorSlot = guildMember.Nickname ?? $"#{guildMember.Discriminator}";
@@ -1021,3 +1035,9 @@ public sealed class ProfileCommands(
 }
 
 public sealed record LastFmHtmlBoardResult(string LastFmHtml, int LastFmTrackLength, int LastFmArtistLength);
+
+internal sealed record ProfileDiscordUser(
+    string? AvatarUrl,
+    string? Discriminator,
+    string? DisplayName,
+    string? Nickname);
