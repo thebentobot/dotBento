@@ -301,6 +301,21 @@ public class LeaderboardServiceTests
         Assert.Equal("RpsUser3", result.Value[0].Username);
     }
 
+    [Theory]
+    [InlineData(RpsLeaderboardOrder.Ties)]
+    [InlineData((RpsLeaderboardOrder)999)]
+    public async Task GetGlobalRpsLeaderboardAsync_OrdersByRequestedBranch(RpsLeaderboardOrder order)
+    {
+        var factory = new InMemoryDbFactory();
+        await SeedRpsGamesAsync(factory, 3);
+        var service = new LeaderboardService(factory);
+
+        var result = await service.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, order);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.Count);
+    }
+
     [Fact]
     public async Task GetGlobalRpsLeaderboardAsync_RespectsLimit()
     {

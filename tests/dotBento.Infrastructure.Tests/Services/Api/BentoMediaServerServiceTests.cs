@@ -89,6 +89,48 @@ public sealed class BentoMediaServerServiceTests
         Assert.Contains("offline", exception.Error);
     }
 
+    [Fact]
+    public async Task ProxyAsync_ReturnsStreamAndSendsApiKey()
+    {
+        HttpRequestMessage? request = null;
+        using var httpClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("proxied media")
+        }, message => request = message);
+        var service = new BentoMediaServerService(httpClient);
+
+        var result = await service.ProxyAsync(
+            "https://media.example",
+            "https://source.example/watch?v=1&name=bento",
+            "secret");
+
+        Assert.True(result.IsSuccess);
+        await using var stream = result.Value;
+        using var reader = new StreamReader(stream);
+        Assert.Equal("proxied media", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("secret", request!.Headers.GetValues("X-API-Key").Single());
+        Assert.Equal(
+            "https://media.example/proxy?url=https%3A%2F%2Fsource.example%2Fwatch%3Fv%3D1%26name%3Dbento",
+            request.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task ProxyAsync_DisposesResponseAndReturnsFailureWhenStreamCreationFails()
+    {
+        using var httpClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new ThrowingStreamContent()
+        });
+        var service = new BentoMediaServerService(httpClient);
+
+        var result = await service.ProxyAsync("https://media.example", "url");
+
+        Assert.True(result.IsFailure);
+        Assert.Contains("stream failed", result.Error);
+    }
+
     private static HttpClient CreateHttpClient(HttpResponseMessage response, Action<HttpRequestMessage>? captureRequest = null)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
@@ -119,5 +161,20 @@ public sealed class BentoMediaServerServiceTests
             .ThrowsAsync(exception);
 
         return new HttpClient(mockHandler.Object);
+    }
+
+    private sealed class ThrowingStreamContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+            => Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override Task<Stream> CreateContentReadStreamAsync()
+            => throw new InvalidOperationException("stream failed");
     }
 }

@@ -153,6 +153,19 @@ public class HttpApiServiceTests
         Assert.Contains("offline", result.Error);
     }
 
+    [Fact]
+    public async Task DiscordApiService_ReturnsFailureWhenRequestTimesOut()
+    {
+        using var httpClient = CreateHttpClient(new TaskCanceledException("timeout"));
+        httpClient.BaseAddress = new Uri("https://discord.example/");
+        var service = new DiscordApiService(httpClient);
+
+        var result = await service.GetGuildMemberAsync(1, 2);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Discord API request timed out", result.Error);
+    }
+
     private static HttpClient CreateHttpClient(HttpResponseMessage response)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
