@@ -108,8 +108,8 @@ public class ApiKeyMiddlewareTests
             }
         }
 
-        Assert.True(cache.TryGetValue("Blocked_127.0.0.1", out bool blocked));
-        Assert.True(blocked);
+Assert.True(cache.TryGetValue("Blocked_127.0.0.1", out var blockedObj));
+Assert.True(Assert.IsType<bool>(blockedObj));
     }
 
     [Fact]
