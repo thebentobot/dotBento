@@ -84,7 +84,22 @@ public sealed class StreamingApiServiceTests
             await stream.WriteAsync(new ReadOnlyMemory<byte>([1]), TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task SushiiImageServer_DisposesResponseWhenStreamCreationFails()
+    {
+        using var httpClient = CreateHttpClient(new ThrowingStreamContent());
+        var service = new SushiiImageServerService(httpClient);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400));
+    }
+
     private static HttpClient CreateHttpClient(Stream contentStream)
+    {
+        return CreateHttpClient(new StreamContent(contentStream));
+    }
+
+    private static HttpClient CreateHttpClient(HttpContent content)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
 
@@ -97,10 +112,25 @@ public sealed class StreamingApiServiceTests
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StreamContent(contentStream)
+                Content = content
             });
 
         return new HttpClient(mockHandler.Object);
+    }
+
+    private sealed class ThrowingStreamContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override Task<Stream> CreateContentReadStreamAsync() =>
+            throw new InvalidOperationException("stream failed");
     }
 
     private sealed class CountingStream(byte[] buffer) : MemoryStream(buffer)

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Net;
 using dotBento.Infrastructure.Utilities;
 using Moq;
@@ -183,6 +184,39 @@ public class StylingUtilitiesTests
     }
 
     [Fact]
+    public async Task MaxLengthStream_TracksAsyncReadsAndDisposeAsync()
+    {
+        var innerStream = new TrackingMemoryStream([1, 2, 3, 4]);
+        await using var stream = new StylingUtilities.MaxLengthStream(innerStream, maxBytes: 10);
+
+        var arrayBuffer = new byte[2];
+        var arrayRead = await stream.ReadAsync(arrayBuffer, 0, arrayBuffer.Length, TestContext.Current.CancellationToken);
+        var memoryRead = await stream.ReadAsync(new Memory<byte>(new byte[2]), TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, arrayRead);
+        Assert.Equal(2, memoryRead);
+        Assert.Equal(4, stream.Position);
+
+        await stream.DisposeAsync();
+        Assert.True(innerStream.IsAsyncDisposed);
+    }
+
+    [Fact]
+    public void GetSampleInfo_ScalesLargeImagesToMaxDimension()
+    {
+        var method = typeof(StylingUtilities)
+            .GetMethod("GetSampleInfo", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var result = (SKImageInfo)method.Invoke(null, [new SKImageInfo(512, 256)])!;
+
+        Assert.Equal(128, result.Width);
+        Assert.Equal(64, result.Height);
+        Assert.Equal(SKColorType.Rgba8888, result.ColorType);
+        Assert.Equal(SKAlphaType.Premul, result.AlphaType);
+    }
+
+    [Fact]
     public void CalculateDominantColor_ReturnsAverageColor()
     {
         // Arrange
@@ -199,4 +233,15 @@ public class StylingUtilitiesTests
         Assert.Equal(System.Drawing.Color.FromArgb(150, 125, 125), result);
     }
 
+}
+
+internal sealed class TrackingMemoryStream(byte[] buffer) : MemoryStream(buffer)
+{
+    public bool IsAsyncDisposed { get; private set; }
+
+    public override async ValueTask DisposeAsync()
+    {
+        IsAsyncDisposed = true;
+        await base.DisposeAsync();
+    }
 }
