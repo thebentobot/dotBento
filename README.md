@@ -59,6 +59,29 @@ A Discord bot written in .NET. This repository is the improved .NET rewrite of [
 
 Postgres data is persisted in a named Docker volume, so your database survives restarts.
 
+## Tests and coverage
+
+Run the full test suite:
+
+```bash
+dotnet test dotBento.sln
+```
+
+Collect Coverlet coverage for all test projects:
+
+```bash
+dotnet test dotBento.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+```
+
+Generate an HTML and text summary report:
+
+```bash
+dotnet tool restore
+dotnet reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;TextSummary"
+```
+
+Open `coverage-report/index.html` for the full report, or read `coverage-report/Summary.txt` for a quick baseline.
+
 ## Relevant links
 - The commit linting rules follows Conventional Commits. You can read about the linting rules specifically [here](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional)
 - [Privacy Policy](./PRIVACYPOLICY.md)

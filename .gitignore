@@ -102,3 +102,8 @@ src/dotBento.WebApi/configs
 dotBento.sln.DotSettings.user
 src/dotBento.sln.DotSettings
 src/dotBento.sln.DotSettings.user
+
+# Test coverage
+TestResults/
+coverage-report/
+coverage-report-webapi/

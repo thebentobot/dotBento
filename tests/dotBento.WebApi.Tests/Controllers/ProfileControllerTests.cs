@@ -22,9 +22,32 @@ public class ProfileControllerTests
             nameof(ProfileUpdateRequest.BackgroundColour),
             "Invalid BackgroundColour. Must be a hex colour like #1F2937."
         },
+        new object[] { nameof(ProfileUpdateRequest.DescriptionColour), "Invalid DescriptionColour. Must be hex #RRGGBB." },
         new object[] { nameof(ProfileUpdateRequest.OverlayColour), "Invalid OverlayColour. Must be hex #RRGGBB." },
         new object[] { nameof(ProfileUpdateRequest.UsernameColour), "Invalid UsernameColour. Must be hex #RRGGBB." },
+        new object[] { nameof(ProfileUpdateRequest.DiscriminatorColour), "Invalid DiscriminatorColour. Must be hex #RRGGBB." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarItemServerColour), "Invalid SidebarItemServerColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarItemGlobalColour), "Invalid SidebarItemGlobalColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarItemBentoColour), "Invalid SidebarItemBentoColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarItemTimezoneColour), "Invalid SidebarItemTimezoneColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarValueServerColour), "Invalid SidebarValueServerColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarValueGlobalColour), "Invalid SidebarValueGlobalColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarValueBentoColour), "Invalid SidebarValueBentoColour." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarColour), "Invalid SidebarColour." },
+        new object[] { nameof(ProfileUpdateRequest.FmDivBgcolour), "Invalid FmDivBgcolour." },
+        new object[] { nameof(ProfileUpdateRequest.FmSongTextColour), "Invalid FmSongTextColour." },
+        new object[] { nameof(ProfileUpdateRequest.FmArtistTextColour), "Invalid FmArtistTextColour." },
+        new object[] { nameof(ProfileUpdateRequest.XpDivBgcolour), "Invalid XpDivBgcolour." },
+        new object[] { nameof(ProfileUpdateRequest.XpTextColour), "Invalid XpTextColour." },
+        new object[] { nameof(ProfileUpdateRequest.XpText2Colour), "Invalid XpText2Colour." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneServerColour1), "Invalid XpDoneServerColour1." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneServerColour2), "Invalid XpDoneServerColour2." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneServerColour3), "Invalid XpDoneServerColour3." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneGlobalColour1), "Invalid XpDoneGlobalColour1." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneGlobalColour2), "Invalid XpDoneGlobalColour2." },
+        new object[] { nameof(ProfileUpdateRequest.XpDoneGlobalColour3), "Invalid XpDoneGlobalColour3." },
         new object[] { nameof(ProfileUpdateRequest.XpBarColour), "Invalid XpBarColour." },
+        new object[] { nameof(ProfileUpdateRequest.XpBar2Colour), "Invalid XpBar2Colour." },
     };
 
     public static IEnumerable<object[]> InvalidOpacityCases() => new List<object[]>
@@ -33,9 +56,47 @@ public class ProfileControllerTests
         {
             nameof(ProfileUpdateRequest.BackgroundColourOpacity), "BackgroundColourOpacity must be between 0 and 100."
         },
+        new object[] { nameof(ProfileUpdateRequest.DescriptionColourOpacity), "DescriptionColourOpacity must be between 0 and 100." },
         new object[] { nameof(ProfileUpdateRequest.OverlayOpacity), "OverlayOpacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.SidebarOpacity), "SidebarOpacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.FmDivBgopacity), "FmDivBgopacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.FmSongTextOpacity), "FmSongTextOpacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.FmArtistTextOpacity), "FmArtistTextOpacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.XpDivBgopacity), "XpDivBgopacity must be between 0 and 100." },
+        new object[] { nameof(ProfileUpdateRequest.XpTextOpacity), "XpTextOpacity must be between 0 and 100." },
         new object[] { nameof(ProfileUpdateRequest.XpBarOpacity), "XpBarOpacity must be between 0 and 100." },
         new object[] { nameof(ProfileUpdateRequest.XpText2Opacity), "XpText2Opacity must be between 0 and 100." },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneServerColour1Opacity),
+            "XpDoneServerColour1Opacity must be between 0 and 100."
+        },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneServerColour2Opacity),
+            "XpDoneServerColour2Opacity must be between 0 and 100."
+        },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneServerColour3Opacity),
+            "XpDoneServerColour3Opacity must be between 0 and 100."
+        },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneGlobalColour1Opacity),
+            "XpDoneGlobalColour1Opacity must be between 0 and 100."
+        },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneGlobalColour2Opacity),
+            "XpDoneGlobalColour2Opacity must be between 0 and 100."
+        },
+        new object[]
+        {
+            nameof(ProfileUpdateRequest.XpDoneGlobalColour3Opacity),
+            "XpDoneGlobalColour3Opacity must be between 0 and 100."
+        },
+        new object[] { nameof(ProfileUpdateRequest.XpBar2Opacity), "XpBar2Opacity must be between 0 and 100." },
     };
 
     private static void SetProperty<T>(ProfileUpdateRequest request, string propertyName, T value)
@@ -192,6 +253,42 @@ public class ProfileControllerTests
         var entity = context.Profiles.First(p => p.UserId == 5);
         Assert.True(entity.LastfmBoard);
         Assert.True(entity.XpBoard);
+    }
+
+    [Fact]
+    public async Task UpsertProfile_NullRequest_ReturnsBadRequest()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+
+        var result = await controller.UpsertProfile(null);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("UserId must be provided", bad.Value);
+    }
+
+    [Fact]
+    public async Task UpsertProfile_MissingUserId_ReturnsBadRequest()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+
+        var result = await controller.UpsertProfile(new ProfileUpdateRequest());
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("UserId must be provided", bad.Value);
+    }
+
+    [Fact]
+    public async Task UpsertProfile_UserNotFound_ReturnsNotFound()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+
+        var result = await controller.UpsertProfile(new ProfileUpdateRequest { UserId = 999 });
+
+        var notFound = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("User does not exist in the Bento database.", notFound.Value);
     }
 
     [Fact]
@@ -394,6 +491,41 @@ public class ProfileControllerTests
         });
         var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("SidebarBlur cannot be negative.", bad.Value);
+    }
+
+    [Fact]
+    public async Task UpsertProfile_ValidSidebarBlur_IsAccepted()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+        await SeedUser(context, 48);
+
+        var result = await controller.UpsertProfile(new ProfileUpdateRequest
+        {
+            UserId = 48,
+            SidebarBlur = 0
+        });
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProfileDto>(ok.Value);
+        Assert.Equal(0, dto.SidebarBlur);
+    }
+
+    [Fact]
+    public async Task UpsertProfile_TooLongDescription_ReturnsSpecificBadRequest()
+    {
+        await using var context = DbContextHelper.GetInMemoryDbContext();
+        var controller = CreateController(context);
+        await SeedUser(context, 49);
+
+        var result = await controller.UpsertProfile(new ProfileUpdateRequest
+        {
+            UserId = 49,
+            Description = new string('x', 501)
+        });
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Description must be 500 characters or fewer.", bad.Value);
     }
 
     [Fact]
