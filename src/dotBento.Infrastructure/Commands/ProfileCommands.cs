@@ -63,10 +63,10 @@ public sealed class ProfileCommands(
         var lastFmBoard = profile.LastfmBoard == true ? await GetLastFmNowPlayingHtml(profile, lastFmApiKey) : null;
         var xpBoard = profile.XpBoard == true ? await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
         // TODO: Make one data method to avoid overfetching and make it more readable
-        var bentoUser = userService.GetUserAsync((ulong)profile.UserId).Result.Value;
+        var bentoUser = (await userService.GetUserAsync((ulong)profile.UserId)).Value;
         var bentoGuildUser = socketGuildMember is null
-            ? guildService.GetGuildMemberAsync((ulong)guildId, (ulong)profile.UserId).Result.Value
-            : guildService.GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, socketGuildMember).Result.Value;
+            ? (await guildService.GetGuildMemberAsync((ulong)guildId, (ulong)profile.UserId)).Value
+            : (await guildService.GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, socketGuildMember)).Value;
         var bentoGameData = await bentoService.FindBentoAsync(profile.UserId);
         var bentoUserCount = await userService.GetTotalDiscordUserCountAsync();
         var bentoTotalUserCount = await bentoService.GetTotalCountOfBentoUsersAsync();
