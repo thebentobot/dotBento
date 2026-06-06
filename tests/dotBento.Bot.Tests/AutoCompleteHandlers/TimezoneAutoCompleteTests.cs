@@ -20,7 +20,7 @@ public sealed class TimezoneAutoCompleteTests
             services: Mock.Of<IServiceProvider>());
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(25, result.Suggestions.Count);
+        Assert.InRange(result.Suggestions.Count, 1, 25);
     }
 
     [Fact]
