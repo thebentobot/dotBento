@@ -4,7 +4,7 @@
 [![Discord Bots](https://top.gg/api/widget/servers/787041583580184609.svg)](https://top.gg/bot/787041583580184609)
 ![dotBento.WebApi coverage](https://img.shields.io/badge/dotBento.WebApi%20coverage-100%25-brightgreen)
 ![dotBento.EntityFramework coverage](https://img.shields.io/badge/dotBento.EntityFramework%20coverage-99%25-brightgreen)
-![dotBento.Infrastructure coverage](https://img.shields.io/badge/dotBento.Infrastructure%20coverage-46.2%25-orange)
+![dotBento.Infrastructure coverage](https://img.shields.io/badge/dotBento.Infrastructure%20coverage-58.1%25-orange)
 
 A Discord bot written in .NET. This repository is the improved .NET rewrite of [Bento](https://github.com/thebentobot/Bento).
 

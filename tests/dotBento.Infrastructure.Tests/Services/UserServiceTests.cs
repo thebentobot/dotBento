@@ -157,4 +157,39 @@ public class UserServiceTests
 
         Assert.Equal("Global", name);
     }
+
+    [Fact]
+    public async Task GetNameAsync_UsesGuildDisplayNameWhenGuildUserExists()
+    {
+        var user = new Mock<IUser>();
+        user.SetupGet(x => x.Id).Returns(10);
+        user.SetupGet(x => x.GlobalName).Returns("Global");
+        user.SetupGet(x => x.Username).Returns("Username");
+        var guildUser = new Mock<IGuildUser>();
+        guildUser.SetupGet(x => x.DisplayName).Returns("Guild Name");
+        var guild = new Mock<IGuild>();
+        guild.Setup(x => x.GetUserAsync(10, CacheMode.AllowDownload, null))
+            .ReturnsAsync(guildUser.Object);
+
+        var name = await UserService.GetNameAsync(guild.Object, user.Object);
+
+        Assert.Equal("Guild Name", name);
+    }
+
+    [Fact]
+    public async Task GetNameAsync_FallsBackWhenGuildUserIsMissing()
+    {
+        var user = new Mock<IUser>();
+        user.SetupGet(x => x.Id).Returns(10);
+        string nullGlobalName = null!;
+        user.SetupGet(x => x.GlobalName).Returns(nullGlobalName);
+        user.SetupGet(x => x.Username).Returns("Username");
+        var guild = new Mock<IGuild>();
+        guild.Setup(x => x.GetUserAsync(10, CacheMode.AllowDownload, null))
+            .ReturnsAsync((IGuildUser?)null);
+
+        var name = await UserService.GetNameAsync(guild.Object, user.Object);
+
+        Assert.Equal("Username", name);
+    }
 }

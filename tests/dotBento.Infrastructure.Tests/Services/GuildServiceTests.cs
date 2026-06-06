@@ -214,4 +214,67 @@ public class GuildServiceTests
         Assert.Equal("Updated", guild.GuildName);
         Assert.Equal("https://cdn.example.com/icon.png", guild.Icon);
     }
+
+    [Fact]
+    public async Task SyncGuildFromDiscordAsync_ReturnsFalseWhenFieldsMatch()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            var guild = Guild(100);
+            guild.Icon = "https://cdn.example.com/icon.png";
+            db.Guilds.Add(guild);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var discordGuild = new Mock<IGuild>();
+        discordGuild.SetupGet(g => g.Name).Returns("Guild100");
+        discordGuild.SetupGet(g => g.IconUrl).Returns("https://cdn.example.com/icon.png");
+        var service = CreateService(factory);
+
+        var changed = await service.SyncGuildFromDiscordAsync(Guild(100), discordGuild.Object);
+
+        Assert.False(changed);
+    }
+
+    [Fact]
+    public async Task SyncGuildMemberFromDiscordAsync_UpdatesAvatarAndHandlesNoChangeOrMissing()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(Guild(100));
+            db.Users.Add(User(10));
+            db.GuildMembers.Add(new GuildMember
+            {
+                GuildMemberId = 1,
+                GuildId = 100,
+                UserId = 10,
+                Level = 1,
+                Xp = 0,
+                AvatarUrl = "old.png"
+            });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var discordGuildUser = new Mock<IGuildUser>();
+        discordGuildUser
+            .Setup(x => x.GetGuildAvatarUrl(ImageFormat.Auto, 512))
+            .Returns("new.png");
+        var service = CreateService(factory);
+
+        var changed = await service.SyncGuildMemberFromDiscordAsync(
+            new GuildMember { GuildMemberId = 1 },
+            discordGuildUser.Object);
+        var unchanged = await service.SyncGuildMemberFromDiscordAsync(
+            new GuildMember { GuildMemberId = 1 },
+            discordGuildUser.Object);
+        var missing = await service.SyncGuildMemberFromDiscordAsync(
+            new GuildMember { GuildMemberId = 999 },
+            discordGuildUser.Object);
+
+        Assert.True(changed);
+        Assert.False(unchanged);
+        Assert.False(missing);
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("new.png", (await assertDb.GuildMembers.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).AvatarUrl);
+    }
 }

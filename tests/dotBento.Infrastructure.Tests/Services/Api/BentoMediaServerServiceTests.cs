@@ -1,0 +1,123 @@
+using System.Net;
+using dotBento.Infrastructure.Services.Api;
+using Moq;
+using Moq.Protected;
+
+namespace dotBento.Infrastructure.Tests.Services.Api;
+
+public sealed class BentoMediaServerServiceTests
+{
+    [Fact]
+    public async Task ResolveAsync_ReturnsResponseAndSendsApiKey()
+    {
+        HttpRequestMessage? request = null;
+        using var httpClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("""
+            {
+              "platform": "youtube",
+              "source_url": "https://source.example/watch",
+              "posted_at": null,
+              "author": {
+                "username": "author",
+                "display_name": "Author"
+              },
+              "content": {
+                "caption": "caption",
+                "attachments": [
+                  {
+                    "type": "video",
+                    "url": "https://cdn.example/video.mp4",
+                    "content_type": "video/mp4",
+                    "proxy": true
+                  }
+                ]
+              }
+            }
+            """)
+        }, message => request = message);
+        var service = new BentoMediaServerService(httpClient);
+
+        var result = await service.ResolveAsync("https://media.example", "https://source.example/watch", "secret");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("https://cdn.example/video.mp4", Assert.Single(result.Value.Content.Attachments).Url);
+        Assert.Equal("secret", request!.Headers.GetValues("X-API-Key").Single());
+        Assert.Equal("https://media.example/resolve", request.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ReturnsFailureForHttpErrorNullPayloadAndException()
+    {
+        using var errorClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.BadGateway,
+            Content = new StringContent("upstream down")
+        });
+        using var nullClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("null")
+        });
+        using var throwingClient = CreateHttpClient(new HttpRequestException("offline"));
+
+        var httpError = await new BentoMediaServerService(errorClient).ResolveAsync("https://media.example", "url");
+        var nullPayload = await new BentoMediaServerService(nullClient).ResolveAsync("https://media.example", "url");
+        var exception = await new BentoMediaServerService(throwingClient).ResolveAsync("https://media.example", "url");
+
+        Assert.True(httpError.IsFailure);
+        Assert.Contains("502", httpError.Error);
+        Assert.True(nullPayload.IsFailure);
+        Assert.Equal("Empty response from media server", nullPayload.Error);
+        Assert.True(exception.IsFailure);
+        Assert.Contains("offline", exception.Error);
+    }
+
+    [Fact]
+    public async Task ProxyAsync_ReturnsFailureForHttpErrorAndException()
+    {
+        using var errorClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+        using var throwingClient = CreateHttpClient(new HttpRequestException("offline"));
+
+        var httpError = await new BentoMediaServerService(errorClient).ProxyAsync("https://media.example", "url");
+        var exception = await new BentoMediaServerService(throwingClient).ProxyAsync("https://media.example", "url");
+
+        Assert.True(httpError.IsFailure);
+        Assert.Contains("404", httpError.Error);
+        Assert.True(exception.IsFailure);
+        Assert.Contains("offline", exception.Error);
+    }
+
+    private static HttpClient CreateHttpClient(HttpResponseMessage response, Action<HttpRequestMessage>? captureRequest = null)
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync((HttpRequestMessage request, CancellationToken _) =>
+            {
+                captureRequest?.Invoke(request);
+                return response;
+            });
+
+        return new HttpClient(mockHandler.Object);
+    }
+
+    private static HttpClient CreateHttpClient(Exception exception)
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(exception);
+
+        return new HttpClient(mockHandler.Object);
+    }
+}

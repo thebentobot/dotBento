@@ -45,6 +45,54 @@ public class StylingUtilitiesTests
     }
 
     [Fact]
+    public async Task TryGetDominantColorAsync_ReturnsFailure_WhenStatusCodeFails()
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+
+        var httpClient = new HttpClient(mockHandler.Object);
+        var utilities = new StylingUtilities(httpClient);
+
+        var result = await utilities.TryGetDominantColorAsync("http://fake-image-url");
+
+        Assert.True(result.IsFailure);
+        Assert.Contains("Status code: 404", result.Error);
+    }
+
+    [Fact]
+    public async Task TryGetDominantColorAsync_ReturnsFailure_WhenImageCannotBeDecoded()
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new ByteArrayContent([1, 2, 3])
+            });
+
+        var httpClient = new HttpClient(mockHandler.Object);
+        var utilities = new StylingUtilities(httpClient);
+
+        var result = await utilities.TryGetDominantColorAsync("http://fake-image-url");
+
+        Assert.True(result.IsFailure);
+        Assert.Contains("Could not decode image stream", result.Error);
+    }
+
+    [Fact]
     public async Task TryGetDominantColorAsync_ReturnsFailure_WhenHttpThrows()
     {
         // Arrange
@@ -98,6 +146,28 @@ public class StylingUtilitiesTests
 
         Assert.True(result.IsFailure);
         Assert.Contains("Image is too large", result.Error);
+    }
+
+    [Fact]
+    public void MaxLengthStream_DelegatesOperationsAndUnsupportedMembersThrow()
+    {
+        using var innerStream = new MemoryStream([1, 2, 3]);
+        using var stream = new StylingUtilities.MaxLengthStream(innerStream, maxBytes: 10);
+
+        Assert.True(stream.CanRead);
+        Assert.False(stream.CanSeek);
+        Assert.False(stream.CanWrite);
+        Assert.Throws<NotSupportedException>(() => stream.Length);
+        Assert.Equal(0, stream.Position);
+        Assert.Throws<NotSupportedException>(() => stream.Position = 1);
+        Assert.Throws<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
+        Assert.Throws<NotSupportedException>(() => stream.SetLength(1));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1], 0, 1));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1]));
+
+        stream.Flush();
+        Assert.Equal(1, stream.Read(new byte[1], 0, 1));
+        Assert.Equal(1, stream.Position);
     }
 
     [Fact]

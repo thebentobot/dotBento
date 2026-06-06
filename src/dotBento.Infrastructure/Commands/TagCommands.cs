@@ -65,8 +65,8 @@ public sealed class TagCommands(TagService tagService)
     
     public async Task<Result> RenameTagAsync(long userId, long guildId, string oldName, string newName, bool hasMessageEditPerms)
     {
-        var tagExistsCheck = await tagService.FindTagAsync(guildId, newName);
-        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || tagExistsCheck.HasValue)
+        var newTagExistsCheck = await tagService.FindTagAsync(guildId, newName);
+        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || newTagExistsCheck.HasValue)
         {
             return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
         }
@@ -74,7 +74,12 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("New tag name cannot be empty.");
         }
-        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
+        var oldTagExistsCheck = await tagService.FindTagAsync(guildId, oldName);
+        if (!oldTagExistsCheck.HasValue)
+        {
+            return Result.Failure("Tag not found.");
+        }
+        if (!hasMessageEditPerms || userId != oldTagExistsCheck.Value.UserId)
         {
             return Result.Failure("You can only rename your own tags.");
         }
