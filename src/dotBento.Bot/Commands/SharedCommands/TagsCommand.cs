@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
@@ -235,6 +236,7 @@ public sealed class TagsCommand(TagCommands tagCommands)
         return embed;
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Wraps PostgreSQL ILike tag search methods that are not supported by the EF InMemory test provider.")]
     public async Task<ResponseModel> SearchTagsAsync(long guildId, string query)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Paginator };

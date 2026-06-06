@@ -2,9 +2,7 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![Build dotBento](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml/badge.svg)](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml)
 [![Discord Bots](https://top.gg/api/widget/servers/787041583580184609.svg)](https://top.gg/bot/787041583580184609)
-![dotBento.WebApi coverage](https://img.shields.io/badge/dotBento.WebApi%20coverage-100%25-brightgreen)
-![dotBento.EntityFramework coverage](https://img.shields.io/badge/dotBento.EntityFramework%20coverage-99%25-brightgreen)
-![dotBento.Infrastructure coverage](https://img.shields.io/badge/dotBento.Infrastructure%20coverage-99.7%25-brightgreen)
+![Code coverage](https://img.shields.io/badge/coverage-96.7%25-brightgreen)
 
 A Discord bot written in .NET. This repository is the improved .NET rewrite of [Bento](https://github.com/thebentobot/Bento).
 
@@ -73,14 +71,14 @@ dotnet test dotBento.sln
 Collect Coverlet coverage for all test projects:
 
 ```bash
-dotnet test dotBento.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+dotnet test dotBento.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults/Coverage
 ```
 
 Generate an HTML, text summary, and local badge report:
 
 ```bash
 dotnet tool restore
-dotnet reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;TextSummary;Badges"
+dotnet reportgenerator -reports:"TestResults/Coverage/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;TextSummary;Badges"
 ```
 
 Open `coverage-report/index.html` for the full report, read `coverage-report/Summary.txt` for a quick baseline, or inspect the generated `coverage-report/badge_*.svg` files locally.

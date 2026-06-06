@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Discord;
 using Discord.Commands;
@@ -19,6 +20,7 @@ public static class GenericEmbedService
         return embed;
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Formats Discord.Commands metadata objects that are produced by Discord.NET command discovery.")]
     public static void HelpResponse(this EmbedBuilder embed, CommandInfo commandInfo, string prefix, string username)
     {
         embed.WithColor(DiscordConstants.InformationColorBlue);
