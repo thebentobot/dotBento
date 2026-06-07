@@ -1,5 +1,5 @@
-using Discord;
-using Discord.WebSocket;
+using System.Runtime.CompilerServices;
+using NetCord;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.EntityFramework.Context;
@@ -69,22 +69,24 @@ public sealed class BackgroundServiceTests
         return entity.Id;
     }
 
+    // Creates a fake non-null User without calling its constructor.
+    // Only used to pass the "user is null" check — no properties are accessed on the returned instance.
+    private static User CreateFakeUser() =>
+        (User)RuntimeHelpers.GetUninitializedObject(typeof(User));
+
     private static BackgroundService CreateSut(
         UserService userService,
-        DiscordSocketClient client,
         ReminderCommands reminderCommands,
         IDbContextFactory<BotDbContext> contextFactory,
         IDiscordUserResolver userResolver,
         IDmSender dmSender)
     {
-        // For this test suite, only userService, client, and reminderCommands are used by SendRemindersToUsers.
-        // The other ctor args are not used in this method, so we can safely pass nulls.
         var guildService = (GuildService)null!;
         var supporterService = (SupporterService)null!;
         var botListService = (BotListService)null!;
         var botSettings = new Mock<IOptions<BotEnvConfig>>();
         botSettings.Setup(s => s.Value).Returns(new BotEnvConfig { Environment = "local" });
-        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object);
+        return new BackgroundService(userService, guildService, null!, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object);
     }
 
     [Fact]
@@ -101,11 +103,10 @@ public sealed class BackgroundServiceTests
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
 
-        var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
 
-        var sut = CreateSut(userService, clientMock.Object, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
+        var sut = CreateSut(userService, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
 
         // Act
         await sut.SendRemindersToUsers();
@@ -117,8 +118,8 @@ public sealed class BackgroundServiceTests
             Assert.Null(deleted);
         }
         // We expect no Discord API lookups when the user isn't in our DB.
-        resolverMock.Verify(r => r.GetUserAsync(It.IsAny<ulong>(), It.IsAny<RequestOptions?>()), Times.Never);
-        dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<IUser>(), It.IsAny<string>()), Times.Never);
+        resolverMock.Verify(r => r.GetUserAsync(It.IsAny<ulong>()), Times.Never);
+        dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<ulong>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -137,14 +138,13 @@ public sealed class BackgroundServiceTests
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
 
-        var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
-        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
-            .Returns(ValueTask.FromResult((IUser?)null));
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId))
+            .Returns(ValueTask.FromResult<User?>(null));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
 
-        var sut = CreateSut(userService, clientMock.Object, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
+        var sut = CreateSut(userService, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
 
         // Act
         await sut.SendRemindersToUsers();
@@ -155,8 +155,8 @@ public sealed class BackgroundServiceTests
             var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(deleted);
         }
-        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
-        dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<IUser>(), It.IsAny<string>()), Times.Never);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId), Times.Once);
+        dmSenderMock.Verify(s => s.SendReminderAsync(It.IsAny<ulong>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -175,19 +175,16 @@ public sealed class BackgroundServiceTests
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
 
-        var channelUserMock = new Mock<IUser>(MockBehavior.Strict);
-
-        var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
-        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
-            .Returns(ValueTask.FromResult<IUser?>(channelUserMock.Object));
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId))
+            .Returns(ValueTask.FromResult<User?>(CreateFakeUser()));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
         dmSenderMock
-            .Setup(s => s.SendReminderAsync(channelUserMock.Object, It.IsAny<string>()))
+            .Setup(s => s.SendReminderAsync(discordUserId, It.IsAny<string>()))
             .ThrowsAsync(new Exception("boom"));
 
-        var sut = CreateSut(userService, clientMock.Object, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
+        var sut = CreateSut(userService, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
 
         // Act
         await sut.SendRemindersToUsers();
@@ -198,8 +195,8 @@ public sealed class BackgroundServiceTests
             var stillThere = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(stillThere);
         }
-        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
-        dmSenderMock.Verify(s => s.SendReminderAsync(channelUserMock.Object, It.IsAny<string>()), Times.Once);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId), Times.Once);
+        dmSenderMock.Verify(s => s.SendReminderAsync(discordUserId, It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -218,18 +215,16 @@ public sealed class BackgroundServiceTests
         var reminderService = new ReminderService(cache, dbFactory);
         var reminderCommands = new ReminderCommands(reminderService);
 
-        var clientMock = new Mock<DiscordSocketClient>(new DiscordSocketConfig());
         var resolverMock = new Mock<IDiscordUserResolver>();
-        var discordUserMock = new Mock<IUser>(MockBehavior.Strict);
-        resolverMock.Setup(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()))
-            .Returns(ValueTask.FromResult<IUser?>(discordUserMock.Object));
+        resolverMock.Setup(r => r.GetUserAsync(discordUserId))
+            .Returns(ValueTask.FromResult<User?>(CreateFakeUser()));
 
         var dmSenderMock = new Mock<IDmSender>(MockBehavior.Strict);
         dmSenderMock
-            .Setup(s => s.SendReminderAsync(discordUserMock.Object, It.IsAny<string>()))
+            .Setup(s => s.SendReminderAsync(discordUserId, It.IsAny<string>()))
             .ReturnsAsync(DmSendResult.Forbidden);
 
-        var sut = CreateSut(userService, clientMock.Object, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
+        var sut = CreateSut(userService, reminderCommands, dbFactory, resolverMock.Object, dmSenderMock.Object);
 
         // Act
         await sut.SendRemindersToUsers();
@@ -240,7 +235,7 @@ public sealed class BackgroundServiceTests
             var deleted = await db.Reminders.FirstOrDefaultAsync(r => r.Id == reminderId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(deleted);
         }
-        resolverMock.Verify(r => r.GetUserAsync(discordUserId, It.IsAny<RequestOptions?>()), Times.Once);
-        dmSenderMock.Verify(s => s.SendReminderAsync(discordUserMock.Object, It.IsAny<string>()), Times.Once);
+        resolverMock.Verify(r => r.GetUserAsync(discordUserId), Times.Once);
+        dmSenderMock.Verify(s => s.SendReminderAsync(discordUserId, It.IsAny<string>()), Times.Once);
     }
 }

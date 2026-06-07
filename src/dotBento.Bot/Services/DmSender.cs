@@ -1,6 +1,7 @@
 using System.Net;
-using Discord;
-using Discord.Net;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Rest;
 using dotBento.Bot.Resources;
 
 namespace dotBento.Bot.Services;
@@ -13,26 +14,24 @@ public enum DmSendResult
 
 public interface IDmSender
 {
-    Task<DmSendResult> SendReminderAsync(IUser user, string content);
+    Task<DmSendResult> SendReminderAsync(ulong userId, string content);
 }
 
-public sealed class DmSender : IDmSender
+public sealed class DmSender(GatewayClient client) : IDmSender
 {
-    public async Task<DmSendResult> SendReminderAsync(IUser user, string content)
+    public async Task<DmSendResult> SendReminderAsync(ulong userId, string content)
     {
         try
         {
-            var dmChannel = await user.CreateDMChannelAsync();
-            await dmChannel.SendMessageAsync(embed: new EmbedBuilder()
-                .WithColor(DiscordConstants.BentoYellow)
-                .WithTitle("Reminder")
-                .WithDescription(content)
-                .Build());
+            var dmChannel = await client.Rest.GetDMChannelAsync(userId);
+            await dmChannel.SendMessageAsync(new MessageProperties()
+                .AddEmbeds(new EmbedProperties()
+                    .WithColor(DiscordConstants.BentoYellow)
+                    .WithTitle("Reminder")
+                    .WithDescription(content)));
             return DmSendResult.Success;
         }
-        catch (HttpException httpEx) when (
-            httpEx.DiscordCode == DiscordErrorCode.CannotSendMessageToUser ||
-            httpEx.HttpCode == HttpStatusCode.Forbidden)
+        catch (RestException restEx) when (restEx.StatusCode == HttpStatusCode.Forbidden)
         {
             // DM disabled, blocked, or lacking permission
             return DmSendResult.Forbidden;

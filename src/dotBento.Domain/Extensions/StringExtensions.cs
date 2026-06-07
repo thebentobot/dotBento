@@ -16,7 +16,7 @@ public static class StringExtensions
 
     public static string FilterOutMentions(this string str)
     {
-        var pattern = new Regex("(@everyone|@here|<@|`)");
+        var pattern = new Regex("(@everyone|@here|<@|`|)");
         return pattern.Replace(str, "");
     }
     
@@ -41,7 +41,6 @@ public static class StringExtensions
     {
         filename = filename.Replace("\"", "_");
         filename = filename.Replace("'", "_");
-        filename = filename.Replace(".", "_");
         filename = filename.Replace(" ", "_");
 
         var invalidChars = Path.GetInvalidFileNameChars();

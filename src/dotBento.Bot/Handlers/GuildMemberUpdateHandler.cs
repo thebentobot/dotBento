@@ -1,49 +1,51 @@
-using Discord;
-using Discord.WebSocket;
+using dotBento.Bot.Services;
 using dotBento.Domain;
 using dotBento.Infrastructure.Services;
+using NetCord;
+using NetCord.Gateway;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
 
 public sealed class GuildMemberUpdateHandler : IDisposable
 {
-    private readonly DiscordSocketClient _client;
+    private readonly GatewayClient _client;
     private readonly GuildService _guildService;
+    private readonly GuildMemberLookupService _memberLookup;
 
-    public GuildMemberUpdateHandler(DiscordSocketClient client,
-        GuildService guildService)
+    public GuildMemberUpdateHandler(GatewayClient client,
+        GuildService guildService, GuildMemberLookupService memberLookup)
     {
         _client = client;
         _guildService = guildService;
-        _client.GuildMemberUpdated += GuildMemberUpdateEvent;
+        _memberLookup = memberLookup;
+        _client.GuildUserUpdate += GuildUserUpdateEvent;
     }
 
-    private Task GuildMemberUpdateEvent(Cacheable<SocketGuildUser, ulong> cacheable, SocketGuildUser newGuildUser)
+    private ValueTask GuildUserUpdateEvent(GuildUser member)
     {
         _ = Task.Run(async () =>
         {
-            try { await GuildMemberUpdated(cacheable, newGuildUser); }
-            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildMemberUpdated handler"); }
+            try { await GuildUserUpdated(member); }
+            catch (Exception ex) { Log.Error(ex, "Unhandled exception in GuildUserUpdated handler"); }
         });
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    private async Task GuildMemberUpdated(Cacheable<SocketGuildUser, ulong> cacheable, SocketGuildUser newGuildUser)
+    internal async Task GuildUserUpdated(GuildUser member)
     {
-        if (newGuildUser.IsBot) return;
-        var getGuildMemberFromDatabaseAsync = await _guildService.GetGuildMemberAsync(newGuildUser.Guild.Id, newGuildUser.Id);
-        if (!cacheable.HasValue) return;
-        var oldGuildUser = cacheable.Value;
-        if (getGuildMemberFromDatabaseAsync.HasValue && oldGuildUser.GetGuildAvatarUrl() != newGuildUser.GetGuildAvatarUrl())
+        if (member.IsBot) return;
+        _memberLookup.Update(member);
+        var getGuildMemberFromDatabaseAsync = await _guildService.GetGuildMemberAsync(member.GuildId, member.Id);
+        if (getGuildMemberFromDatabaseAsync.HasValue)
         {
-            Statistics.DiscordEvents.WithLabels(nameof(GuildMemberUpdated)).Inc();
-            await _guildService.UpdateGuildMemberAvatarAsync(newGuildUser);
+            Statistics.DiscordEvents.WithLabels(nameof(GuildUserUpdated)).Inc();
+            await _guildService.UpdateGuildMemberAvatarAsync(member);
         }
     }
 
     public void Dispose()
     {
-        _client.GuildMemberUpdated -= GuildMemberUpdateEvent;
+        _client.GuildUserUpdate -= GuildUserUpdateEvent;
     }
 }

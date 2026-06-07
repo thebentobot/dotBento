@@ -3,6 +3,7 @@ using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace dotBento.Infrastructure.Services;
 
@@ -12,7 +13,21 @@ public sealed class PrefixService(IDbContextFactory<BotDbContext> contextFactory
 
     public void StorePrefix(string prefix, ulong key)
     {
-        ServerPrefixes.AddOrUpdate(key, prefix, (_, _) => prefix);
+        if (ServerPrefixes.ContainsKey(key))
+        {
+            var oldPrefix = GetPrefix(key);
+            if (!ServerPrefixes.TryUpdate(key, prefix, oldPrefix))
+            {
+                Log.Warning("Failed to update custom prefix {Prefix} with the key: {Key} from the dictionary", prefix, key);
+            }
+
+            return;
+        }
+
+        if (!ServerPrefixes.TryAdd(key, prefix))
+        {
+            Log.Warning("Failed to add custom prefix {Prefix} with the key: {Key} from the dictionary", prefix, key);
+        }
     }
 
 
@@ -35,7 +50,10 @@ public sealed class PrefixService(IDbContextFactory<BotDbContext> contextFactory
             return;
         }
 
-        ServerPrefixes.TryRemove(key, out _);
+        if (!ServerPrefixes.TryRemove(key, out var removedPrefix))
+        {
+            Log.Warning("Failed to remove custom prefix {RemovedPrefix} with the key: {Key} from the dictionary", removedPrefix, key);
+        }
     }
 
 

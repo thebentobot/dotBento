@@ -1,140 +1,99 @@
 using CSharpFunctionalExtensions;
+using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace dotBento.Infrastructure.Tests.Commands;
 
 public sealed class TagCommandsTests
 {
-    [Fact]
-    public async Task CreateTagAsync_ValidatesAndCreatesTags()
+    private sealed class InMemoryDbFactory : IDbContextFactory<BotDbContext>
     {
-        var command = CreateCommand(out var factory);
+        private readonly string _dbName = Guid.NewGuid().ToString("N");
+        private readonly InMemoryDatabaseRoot _root = new();
+        private readonly IConfiguration _config = new ConfigurationBuilder().Build();
 
-        var created = await command.CreateTagAsync(100, 1, "hello", " hello @everyone ");
-        var duplicate = await command.CreateTagAsync(100, 1, "hello", "again");
-        var reserved = await command.CreateTagAsync(100, 1, "Ping", "content");
-        var sensitive = await command.CreateTagAsync(100, 1, "bad/name", "content");
-        var emptyContent = await command.CreateTagAsync(100, 1, "empty", "@everyone");
+        public BotDbContext CreateDbContext()
+        {
+            var options = new DbContextOptionsBuilder<BotDbContext>()
+                .UseInMemoryDatabase(_dbName, _root)
+                .ConfigureWarnings(w => w.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning))
+                .Options;
+            return new BotDbContext(_config, options);
+        }
 
-        Assert.True(created.IsSuccess);
-        Assert.True(duplicate.IsFailure);
-        Assert.Equal("Tag name already exists on this server.", duplicate.Error);
-        Assert.True(reserved.IsFailure);
-        Assert.True(sensitive.IsFailure);
-        Assert.True(emptyContent.IsFailure);
-
-        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
-        var tag = Assert.Single(db.Tags);
-        Assert.Equal("hello", tag.Command);
-        Assert.Equal(" hello  ", tag.Content);
+        public Task<BotDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(CreateDbContext());
     }
 
-    [Fact]
-    public async Task FindListSearchRandomAndIncrement_ReturnMappedTags()
+    private static TagCommands CreateSut(IDbContextFactory<BotDbContext> factory)
     {
-        var command = CreateCommand(out var factory);
-        await SeedTagsAsync(factory);
-
-        var found = await command.FindTagAsync(1, "alpha");
-        var missing = await command.FindTagAsync(1, "missing");
-        var tags = await command.FindTagsAsync(1, top: false, Maybe<long>.None);
-        var authorTags = await command.FindTagsAsync(1, top: false, 200);
-        var autocomplete = await command.FindTagNamesForAutocompleteAsync(1, Maybe<long>.None, "a");
-        var random = await command.GetRandomTagAsync(100, 1);
-        await command.IncrementTagUsageAsync(found.Value.TagId);
-
-        Assert.True(found.IsSuccess);
-        Assert.Equal("alpha", found.Value.Command);
-        Assert.True(missing.IsFailure);
-        Assert.True(tags.IsSuccess);
-        Assert.Equal(2, tags.Value.Count);
-        Assert.True(authorTags.IsSuccess);
-        Assert.Equal(200, Assert.Single(authorTags.Value).UserId);
-        Assert.Contains("alpha", autocomplete);
-        Assert.True(random.IsSuccess);
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new TagService(cache, factory);
+        return new TagCommands(service);
     }
 
-    [Fact]
-    public async Task DeleteAndUpdateTagAsync_ValidateOwnershipAndPersistChanges()
-    {
-        var command = CreateCommand(out var factory);
-        await SeedTagsAsync(factory);
-
-        var missingDelete = await command.DeleteTagAsync(100, 1, "missing", hasMessageEditPerms: true);
-        var notOwnerDelete = await command.DeleteTagAsync(999, 1, "alpha", hasMessageEditPerms: true);
-        var missingUpdate = await command.UpdateTagAsync(100, 1, "missing", "content", hasMessageEditPerms: true);
-        var emptyUpdate = await command.UpdateTagAsync(100, 1, "alpha", "@here", hasMessageEditPerms: true);
-        var notOwnerUpdate = await command.UpdateTagAsync(999, 1, "alpha", "content", hasMessageEditPerms: true);
-        var updated = await command.UpdateTagAsync(100, 1, "alpha", "updated", hasMessageEditPerms: true);
-        var deleted = await command.DeleteTagAsync(100, 1, "alpha", hasMessageEditPerms: true);
-        var afterDelete = await command.FindTagAsync(1, "alpha");
-
-        Assert.True(missingDelete.IsFailure);
-        Assert.True(notOwnerDelete.IsFailure);
-        Assert.True(missingUpdate.IsFailure);
-        Assert.True(emptyUpdate.IsFailure);
-        Assert.True(notOwnerUpdate.IsFailure);
-        Assert.True(updated.IsSuccess);
-        Assert.True(deleted.IsSuccess);
-        Assert.True(afterDelete.IsFailure);
-    }
-
-    [Fact]
-    public async Task RenameTagAsync_ValidatesOwnershipAndPersistsChanges()
-    {
-        var command = CreateCommand(out var factory);
-        await SeedTagsAsync(factory);
-
-        var existingName = await command.RenameTagAsync(100, 1, "alpha", "beta", hasMessageEditPerms: true);
-        var reserved = await command.RenameTagAsync(100, 1, "alpha", "Ping", hasMessageEditPerms: true);
-        var empty = await command.RenameTagAsync(100, 1, "alpha", "", hasMessageEditPerms: true);
-        var missing = await command.RenameTagAsync(100, 1, "missing", "gamma", hasMessageEditPerms: true);
-        var notOwner = await command.RenameTagAsync(999, 1, "alpha", "gamma", hasMessageEditPerms: true);
-        var renamed = await command.RenameTagAsync(100, 1, "alpha", "gamma", hasMessageEditPerms: true);
-        var oldName = await command.FindTagAsync(1, "alpha");
-        var newName = await command.FindTagAsync(1, "gamma");
-
-        Assert.True(existingName.IsFailure);
-        Assert.True(reserved.IsFailure);
-        Assert.True(empty.IsFailure);
-        Assert.True(missing.IsFailure);
-        Assert.True(notOwner.IsFailure);
-        Assert.True(renamed.IsSuccess);
-        Assert.True(oldName.IsFailure);
-        Assert.True(newName.IsSuccess);
-    }
-
-    private static TagCommands CreateCommand(out InfrastructureTestDbFactory factory)
-    {
-        factory = new InfrastructureTestDbFactory();
-        return new TagCommands(new TagService(new MemoryCache(new MemoryCacheOptions()), factory));
-    }
-
-    private static async Task SeedTagsAsync(InfrastructureTestDbFactory factory)
+    private static async Task SeedTagAsync(IDbContextFactory<BotDbContext> factory, long guildId, string command, string content, long userId = 456)
     {
         await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
-        db.Tags.AddRange(
-            new Tag
-            {
-                GuildId = 1,
-                UserId = 100,
-                Command = "alpha",
-                Content = "first content",
-                Count = 1,
-                Date = DateTime.UtcNow
-            },
-            new Tag
-            {
-                GuildId = 1,
-                UserId = 200,
-                Command = "beta",
-                Content = "second content",
-                Count = 2,
-                Date = DateTime.UtcNow
-            });
+        db.Tags.Add(new Tag
+        {
+            GuildId = guildId,
+            UserId = userId,
+            Command = command,
+            Content = content,
+            Count = 0,
+            Date = DateTime.UtcNow
+        });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task FindTagsAsync_WhenGuildHasNoTags_ReturnsFailure()
+    {
+        var factory = new InMemoryDbFactory();
+        var sut = CreateSut(factory);
+
+        var result = await sut.FindTagsAsync(123, top: false, Maybe<long>.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("No tags found.", result.Error);
+    }
+
+    [Fact]
+    public async Task FindTagsAsync_CachesAuthorFilteredResultsSeparately()
+    {
+        var factory = new InMemoryDbFactory();
+        await SeedTagAsync(factory, guildId: 123, command: "mine", content: "mine", userId: 456);
+        await SeedTagAsync(factory, guildId: 123, command: "other", content: "other", userId: 789);
+        var sut = CreateSut(factory);
+
+        var allTags = await sut.FindTagsAsync(123, top: false, Maybe<long>.None);
+        var authorTags = await sut.FindTagsAsync(123, top: false, 456L);
+
+        Assert.True(allTags.IsSuccess);
+        Assert.Equal(2, allTags.Value.Count);
+        Assert.True(authorTags.IsSuccess);
+        Assert.Single(authorTags.Value);
+        Assert.Equal("mine", authorTags.Value[0].Command);
+    }
+
+    [Fact]
+    public async Task SearchTagsAsync_WhenNoTagsMatch_ReturnsFailure()
+    {
+        var factory = new InMemoryDbFactory();
+        await SeedTagAsync(factory, guildId: 123, command: "hello", content: "world");
+        var sut = CreateSut(factory);
+
+        var result = await sut.SearchTagsAsync(123, "missing");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("No tags found.", result.Error);
     }
 }

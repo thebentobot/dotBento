@@ -4,11 +4,12 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Infrastructure.Commands;
 
-public sealed class GameCommands(GameService gameService, Func<int, int, int>? randomNext = null)
+public sealed class GameCommands(GameService gameService)
 {
     public async Task<(RpsGameChoice, RpsGameResult)> RockPaperScissorsAsync(RpsGameChoice playerChoice, long userId)
     {
-        var aiChoice = (RpsGameChoice)(randomNext?.Invoke(0, 3) ?? Random.Shared.Next(0, 3));
+        var random = new Random();
+        var aiChoice = (RpsGameChoice) random.Next(0, 3);
 
         RpsGameResult result;
 

@@ -1,24 +1,46 @@
 using CSharpFunctionalExtensions;
-using Discord;
-using Discord.Interactions;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
+using dotBento.Bot.Extensions;
+using dotBento.Bot.Services;
 using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : AutocompleteHandler
+public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands, GuildMemberLookupService memberLookup) : IAutocompleteProvider<AutocompleteInteractionContext>
 {
-    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
-        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
+    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
+        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
     {
-        var guildUser = await context.Guild.GetUserAsync(context.User.Id);
-        var userId = guildUser.GuildPermissions.ManageMessages ? (long)context.User.Id : Maybe<long>.None;
-        var searchValue = autocompleteInteraction.Data?.Current?.Value?.ToString();
-        var results = await tagCommands.FindTagNamesForAutocompleteAsync(
-            (long)context.Guild.Id,
-            userId,
-            searchValue);
+        var results = new List<string>();
+        var guildUser = context.Guild is not null
+            ? await memberLookup.GetOrFetchAsync(context.Guild.Id, context.User.Id, context.Guild)
+            : null;
+        var hasManageMessages = guildUser is not null
+            && context.Guild is not null
+            && guildUser.HasGuildPermission(context.Guild, Permissions.ManageMessages);
+        var authorId = hasManageMessages
+            ? Maybe<long>.None
+            : (long)context.User.Id;
+        var tags = await tagCommands.FindTagsAsync((long)context.Guild!.Id, true, authorId);
+        if (tags.IsFailure)
+        {
+            return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+        }
 
-        return AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s)));
+        if (option.Value == null || string.IsNullOrWhiteSpace(option.Value.ToString()))
+        {
+            results.ReplaceOrAddToList(tags.Value.Select(s => s.Command));
+        }
+        else
+        {
+            var searchValue = option.Value.ToString();
+            results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
+        }
+
+        return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
     }
 }

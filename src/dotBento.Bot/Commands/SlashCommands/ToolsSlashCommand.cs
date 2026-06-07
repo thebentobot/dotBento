@@ -1,29 +1,29 @@
-using Discord;
-using Discord.Interactions;
+using NetCord;
+using NetCord.Services.ApplicationCommands;
 using dotBento.Bot.AutoCompleteHandlers;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
-using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Models.NetCord;
 using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-[Group("tools", "Small tools for convenience")]
-public sealed class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand, UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+[SlashCommand("tools", "Small tools for convenience")]
+public sealed class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand, UserSettingService userSettingService) : ApplicationCommandModule<ApplicationCommandContext>
 {
-    [SlashCommand("colour", "Get the colour of a hex code or RGB")]
+    [SubSlashCommand("colour", "Get the colour of a hex code or RGB")]
     public async Task GetColourCommand(
-        [Summary("colour", "Hex code or RGB separated by commas")] string colour,
-        [Summary("hide", "Only show colour for you")] bool? hide = null) =>
+        [SlashCommandParameter(Name = "colour", Description = "Hex code or RGB separated by commas")] string colour,
+        [SlashCommandParameter(Name = "hide", Description = "Only show colour for you")] bool? hide = null) =>
         await Context.SendResponse(interactiveService, await toolsCommand.GetColour(colour), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 
-    [SlashCommand("dominantcolour", "Get the dominant colour of an image, either by URL or by attachment")]
+    [SubSlashCommand("dominantcolour", "Get the dominant colour of an image, either by URL or by attachment")]
     public async Task GetDominantColourCommand(
-        [Summary("url", "URL of the image")] string? url,
-        [Summary("attachment", "Add a photo")] IAttachment? attachment = null,
-        [Summary("hide", "Only show colour for you")] bool? hide = null)
+        [SlashCommandParameter(Name = "url", Description = "URL of the image")] string? url = null,
+        [SlashCommandParameter(Name = "attachment", Description = "Add a photo")] Attachment? attachment = null,
+        [SlashCommandParameter(Name = "hide", Description = "Only show colour for you")] bool? hide = null)
     {
         if (attachment != null)
         {
@@ -37,18 +37,25 @@ public sealed class ToolsSlashCommand(InteractiveService interactiveService, Too
             return;
         }
 
-        await Context.SendResponse(interactiveService, await toolsCommand.GetDominantColour(url), effectiveHide);
+        await Context.DeferResponseAsync(effectiveHide);
+
+        try
+        {
+            await Context.SendFollowUpResponse(interactiveService, await toolsCommand.GetDominantColour(url), effectiveHide);
+        }
+        catch (Exception ex)
+        {
+            await Context.HandleCommandException(ex);
+        }
     }
 
-    [SlashCommand("timezone", "Show the current time in a timezone")]
+    [SubSlashCommand("timezone", "Show the current time in a timezone")]
     public async Task GetTimezoneCommand(
-        [Summary("timezone", "Timezone to look up, e.g. Europe/Copenhagen")]
-        [Autocomplete(typeof(TimezoneAutoComplete))]
+        [SlashCommandParameter(Name = "timezone", Description = "Timezone to look up, e.g. Europe/Copenhagen", AutocompleteProviderType = typeof(TimezoneAutoComplete))]
         string timezone,
-        [Summary("compare", "Timezone to compare against (defaults to your profile timezone if set)")]
-        [Autocomplete(typeof(TimezoneAutoComplete))]
+        [SlashCommandParameter(Name = "compare", Description = "Timezone to compare against (defaults to your profile timezone if set)", AutocompleteProviderType = typeof(TimezoneAutoComplete))]
         string? compare = null,
-        [Summary("hide", "Only show this result for you")]
+        [SlashCommandParameter(Name = "hide", Description = "Only show this result for you")]
         bool? hide = null) =>
         await Context.SendResponse(
             interactiveService,
