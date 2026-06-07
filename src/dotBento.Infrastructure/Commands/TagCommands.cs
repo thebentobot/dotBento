@@ -40,7 +40,8 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("You can only delete your own tags.");
         }
-        await tagService.DeleteTagAsync(userId, guildId, name);
+        var ownerUserId = tagExistsCheck.Value.UserId;
+        await tagService.DeleteTagAsync(ownerUserId, guildId, name);
         return Result.Success();
     }
 
