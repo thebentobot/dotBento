@@ -86,7 +86,9 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
     {
         var guildUser = await memberLookup.GetOrFetchAsync(Context.Guild!.Id, Context.User.Id, Context.Guild);
         var hasMessageEditPerms = guildUser != null && guildUser.HasGuildPermission(Context.Guild!, Permissions.ManageMessages);
-        var attachments = new[] {firstAttachment, secondAttachment, thirdAttachment};
+        var attachments = new[] { firstAttachment, secondAttachment, thirdAttachment }
+            .Where(a => a is not null)
+            .ToArray();
         var tagContent = new TagContentDto(messageContent, attachments);
         await Context.SendResponse(
             interactiveService,
