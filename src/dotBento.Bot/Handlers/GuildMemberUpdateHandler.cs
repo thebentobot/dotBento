@@ -39,6 +39,9 @@ public sealed class GuildMemberUpdateHandler : IDisposable
         var getGuildMemberFromDatabaseAsync = await _guildService.GetGuildMemberAsync(member.GuildId, member.Id);
         if (getGuildMemberFromDatabaseAsync.HasValue)
         {
+            var currentAvatarUrl = GuildService.GetEffectiveGuildMemberAvatarUrl(member);
+            if (getGuildMemberFromDatabaseAsync.Value.AvatarUrl == currentAvatarUrl) return;
+
             Statistics.DiscordEvents.WithLabels(nameof(GuildUserUpdated)).Inc();
             await _guildService.UpdateGuildMemberAvatarAsync(member);
         }

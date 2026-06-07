@@ -97,7 +97,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             {
                 GuildId = (long)guildUser.GuildId,
                 UserId = (long)guildUser.Id,
-                AvatarUrl = GetGuildAvatarUrl(guildUser) ?? GetGlobalAvatarUrl(guildUser),
+                AvatarUrl = GetEffectiveGuildMemberAvatarUrl(guildUser),
                 Xp = 0,
                 Level = 1
             };
@@ -194,7 +194,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (user != null)
         {
-            var newAvatarUrl = GetGuildAvatarUrl(guildMember) ?? GetGlobalAvatarUrl(guildMember);
+            var newAvatarUrl = GetEffectiveGuildMemberAvatarUrl(guildMember);
             if (user.AvatarUrl == newAvatarUrl) return;
             user.AvatarUrl = newAvatarUrl;
             await db.SaveChangesAsync();
@@ -272,7 +272,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         {
             GuildId = (long)discordGuildId,
             UserId = (long)discordUserId,
-            AvatarUrl = GetGuildAvatarUrl(guildUser) ?? GetGlobalAvatarUrl(guildUser),
+            AvatarUrl = GetEffectiveGuildMemberAvatarUrl(guildUser),
             Xp = 0,
             Level = 1
         };
@@ -358,7 +358,7 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
         if (guildMember == null) return false;
 
-        var newAvatarUrl = GetGuildAvatarUrl(discordGuildUser) ?? GetGlobalAvatarUrl(discordGuildUser);
+        var newAvatarUrl = GetEffectiveGuildMemberAvatarUrl(discordGuildUser);
         if (guildMember.AvatarUrl != newAvatarUrl)
         {
             guildMember.AvatarUrl = newAvatarUrl;
@@ -395,6 +395,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             }
         }
     }
+
+    public static string? GetEffectiveGuildMemberAvatarUrl(NetCord.GuildUser member) =>
+        GetGuildAvatarUrl(member) ?? GetGlobalAvatarUrl(member);
 
     private static string? GetGuildAvatarUrl(NetCord.GuildUser member) =>
         member.GuildAvatarHash != null

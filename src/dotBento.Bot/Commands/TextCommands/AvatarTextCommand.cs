@@ -25,10 +25,12 @@ public sealed class AvatarTextCommand(
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
         var guildMember = Context.Guild?.Users.GetValueOrDefault(user.Id);
-        var userAvatarUrl = user.GetAvatarUrl()?.ToString();
-        var guildAvatarUrl = guildMember?.GetGuildAvatarUrl()?.ToString();
+        var userAvatarUrl = user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
+        var guildAvatarUrl = guildMember?.GetGuildAvatarUrl()?.ToString(1024);
 
-        if (guildMember == null || string.Equals(userAvatarUrl, guildAvatarUrl, StringComparison.Ordinal))
+        if (guildMember == null
+            || guildAvatarUrl == null
+            || string.Equals(userAvatarUrl, guildAvatarUrl, StringComparison.Ordinal))
         {
             await Context.SendResponse(interactiveService, await avatarCommand.UserAvatarCommand(user));
         }
