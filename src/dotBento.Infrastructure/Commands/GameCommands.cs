@@ -40,6 +40,6 @@ public sealed class GameCommands(GameService gameService)
     
     public static int Roll(int min, int max)
     {
-        return Random.Shared.Next(min, max);
+        return Random.Shared.Next(min, max + 1);
     }
 }

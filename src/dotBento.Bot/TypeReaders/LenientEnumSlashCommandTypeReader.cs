@@ -25,38 +25,39 @@ public sealed class LenientEnumSlashCommandTypeReader<TContext> : SlashCommandTy
         ApplicationCommandServiceConfiguration<TContext> configuration,
         IServiceProvider? serviceProvider)
     {
-        var enumType = parameter.NonNullableType;
+        var result = TryReadEnum(value, parameter.NonNullableType);
+        return new(result is not null
+            ? SlashCommandTypeReaderResult.Success(result)
+            : SlashCommandTypeReaderResult.ParseFail(parameter.Name));
+    }
 
+    internal static object? TryReadEnum(string value, Type enumType)
+    {
         // 1. Integer value (NetCord format: "0", "1", "2")
         if (long.TryParse(value, out var longVal))
         {
-            try
-            {
-                var enumVal = Enum.ToObject(enumType, longVal);
-                if (Enum.IsDefined(enumType, enumVal))
-                    return new(SlashCommandTypeReaderResult.Success(enumVal));
-            }
-            catch { }
+            var enumVal = Enum.ToObject(enumType, longVal);
+            if (Enum.IsDefined(enumType, enumVal))
+                return enumVal;
         }
 
         // 2. Enum member name, case-insensitive ("Rock", "SevenDays")
-        try
+        if (Enum.TryParse(enumType, value, ignoreCase: true, out var parsedEnumVal)
+            && parsedEnumVal is not null
+            && Enum.IsDefined(enumType, parsedEnumVal))
         {
-            var enumVal = Enum.Parse(enumType, value, ignoreCase: true);
-            if (Enum.IsDefined(enumType, enumVal))
-                return new(SlashCommandTypeReaderResult.Success(enumVal));
+            return parsedEnumVal;
         }
-        catch { }
 
         // 3. SlashCommandChoice display name, case-insensitive ("7 Days", "Top Artists")
         foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
         {
             var attr = field.GetCustomAttribute<SlashCommandChoiceAttribute>();
             if (attr?.Name != null && string.Equals(attr.Name, value, StringComparison.OrdinalIgnoreCase))
-                return new(SlashCommandTypeReaderResult.Success(field.GetValue(null)!));
+                return field.GetValue(null)!;
         }
 
-        return new(SlashCommandTypeReaderResult.ParseFail(parameter.Name));
+        return null;
     }
 
     public override IChoicesProvider<TContext>? ChoicesProvider => EnumChoicesProvider<TContext>.Instance;
