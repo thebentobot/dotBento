@@ -5,6 +5,7 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
 using dotBento.Bot.Models.NetCord;
 using dotBento.Bot.Services;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
@@ -71,7 +72,7 @@ public sealed class UserCommand(
         }
 
         result.Stream = profile.Value;
-        result.FileName = $"{guildMember.Username}_BentoProfile_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
+        result.FileName = $"{guildMember.Username}_BentoProfile_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png".ReplaceInvalidChars();
 
         return result;
     }

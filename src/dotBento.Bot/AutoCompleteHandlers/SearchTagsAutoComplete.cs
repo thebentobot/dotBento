@@ -26,7 +26,9 @@ public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : IAutocompl
         else
         {
             var searchValue = option.Value.ToString();
-            results.ReplaceOrAddToList(tags.Value.Where(x => x.Command.StartsWith(searchValue ?? "")).Select(s => s.Command));
+            results.ReplaceOrAddToList(tags.Value
+                .Where(x => x.Command.StartsWith(searchValue ?? "", StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.Command));
         }
 
         return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));

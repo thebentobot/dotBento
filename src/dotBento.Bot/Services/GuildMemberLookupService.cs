@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using NetCord;
 using NetCord.Gateway;
+using NetCord.Rest;
 using Serilog;
 
 namespace dotBento.Bot.Services;
@@ -49,10 +50,15 @@ public sealed class GuildMemberLookupService(GatewayClient client, IMemoryCache 
             cache.Set(key, member, CacheOptions);
             return member;
         }
+        catch (RestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Forbidden)
+        {
+            Log.Debug(ex, "Guild member {UserId} is not available in guild {GuildId} via REST", userId, guildId);
+            cache.Set(MissKey(guildId, userId), true, NegativeCacheOptions);
+            return null;
+        }
         catch (Exception ex)
         {
             Log.Debug(ex, "Could not fetch guild member {UserId} in guild {GuildId} via REST", userId, guildId);
-            cache.Set(MissKey(guildId, userId), true, NegativeCacheOptions);
             return null;
         }
     }

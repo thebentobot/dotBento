@@ -26,7 +26,9 @@ public sealed class SearchRemindersAutoComplete(ReminderCommands reminderCommand
         else
         {
             var searchValue = option.Value.ToString();
-            results.ReplaceOrAddToList(reminders.Value.Where(x => x.Content.StartsWith(searchValue ?? "")).Select(CreateReminderString));
+            results.ReplaceOrAddToList(reminders.Value
+                .Where(x => x.Content.StartsWith(searchValue ?? "", StringComparison.OrdinalIgnoreCase))
+                .Select(CreateReminderString));
         }
 
         return results.Take(25).Select(s => new ApplicationCommandOptionChoiceProperties(s, s));

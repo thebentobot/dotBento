@@ -35,7 +35,6 @@ public static class ChooseCommand
 
     private static string ChooseOption(IReadOnlyList<string> options)
     {
-        var rnd = new Random();
-        return options[rnd.Next(options.Count)];
+        return options[Random.Shared.Next(options.Count)];
     }
 }

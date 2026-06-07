@@ -15,8 +15,8 @@ public sealed class StringExtensionsTests
     [Fact]
     public void ReplaceInvalidChars_ReplacesUnsafeCharacters()
     {
-        var result = "bad file'name.png".ReplaceInvalidChars();
+        var result = "bad file'name/slash.png".ReplaceInvalidChars();
 
-        Assert.Equal("bad_file_name.png", result);
+        Assert.Equal("bad_file_name_slash.png", result);
     }
 }

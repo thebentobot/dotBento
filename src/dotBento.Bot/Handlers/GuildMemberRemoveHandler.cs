@@ -27,6 +27,11 @@ public sealed class GuildMemberRemoveHandler : IDisposable
 
     private ValueTask GuildMemberRemovedEvent(GuildUserRemoveEventArgs args)
     {
+        if (args.User.IsBot)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         _ = Task.Run(async () =>
         {
             try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
@@ -37,6 +42,11 @@ public sealed class GuildMemberRemoveHandler : IDisposable
 
     private ValueTask GuildMemberBannedEvent(GuildBanEventArgs args)
     {
+        if (args.User.IsBot)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         _ = Task.Run(async () =>
         {
             try { await GuildMemberRemoved(args.GuildId, args.User.Id); }
