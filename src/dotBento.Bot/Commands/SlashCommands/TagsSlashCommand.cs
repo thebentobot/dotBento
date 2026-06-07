@@ -62,7 +62,9 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
             [SlashCommandParameter(Name = "hide", Description = "Only the result of the message to you")] bool? hide = null
         )
     {
-        var attachments = new[] {firstAttachment, secondAttachment, thirdAttachment};
+        var attachments = new[] { firstAttachment, secondAttachment, thirdAttachment }
+            .Where(a => a is not null)
+            .ToArray();
         var tagContent = new TagContentDto(messageContent, attachments);
         await Context.SendResponse(
             interactiveService,
