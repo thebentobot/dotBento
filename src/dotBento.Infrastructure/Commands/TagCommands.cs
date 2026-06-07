@@ -60,7 +60,8 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("You can only update your own tags.");
         }
-        await tagService.UpdateTagAsync(userId, guildId, name, SanitizeTagContent(content));
+        var ownerUserId = tagExistsCheck.Value.UserId;
+        await tagService.UpdateTagAsync(ownerUserId, guildId, name, SanitizeTagContent(content));
         return Result.Success();
     }
 
