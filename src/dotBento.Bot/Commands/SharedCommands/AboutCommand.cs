@@ -33,7 +33,7 @@ public static class AboutCommand
             .WithColor(DiscordConstants.BentoYellow)
             .WithThumbnail(botPfp != null ? new EmbedThumbnailProperties(botPfp) : null)
             .WithTitle("About Bento Bot 🍱")
-            .WithDescription("A Discord bot for chat moderation and fun features you did not know you needed on chat.")
+            .WithDescription("A Discord bot for chat moderation and fun features you did not know you needed on Discord.")
             .AddFields([
                 new EmbedFieldProperties().WithName("Get a full list and more details for each command").WithValue($"{DiscordConstants.WebsiteUrl}/commands"),
                 new EmbedFieldProperties().WithName("Want additional benefits when using Bento 🍱?").WithValue("https://www.patreon.com/bentobot"),
