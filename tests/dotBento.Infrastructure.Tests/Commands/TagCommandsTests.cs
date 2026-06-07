@@ -39,7 +39,7 @@ public sealed class TagCommandsTests
         return new TagCommands(service);
     }
 
-    private static async Task SeedTagAsync(IDbContextFactory<BotDbContext> factory, long guildId, string command, string content, long userId = 456)
+    private static async Task SeedTagAsync(IDbContextFactory<BotDbContext> factory, long guildId, string command, string content, long userId = 456, int count = 0)
     {
         await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         db.Tags.Add(new Tag
@@ -48,7 +48,7 @@ public sealed class TagCommandsTests
             UserId = userId,
             Command = command,
             Content = content,
-            Count = 0,
+            Count = count,
             Date = DateTime.UtcNow
         });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -64,6 +64,37 @@ public sealed class TagCommandsTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("No tags found.", result.Error);
+    }
+
+    [Fact]
+    public async Task FindTagNamesForAutocompleteAsync_FiltersByPrefixAndLimitsResults()
+    {
+        var factory = new InMemoryDbFactory();
+        for (var i = 0; i < 30; i++)
+        {
+            await SeedTagAsync(factory, guildId: 123, command: $"Alpha{i:00}", content: "match");
+        }
+        await SeedTagAsync(factory, guildId: 123, command: "beta", content: "miss");
+        var sut = CreateSut(factory);
+
+        var result = await sut.FindTagNamesForAutocompleteAsync(123, "alpha", Maybe<long>.None);
+
+        Assert.Equal(25, result.Count);
+        Assert.All(result, tagName => Assert.StartsWith("Alpha", tagName, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task FindTagNamesForAutocompleteAsync_AppliesAuthorFilter()
+    {
+        var factory = new InMemoryDbFactory();
+        await SeedTagAsync(factory, guildId: 123, command: "mine", content: "mine", userId: 456);
+        await SeedTagAsync(factory, guildId: 123, command: "other", content: "other", userId: 789);
+        var sut = CreateSut(factory);
+
+        var result = await sut.FindTagNamesForAutocompleteAsync(123, null, 456L);
+
+        Assert.Single(result);
+        Assert.Equal("mine", result[0]);
     }
 
     [Fact]

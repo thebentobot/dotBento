@@ -107,6 +107,29 @@ public sealed class TagService(
             : tags.Value;
     }
 
+    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, string? query, Maybe<long> authorId, int limit = 25)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var tags = context.Tags.AsNoTracking().Where(x => x.GuildId == guildId);
+        if (authorId.HasValue)
+        {
+            tags = tags.Where(x => x.UserId == authorId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var normalizedQuery = query.ToLowerInvariant();
+            tags = tags.Where(x => x.Command.ToLower().StartsWith(normalizedQuery));
+        }
+
+        return await tags
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Command)
+            .Select(x => x.Command)
+            .Take(limit)
+            .ToListAsync();
+    }
+
     public async Task<Maybe<Tag>> GetRandomTagAsync(long userId, long guildId)
     {
         var cacheKey = GetTagsCacheKey(guildId);
