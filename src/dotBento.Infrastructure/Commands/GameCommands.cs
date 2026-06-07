@@ -8,8 +8,7 @@ public sealed class GameCommands(GameService gameService)
 {
     public async Task<(RpsGameChoice, RpsGameResult)> RockPaperScissorsAsync(RpsGameChoice playerChoice, long userId)
     {
-        var random = new Random();
-        var aiChoice = (RpsGameChoice) random.Next(0, 3);
+        var aiChoice = (RpsGameChoice)Random.Shared.Next(0, 3);
 
         RpsGameResult result;
 
@@ -41,7 +40,6 @@ public sealed class GameCommands(GameService gameService)
     
     public static int Roll(int min, int max)
     {
-        var random = new Random();
-        return random.Next(min, max);
+        return Random.Shared.Next(min, max);
     }
 }

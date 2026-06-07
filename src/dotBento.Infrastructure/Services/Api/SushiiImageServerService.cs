@@ -20,12 +20,23 @@ public sealed class SushiiImageServerService(HttpClient httpClient)
 
         request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-        using var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         if (!response.IsSuccessStatusCode)
+        {
+            response.Dispose();
             return Result.Failure<Stream>("Could not get image from Sushii Image Server");
+        }
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        return Result.Success<Stream>(new MemoryStream(bytes));
+        try
+        {
+            var stream = await response.Content.ReadAsStreamAsync();
+            return Result.Success<Stream>(new HttpResponseMessageStream(response, stream));
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 }

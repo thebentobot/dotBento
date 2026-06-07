@@ -10,7 +10,8 @@ public sealed class ReminderCommands(ReminderService reminderService)
 {
     public async Task<Result> CreateReminderAsync(long userId, string content, DateTimeOffset date)
     {
-        var existsCheck = await reminderService.GetReminderAsync(userId, content, date);
+        var sanitizedContent = SanitizeTagContent(content);
+        var existsCheck = await reminderService.GetReminderAsync(userId, sanitizedContent, date);
         if (existsCheck.HasValue)
         {
             return Result.Failure("Reminder already exists.");
@@ -20,7 +21,6 @@ public sealed class ReminderCommands(ReminderService reminderService)
             return Result.Failure("Reminder date cannot be in the past.");
         }
         
-        var sanitizedContent = SanitizeTagContent(content);
         if (string.IsNullOrWhiteSpace(sanitizedContent))
         {
             return Result.Failure("Reminder content cannot be empty.");

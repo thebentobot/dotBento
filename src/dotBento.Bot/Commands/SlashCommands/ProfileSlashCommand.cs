@@ -45,7 +45,7 @@ public sealed class ProfileSlashCommand(
         : ApplicationCommandModule<ApplicationCommandContext>
     {
         [SubSlashCommand("url", "Set the background image URL for your profile")]
-        public async Task SetBackgroundUrl([SlashCommandParameter(Name = "url", Description = "Direct image URL (https)")] string url)
+        public async Task SetBackgroundUrl([SlashCommandParameter(Name = "url", Description = "Direct image URL (http/https)")] string url)
         {
             var response = await profileEditCommand.SetBackgroundUrlAsync(Context.User.Id, url);
             await Context.SendResponse(interactiveService, response, true);

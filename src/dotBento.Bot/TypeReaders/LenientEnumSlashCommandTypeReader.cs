@@ -76,7 +76,7 @@ internal sealed class EnumChoicesProvider<TContext> : IChoicesProvider<TContext>
             {
                 var attr = f.GetCustomAttribute<SlashCommandChoiceAttribute>();
                 var name = attr?.Name ?? f.Name;
-                var value = Convert.ToDouble(f.GetRawConstantValue());
+                var value = Convert.ToInt64(f.GetRawConstantValue());
                 return new ApplicationCommandOptionChoiceProperties(name, value);
             });
 

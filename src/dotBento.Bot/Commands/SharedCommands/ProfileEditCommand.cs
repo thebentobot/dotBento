@@ -13,7 +13,7 @@ public sealed class ProfileEditCommand(ProfileService profileService)
     {
         if (!ProfileValidationUtilities.IsValidHttpUrl(url))
         {
-            return Error("Invalid URL", "Please provide a valid https URL to an image.");
+            return Error("Invalid URL", "Please provide a valid http/https URL to an image.");
         }
 
         await profileService.CreateOrUpdateProfileAsync((long)userId, p =>
