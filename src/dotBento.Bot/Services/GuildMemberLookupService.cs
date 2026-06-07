@@ -71,6 +71,9 @@ public sealed class GuildMemberLookupService(GatewayClient client, IMemoryCache 
     }
 
     /// <summary>Evicts a cached member entry, e.g. after a leave or ban event.</summary>
-    public void Invalidate(ulong guildId, ulong userId) =>
+    public void Invalidate(ulong guildId, ulong userId)
+    {
         cache.Remove(Key(guildId, userId));
+        cache.Remove(MissKey(guildId, userId));
+    }
 }
