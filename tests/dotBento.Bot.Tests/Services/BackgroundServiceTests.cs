@@ -3,6 +3,7 @@ using NetCord;
 using dotBento.Bot.Models;
 using dotBento.Bot.Services;
 using dotBento.EntityFramework.Context;
+using EfGuild = dotBento.EntityFramework.Entities.Guild;
 using EfReminder = dotBento.EntityFramework.Entities.Reminder;
 using EfUser = dotBento.EntityFramework.Entities.User;
 using dotBento.Infrastructure.Commands;
@@ -69,6 +70,22 @@ public sealed class BackgroundServiceTests
         return entity.Id;
     }
 
+    private static async Task SeedGuildAsync(IDbContextFactory<BotDbContext> factory, long guildId, int memberCount)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        db.Guilds.Add(new EfGuild
+        {
+            GuildId = guildId,
+            GuildName = "Test Guild",
+            Prefix = "b!",
+            Leaderboard = true,
+            Media = false,
+            Tiktok = false,
+            MemberCount = memberCount
+        });
+        await db.SaveChangesAsync();
+    }
+
     // Creates a fake non-null User without calling its constructor.
     // Only used to pass the "user is null" check — no properties are accessed on the returned instance.
     private static User CreateFakeUser() =>
@@ -87,6 +104,36 @@ public sealed class BackgroundServiceTests
         var botSettings = new Mock<IOptions<BotEnvConfig>>();
         botSettings.Setup(s => s.Value).Returns(new BotEnvConfig { Environment = "local" });
         return new BackgroundService(userService, guildService, null!, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object);
+    }
+
+    private static BackgroundService CreateStatusSut(IDbContextFactory<BotDbContext> contextFactory)
+    {
+        var botSettings = new Mock<IOptions<BotEnvConfig>>();
+        botSettings.Setup(s => s.Value).Returns(new BotEnvConfig { Environment = "local" });
+        return new BackgroundService(null!, null!, null!, null!, null!, null!, contextFactory, null!, null!, botSettings.Object);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "1 user on 1 server")]
+    [InlineData(7, 1, "7 users on 1 server")]
+    [InlineData(1250, 12, "1.3k users on 12 servers")]
+    public void FormatActivityStatus_UsesExpectedPluralizationAndThousands(int users, int guilds, string expected)
+    {
+        var result = BackgroundService.FormatActivityStatus(users, guilds);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public async Task GetDatabaseActivityStatusAsync_UsesPersistedGuildCounts()
+    {
+        var dbFactory = new InMemoryDbFactory();
+        await SeedGuildAsync(dbFactory, guildId: 123, memberCount: 7);
+        var sut = CreateStatusSut(dbFactory);
+
+        var result = await sut.GetDatabaseActivityStatusAsync();
+
+        Assert.Equal("7 users on 1 server", result);
     }
 
     [Fact]

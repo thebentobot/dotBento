@@ -85,7 +85,8 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("You can only rename your own tags.");
         }
-        await tagService.RenameTagAsync(userId, guildId, oldName, newName);
+        var ownerUserId = oldTagCheck.Value.UserId;
+        await tagService.RenameTagAsync(ownerUserId, guildId, oldName, newName);
         return Result.Success();
     }
     

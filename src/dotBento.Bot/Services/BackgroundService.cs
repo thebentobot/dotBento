@@ -96,16 +96,39 @@ public sealed class BackgroundService(UserService userService,
     public async Task UpdateStatus()
     {
         Log.Information($"Running {nameof(UpdateStatus)}");
-        var statusText = GetRandomActivityStatus(client);
+        var statusText = await GetActivityStatusAsync(client);
         await client.UpdatePresenceAsync(new PresenceProperties(UserStatusType.Online)
             .WithActivities([new UserActivityProperties(statusText, UserActivityType.Watching)]));
     }
 
-    private static string GetRandomActivityStatus(GatewayClient client)
+    internal async Task<string> GetActivityStatusAsync(GatewayClient client)
     {
         var guildCount = client.Cache.Guilds.Count;
         var userCount = client.Cache.Guilds.Values.Sum(x => x.UserCount);
 
+        if (guildCount == 0)
+        {
+            return await GetDatabaseActivityStatusAsync();
+        }
+
+        return FormatActivityStatus(userCount, guildCount);
+    }
+
+    internal async Task<string> GetDatabaseActivityStatusAsync()
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var userCount = await db.Guilds
+            .AsNoTracking()
+            .SumAsync(x => x.MemberCount ?? 0);
+        var guildCount = await db.Guilds
+            .AsNoTracking()
+            .CountAsync();
+
+        return FormatActivityStatus(userCount, guildCount);
+    }
+
+    internal static string FormatActivityStatus(int userCount, int guildCount)
+    {
         var formattedUserCount = FormatThousandsCount(userCount);
         var formattedGuildCount = FormatThousandsCount(guildCount);
 

@@ -202,13 +202,7 @@ public sealed class Startup
         var discordToken = Configuration["Discord:Token"]
             ?? throw new InvalidOperationException("Discord:Token environment variable not set.");
 
-        var discordClient = new GatewayClient(
-            new BotToken(discordToken),
-            new GatewayClientConfiguration
-            {
-                // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
-                Intents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.GuildUsers
-            });
+        var discordClient = CreateGatewayClient(discordToken);
 
         services
             .AddSingleton(discordClient)
@@ -328,6 +322,19 @@ public sealed class Startup
         // Keep IMemoryCache for local per-process caching used elsewhere
         services.AddMemoryCache();
     }
+
+    internal static GatewayClient CreateGatewayClient(string discordToken) =>
+        new(
+            new BotToken(discordToken),
+            CreateGatewayClientConfiguration());
+
+    internal static GatewayClientConfiguration CreateGatewayClientConfiguration() =>
+        new()
+        {
+            // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
+            Intents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.GuildUsers,
+            CacheProvider = ConcurrentGatewayClientCacheProvider.Empty
+        };
 
     /// <summary>
     /// Creates an <see cref="InteractiveService"/> without its constructor to avoid the

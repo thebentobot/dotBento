@@ -6,6 +6,7 @@ using dotBento.Infrastructure.Interfaces;
 using dotBento.Infrastructure.Services;
 using dotBento.Bot.Services;
 using Fergun.Interactive;
+using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace dotBento.Bot.Handlers;
@@ -21,6 +22,9 @@ public sealed class MessageHandler : IDisposable
     private readonly InteractiveService _interactiveService;
     private readonly TagsCommand _tagsCommand;
     private readonly GuildMemberLookupService _memberLookup;
+    private readonly IMemoryCache _cache;
+
+    private static readonly TimeSpan MessageXpCooldown = TimeSpan.FromMinutes(5);
 
     public MessageHandler(GatewayClient client,
         UserService userService,
@@ -30,7 +34,8 @@ public sealed class MessageHandler : IDisposable
         IServiceProvider provider,
         InteractiveService interactiveService,
         TagsCommand tagsCommand,
-        GuildMemberLookupService memberLookup)
+        GuildMemberLookupService memberLookup,
+        IMemoryCache cache)
     {
         _client = client;
         _userService = userService;
@@ -41,6 +46,7 @@ public sealed class MessageHandler : IDisposable
         _interactiveService = interactiveService;
         _tagsCommand = tagsCommand;
         _memberLookup = memberLookup;
+        _cache = cache;
         _client.MessageCreate += MessageReceived;
     }
 
@@ -78,8 +84,12 @@ public sealed class MessageHandler : IDisposable
             await _guildService.AddGuildMemberAsync(guildMember);
         }
 
-        var patreonUser = await _userService.GetPatreonUserAsync(context.User.Id);
+        if (!TryBeginMessageXpCooldown(_cache, context.User.Id))
+        {
+            return;
+        }
 
+        var patreonUser = await _userService.GetPatreonUserAsync(context.User.Id);
         await _userService.AddExperienceAsync(context.User.Id, context.Guild.Id, patreonUser);
 
         // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
@@ -147,6 +157,18 @@ public sealed class MessageHandler : IDisposable
             }
         }
         */
+    }
+
+    internal static bool TryBeginMessageXpCooldown(IMemoryCache cache, ulong userId)
+    {
+        var key = $"message-xp-cooldown:{userId}";
+        if (cache.TryGetValue(key, out _))
+        {
+            return false;
+        }
+
+        cache.Set(key, true, MessageXpCooldown);
+        return true;
     }
 
     /*
