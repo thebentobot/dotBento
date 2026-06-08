@@ -41,7 +41,6 @@ public static class StringExtensions
     {
         filename = filename.Replace("\"", "_");
         filename = filename.Replace("'", "_");
-        filename = filename.Replace(".", "_");
         filename = filename.Replace(" ", "_");
 
         var invalidChars = Path.GetInvalidFileNameChars();

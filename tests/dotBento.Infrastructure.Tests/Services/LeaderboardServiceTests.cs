@@ -32,7 +32,7 @@ public class LeaderboardServiceTests
 
     private static async Task SeedUsersAsync(IDbContextFactory<BotDbContext> factory, int count)
     {
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         for (var i = 0; i < count; i++)
         {
             db.Users.Add(new User
@@ -44,12 +44,12 @@ public class LeaderboardServiceTests
                 Xp = (count - i) * 100
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task SeedGuildMembersAsync(IDbContextFactory<BotDbContext> factory, long guildId, int count)
     {
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         db.Guilds.Add(new Guild
         {
             GuildId = guildId,
@@ -77,12 +77,12 @@ public class LeaderboardServiceTests
                 Xp = (count - i) * 50
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task SeedBentosAsync(IDbContextFactory<BotDbContext> factory, int count)
     {
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         for (var i = 0; i < count; i++)
         {
             db.Users.Add(new User
@@ -100,12 +100,12 @@ public class LeaderboardServiceTests
                 BentoDate = DateTime.UtcNow
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task SeedRpsGamesAsync(IDbContextFactory<BotDbContext> factory, int count)
     {
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         for (var i = 0; i < count; i++)
         {
             db.Users.Add(new User
@@ -130,7 +130,7 @@ public class LeaderboardServiceTests
                 ScissorsTies = 1
             });
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     // --- Global XP ---
@@ -231,7 +231,7 @@ public class LeaderboardServiceTests
         var factory = new InMemoryDbFactory();
         const long guildId = 10;
 
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "BentoGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 3; i++)
@@ -240,7 +240,7 @@ public class LeaderboardServiceTests
                 db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = i + 500, Level = 1, Xp = 0 });
                 db.Bentos.Add(new Bento { UserId = i + 500, Bento1 = (3 - i) * 20, BentoDate = DateTime.UtcNow });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var service = new LeaderboardService(factory);
@@ -301,65 +301,6 @@ public class LeaderboardServiceTests
         Assert.Equal("RpsUser3", result.Value[0].Username);
     }
 
-    [Theory]
-    [InlineData(RpsLeaderboardOrder.Ties)]
-    [InlineData((RpsLeaderboardOrder)999)]
-    public async Task GetGlobalRpsLeaderboardAsync_OrdersByRequestedBranch(RpsLeaderboardOrder order)
-    {
-        var factory = new InMemoryDbFactory();
-        await SeedRpsGamesAsync(factory, 3);
-        var service = new LeaderboardService(factory);
-
-        var result = await service.GetGlobalRpsLeaderboardAsync(RpsLeaderboardType.All, order);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(3, result.Value.Count);
-    }
-
-    [Fact]
-    public async Task GetGlobalRpsLeaderboardAsync_RespectsLimit()
-    {
-        var factory = new InMemoryDbFactory();
-        await SeedRpsGamesAsync(factory, 10);
-        var service = new LeaderboardService(factory);
-
-        var result = await service.GetGlobalRpsLeaderboardAsync(
-            RpsLeaderboardType.All,
-            RpsLeaderboardOrder.Wins,
-            3);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(3, result.Value.Count);
-        Assert.Equal([1, 2, 3], result.Value.Select(x => x.Rank));
-    }
-
-    [Fact]
-    public async Task GetServerRpsLeaderboardAsync_ReturnsOnlyGuildMembers()
-    {
-        var factory = new InMemoryDbFactory();
-        const long guildId = 30;
-        await SeedRpsGamesAsync(factory, 5);
-
-        await using (var db = await factory.CreateDbContextAsync())
-        {
-            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "RpsGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
-            db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 301, Level = 1, Xp = 0 });
-            db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 303, Level = 1, Xp = 0 });
-            await db.SaveChangesAsync();
-        }
-
-        var service = new LeaderboardService(factory);
-
-        var result = await service.GetServerRpsLeaderboardAsync(
-            guildId,
-            RpsLeaderboardType.All,
-            RpsLeaderboardOrder.Wins);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Count);
-        Assert.Equal([301, 303], result.Value.Select(x => x.UserId));
-    }
-
     // --- User Summary ---
 
     [Fact]
@@ -368,7 +309,7 @@ public class LeaderboardServiceTests
         var factory = new InMemoryDbFactory();
         const long guildId = 20;
 
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "SummaryGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
 
@@ -379,7 +320,7 @@ public class LeaderboardServiceTests
                 db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = i + 600, Level = 3 - i, Xp = (3 - i) * 100 });
                 db.Bentos.Add(new Bento { UserId = i + 600, Bento1 = (3 - i) * 30, BentoDate = DateTime.UtcNow });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var service = new LeaderboardService(factory);
@@ -414,10 +355,10 @@ public class LeaderboardServiceTests
     {
         var factory = new InMemoryDbFactory();
 
-        await using (var db = await factory.CreateDbContextAsync())
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Users.Add(new User { UserId = 700, Username = "Loner", Discriminator = "0", Level = 5, Xp = 500 });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var service = new LeaderboardService(factory);

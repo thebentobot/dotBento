@@ -1,4 +1,4 @@
-namespace dotBento.Bot.Models.Discord.MultiSelect;
+namespace dotBento.Bot.Models.NetCord.MultiSelect;
 
 public sealed record MultiSelectOption(
     string Option,

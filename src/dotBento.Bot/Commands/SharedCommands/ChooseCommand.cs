@@ -1,5 +1,5 @@
 using dotBento.Bot.Enums;
-using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Models.NetCord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Services;
 
@@ -32,10 +32,9 @@ public static class ChooseCommand
         }
         return Task.FromResult(embed);
     }
-    
+
     private static string ChooseOption(IReadOnlyList<string> options)
     {
-        var rnd = new Random();
-        return options[rnd.Next(options.Count)];
+        return options[Random.Shared.Next(options.Count)];
     }
 }

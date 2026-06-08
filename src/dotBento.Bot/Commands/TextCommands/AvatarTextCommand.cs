@@ -1,5 +1,5 @@
-using Discord.Commands;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Services.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -9,31 +9,33 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[Name("Avatar")]
+[ModuleName("Avatar")]
 public sealed class AvatarTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
     AvatarCommand avatarCommand) : BaseCommandModule(botSettings)
 {
-    [Command("avatar", RunMode = RunMode.Async)]
+    [Command("avatar", "av", "pfp")]
     [Summary("Get the avatar of a User Profile")]
-    [Alias("av", "pfp")]
     [Examples("avatar", "av 223908083825377281", "pfp @Adam")]
     [GuildOnly]
-    public async Task AvatarCommand(SocketUser? user = null)
+    public async Task AvatarCommand(User? user = null)
     {
-        _ = Context.Channel.TriggerTypingAsync();
+        _ = Context.Channel?.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
-        var guildMember = Context.Guild.Users.Single(guildUser => guildUser.Id == user.Id);
+        var guildMember = Context.Guild?.Users.GetValueOrDefault(user.Id);
+        var userAvatarUrl = user.GetAvatarUrl()?.ToString(1024) ?? user.DefaultAvatarUrl.ToString(1024);
+        var guildAvatarUrl = guildMember?.GetGuildAvatarUrl()?.ToString(1024);
 
-        if (user.GetDisplayAvatarUrl() == guildMember.GetDisplayAvatarUrl())
+        if (guildMember == null
+            || guildAvatarUrl == null
+            || string.Equals(userAvatarUrl, guildAvatarUrl, StringComparison.Ordinal))
         {
             await Context.SendResponse(interactiveService, await avatarCommand.UserAvatarCommand(user));
         }
         else
         {
-            
             await Context.SendResponse(interactiveService, await avatarCommand.ServerAvatarCommand(guildMember));
             await Context.SendResponse(interactiveService, await avatarCommand.UserAvatarCommand(user));
         }

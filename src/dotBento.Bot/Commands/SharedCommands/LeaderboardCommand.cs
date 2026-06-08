@@ -1,8 +1,8 @@
 using System.Text;
-using Discord;
+using NetCord.Rest;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
-using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Models.NetCord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Services;
 using dotBento.Domain.Enums.Leaderboard;
@@ -141,15 +141,13 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             description.AppendLine($"**Global Bento Rank:** #{summary.BentoRank} — {summary.BentoCount} Bento");
         }
 
-        var author = new EmbedAuthorBuilder
-        {
-            Name = $"{displayName}'s Rankings",
-            IconUrl = avatarUrl
-        };
+        var author = new EmbedAuthorProperties()
+            .WithName($"{displayName}'s Rankings")
+            .WithIconUrl(avatarUrl);
 
         embed.Embed
             .WithAuthor(author)
-            .WithThumbnailUrl(avatarUrl)
+            .WithThumbnail(avatarUrl != null ? new EmbedThumbnailProperties(avatarUrl) : null)
             .WithDescription(description.ToString())
             .WithColor(DiscordConstants.BentoYellow);
 
@@ -179,7 +177,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -206,7 +204,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 
@@ -238,7 +236,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.ComponentPaginator = pages.BuildSimpleStaticPaginator();
         return embed;
     }
 

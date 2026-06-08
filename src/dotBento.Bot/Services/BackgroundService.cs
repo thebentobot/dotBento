@@ -1,6 +1,8 @@
 using System.Diagnostics;
-using Discord;
-using Discord.WebSocket;
+using System.Net.Sockets;
+using CSharpFunctionalExtensions;
+using NetCord;
+using NetCord.Gateway;
 using dotBento.Bot.Models;
 using dotBento.Domain;
 using dotBento.EntityFramework.Context;
@@ -8,14 +10,16 @@ using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Services;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Serilog;
 
 namespace dotBento.Bot.Services;
 
 public sealed class BackgroundService(UserService userService,
     GuildService guildService,
-    DiscordSocketClient client,
+    GatewayClient client,
     SupporterService supporterService,
     BotListService botListService,
     ReminderCommands reminderCommands,
@@ -24,16 +28,6 @@ public sealed class BackgroundService(UserService userService,
     IDmSender dmSender,
     IOptions<BotEnvConfig> botSettings)
 {
-    private static readonly string[] RetiredDataMaintenanceJobIds =
-    [
-        "CleanupStaleUsers",
-        "CleanupStaleGuilds",
-        "CleanupStaleGuildMembers",
-        "SyncUserData",
-        "SyncGuildData",
-        "SyncGuildMemberData"
-    ];
-
     public void QueueJobs()
     {
         var environment = botSettings.Value.Environment;
@@ -42,9 +36,6 @@ public sealed class BackgroundService(UserService userService,
 
         Log.Information($"RecurringJob: Adding {nameof(UpdateStatus)}");
         RecurringJob.AddOrUpdate(nameof(UpdateStatus), () => UpdateStatus(), "*/5 * * * *");
-
-        Log.Information($"RecurringJob: Adding {nameof(ClearUserCache)}");
-        RecurringJob.AddOrUpdate(nameof(ClearUserCache), () => ClearUserCache(), "30 */2 * * *");
 
         Log.Information($"RecurringJob: Adding {nameof(SendRemindersToUsers)}");
         RecurringJob.AddOrUpdate(nameof(SendRemindersToUsers), () => SendRemindersToUsers(), "* * * * *");
@@ -60,7 +51,23 @@ public sealed class BackgroundService(UserService userService,
             Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
             RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
 
-            RemoveRetiredDataMaintenanceJobs();
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleUsers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleUsers), () => CleanupStaleUsers(), "0 2 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuilds)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuilds), () => CleanupStaleGuilds(), "0 3 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(CleanupStaleGuildMembers)}");
+            RecurringJob.AddOrUpdate(nameof(CleanupStaleGuildMembers), () => CleanupStaleGuildMembers(), "0 4 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncUserData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncUserData), () => SyncUserData(), "0 5 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildData), () => SyncGuildData(), "0 6 * * *");
+
+            Log.Information($"RecurringJob: Adding {nameof(SyncGuildMemberData)}");
+            RecurringJob.AddOrUpdate(nameof(SyncGuildMemberData), () => SyncGuildMemberData(), "0 7 * * *");
 
             // Bot list updates only in production
             if (isProduction)
@@ -77,35 +84,55 @@ public sealed class BackgroundService(UserService userService,
         {
             RecurringJob.RemoveIfExists(nameof(UpdateMetrics));
             RecurringJob.RemoveIfExists(nameof(UpdateBotLists));
-            RemoveRetiredDataMaintenanceJobs();
-        }
-    }
-
-    private static void RemoveRetiredDataMaintenanceJobs()
-    {
-        foreach (var jobId in RetiredDataMaintenanceJobIds)
-        {
-            RecurringJob.RemoveIfExists(jobId);
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleUsers));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuilds));
+            RecurringJob.RemoveIfExists(nameof(CleanupStaleGuildMembers));
+            RecurringJob.RemoveIfExists(nameof(SyncUserData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildData));
+            RecurringJob.RemoveIfExists(nameof(SyncGuildMemberData));
         }
     }
 
     public async Task UpdateStatus()
     {
         Log.Information($"Running {nameof(UpdateStatus)}");
-        var activity = GetRandomActivityStatus(client);
-        await client.SetActivityAsync(activity);
+        var statusText = await GetActivityStatusAsync(client);
+        await client.UpdatePresenceAsync(new PresenceProperties(UserStatusType.Online)
+            .WithActivities([new UserActivityProperties(statusText, UserActivityType.Watching)]));
     }
 
-    private static Game GetRandomActivityStatus(DiscordSocketClient client)
+    internal async Task<string> GetActivityStatusAsync(GatewayClient client)
     {
-        var guildCount = client.Guilds.Count;
-        var userCount = client.Guilds.Sum(x => x.MemberCount);
+        var guildCount = client.Cache.Guilds.Count;
+        var userCount = client.Cache.Guilds.Values.Sum(x => x.UserCount);
 
+        if (guildCount == 0)
+        {
+            return await GetDatabaseActivityStatusAsync();
+        }
+
+        return FormatActivityStatus(userCount, guildCount);
+    }
+
+    internal async Task<string> GetDatabaseActivityStatusAsync()
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var userCount = await db.Guilds
+            .AsNoTracking()
+            .SumAsync(x => x.MemberCount ?? 0);
+        var guildCount = await db.Guilds
+            .AsNoTracking()
+            .CountAsync();
+
+        return FormatActivityStatus(userCount, guildCount);
+    }
+
+    internal static string FormatActivityStatus(int userCount, int guildCount)
+    {
         var formattedUserCount = FormatThousandsCount(userCount);
         var formattedGuildCount = FormatThousandsCount(guildCount);
 
-        var statusText = $"{formattedUserCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
-        return new Game(statusText, ActivityType.Watching);
+        return $"{formattedUserCount} {(userCount == 1 ? "user" : "users")} on {formattedGuildCount} {(guildCount == 1 ? "server" : "servers")}";
     }
 
     private static string FormatThousandsCount(int count) =>
@@ -124,7 +151,18 @@ public sealed class BackgroundService(UserService userService,
     public async Task SendRemindersToUsers()
     {
         Log.Information($"Running {nameof(SendRemindersToUsers)}");
-        var reminders = await reminderCommands.GetAllRecentRemindersAsync();
+
+        Result<List<Domain.Entities.Reminder>> reminders;
+        try
+        {
+            reminders = await reminderCommands.GetAllRecentRemindersAsync();
+        }
+        catch (Exception ex) when (IsTransientDatabaseException(ex))
+        {
+            Log.Warning(ex, "Skipping {JobName} because the database is temporarily unavailable", nameof(SendRemindersToUsers));
+            return;
+        }
+
         if (reminders.IsFailure)
         {
             return;
@@ -132,26 +170,26 @@ public sealed class BackgroundService(UserService userService,
 
         foreach (var reminder in reminders.Value)
         {
-            var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
-            if (checkIfBentoUser.HasNoValue)
-            {
-                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
-                continue;
-            }
-
-            var user = await userResolver.GetUserAsync((ulong)reminder.UserId);
-            if (user is null)
-            {
-                Log.Warning(
-                    "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
-                    reminder.UserId, reminder.Id);
-                await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
-                continue;
-            }
-
             try
             {
-                var result = await dmSender.SendReminderAsync(user, reminder.Content);
+                var checkIfBentoUser = await userService.GetUserAsync((ulong)reminder.UserId);
+                if (checkIfBentoUser.HasNoValue)
+                {
+                    await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                    continue;
+                }
+
+                var user = await userResolver.GetUserAsync((ulong)reminder.UserId);
+                if (user is null)
+                {
+                    Log.Warning(
+                        "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
+                        reminder.UserId, reminder.Id);
+                    await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
+                    continue;
+                }
+
+                var result = await dmSender.SendReminderAsync((ulong)reminder.UserId, reminder.Content);
                 switch (result)
                 {
                     case DmSendResult.Success:
@@ -165,6 +203,11 @@ public sealed class BackgroundService(UserService userService,
                         break;
                 }
             }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                Log.Warning(ex, "Stopping {JobName} because the database became temporarily unavailable", nameof(SendRemindersToUsers));
+                return;
+            }
             catch (Exception ex)
             {
                 // Unexpected error: log and keep the reminder so it can be retried later by the next run
@@ -177,22 +220,24 @@ public sealed class BackgroundService(UserService userService,
 
     public async Task UpdateMetrics()
     {
-        if (!string.Equals(botSettings.Value.Environment, "production", StringComparison.OrdinalIgnoreCase))
+        var environment = botSettings.Value.Environment;
+        if (!string.Equals(environment, "production", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(environment, "staging", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         Log.Information($"Running {nameof(UpdateMetrics)}");
 
-        Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
-        var discordUserCount = await userService.GetTotalDiscordUserCountAsync();
-        Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
-        Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
-        Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
-
         try
         {
-            if (client.Guilds?.Count == null)
+            Statistics.RegisteredUserCount.Set(await userService.GetTotalDatabaseUserCountAsync());
+            var discordUserCount = await userService.GetTotalDiscordUserCountAsync();
+            Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
+            Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
+            Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
+
+            if (client.Cache.Guilds.Count == 0)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateMetrics)}");
                 return;
@@ -203,8 +248,12 @@ public sealed class BackgroundService(UserService userService,
 
             if (startTime.Minutes > 8)
             {
-                Statistics.DiscordServerCount.Set(client.Guilds.Count);
+                Statistics.DiscordServerCount.Set(client.Cache.Guilds.Count);
             }
+        }
+        catch (Exception e) when (IsTransientDatabaseException(e))
+        {
+            Log.Warning(e, "Skipping {JobName} because the database is temporarily unavailable", nameof(UpdateMetrics));
         }
         catch (Exception e)
         {
@@ -213,10 +262,27 @@ public sealed class BackgroundService(UserService userService,
         }
     }
 
-    public void ClearUserCache()
+    private static bool IsTransientDatabaseException(Exception exception)
     {
-        client.PurgeUserCache();
-        Log.Information("Purged discord user cache");
+        var sawDatabaseException = false;
+
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            sawDatabaseException |= current is RetryLimitExceededException or NpgsqlException or PostgresException;
+
+            if (current is PostgresException postgresException
+                && postgresException.SqlState == PostgresErrorCodes.CannotConnectNow)
+            {
+                return true;
+            }
+
+            if (sawDatabaseException && current is IOException or SocketException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task UpdateGuildMemberCounts()
@@ -225,18 +291,18 @@ public sealed class BackgroundService(UserService userService,
 
         try
         {
-            if (client.Guilds?.Count == null)
+            if (client.Cache.Guilds.Count == 0)
             {
                 Log.Information($"Client guild count is null, cancelling {nameof(UpdateGuildMemberCounts)}");
                 return;
             }
 
-            foreach (var guild in client.Guilds)
+            foreach (var guild in client.Cache.Guilds.Values)
             {
-                await guildService.UpdateGuildMemberCountAsync(guild.Id, guild.MemberCount);
+                await guildService.UpdateGuildMemberCountAsync(guild.Id, guild.UserCount);
             }
 
-            Log.Information($"Updated member counts for {client.Guilds.Count} guilds");
+            Log.Information($"Updated member counts for {client.Cache.Guilds.Count} guilds");
         }
         catch (Exception e)
         {
@@ -265,8 +331,13 @@ public sealed class BackgroundService(UserService userService,
             {
                 try
                 {
-                    var discordUser = client.GetUser((ulong)user.UserId);
-                    if (discordUser == null) continue;
+                    var discordUser = await userResolver.GetUserAsync((ulong)user.UserId);
+                    if (discordUser == null)
+                    {
+                        Log.Debug("Could not resolve leaderboard user {UserId} for avatar refresh", user.UserId);
+                        continue;
+                    }
+
                     await userService.UpdateUserAvatarAsync(discordUser);
                     updatedCount++;
                 }
@@ -284,9 +355,422 @@ public sealed class BackgroundService(UserService userService,
             throw;
         }
     }
-    
+
     public async Task UpdateBotLists()
     {
-        await botListService.UpdateBotLists(client.Guilds.Count);
+        await botListService.UpdateBotLists(client.Cache.Guilds.Count);
+    }
+
+    /// <summary>
+    /// Removes guilds from database that the bot is no longer a member of.
+    /// Cascade deletes all guild members for those guilds automatically.
+    /// Runs at 3am daily, after CleanupStaleUsers.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task CleanupStaleGuilds()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuilds)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(CleanupStaleGuilds)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
+
+                var deletedInBatch = 0;
+                foreach (var dbGuild in dbGuilds)
+                {
+                    totalProcessed++;
+
+                    var guild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuild.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
+                    {
+                        Log.Information($"Removing stale guild: {dbGuild.GuildName} ({dbGuild.GuildId})");
+                        await guildService.RemoveGuildAsync((ulong)dbGuild.GuildId);
+                        deletedInBatch++;
+                        totalDeleted++;
+                    }
+                }
+
+                if (deletedInBatch == 0)
+                {
+                    skip += batchSize;
+                }
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuilds)}: Processed {totalProcessed} guilds, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuilds));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes guild members from database who are no longer in their respective guilds.
+    /// Only handles members who left guilds that the bot is still in (other cases handled by cascade deletion).
+    /// Uses REST API calls to verify membership (not cache) to avoid false positives.
+    /// Runs at 4am daily, after CleanupStaleUsers and CleanupStaleGuilds.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task CleanupStaleGuildMembers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleGuildMembers)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(CleanupStaleGuildMembers)))
+            {
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalDeleted = 0;
+
+            while (true)
+            {
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
+
+                var guildMembersToDelete = new List<long>();
+
+                foreach (var dbGuildMember in dbGuildMembers)
+                {
+                    totalProcessed++;
+
+                    var guild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuildMember.GuildId).AsMaybe();
+                    if (guild.HasNoValue)
+                    {
+                        // Guild no longer exists in bot's guild list - safe to delete
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Use REST API call instead of cache lookup to verify membership
+                        // This ensures we don't delete valid members who just aren't in cache
+                        var guildUser = await client.Rest.GetGuildUserAsync((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                        if (guildUser == null)
+                        {
+                            guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                        }
+                    }
+                    catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        // User not found in guild - safe to delete
+                        guildMembersToDelete.Add(dbGuildMember.GuildMemberId);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but don't delete on other errors - better to be safe
+                        Log.Warning(ex, $"Failed to verify guild member {dbGuildMember.GuildMemberId} in guild {dbGuildMember.GuildId}");
+                    }
+
+                    // Rate-limit REST API calls to Discord
+                    await Task.Delay(10000);
+                }
+
+                if (guildMembersToDelete.Count > 0)
+                {
+                    await guildService.DeleteGuildMembersBulkAsync(guildMembersToDelete);
+                    totalDeleted += guildMembersToDelete.Count;
+                    Log.Information($"Deleted {guildMembersToDelete.Count} stale guild members in this batch");
+                }
+
+                if (guildMembersToDelete.Count == 0)
+                {
+                    skip += batchSize;
+                }
+
+                await Task.Delay(15000);
+            }
+
+            Log.Information($"Completed {nameof(CleanupStaleGuildMembers)}: Processed {totalProcessed} guild members, deleted {totalDeleted}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleGuildMembers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Removes users from database who have no guild memberships.
+    /// Cascade deletes any stale guild member records for these users automatically.
+    /// Runs at 2am daily, before CleanupStaleGuilds and CleanupStaleGuildMembers.
+    /// Running first allows cascade deletions from subsequent jobs to handle most cleanup automatically.
+    /// </summary>
+    public async Task CleanupStaleUsers()
+    {
+        Log.Information($"Running {nameof(CleanupStaleUsers)}");
+
+        try
+        {
+            var usersWithNoGuilds = await userService.GetUsersWithoutGuilds();
+
+            if (usersWithNoGuilds.Count > 0)
+            {
+                Log.Information($"Found {usersWithNoGuilds.Count} users with no guild memberships");
+
+                var deletedCount = 0;
+                foreach (var userId in usersWithNoGuilds)
+                {
+                    try
+                    {
+                        await userService.DeleteUserAsync((ulong)userId);
+                        deletedCount++;
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        Log.Warning($"User {userId} was already deleted (likely by cascade from guild member cleanup)");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Failed to delete user {userId}");
+                    }
+                }
+
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: Deleted {deletedCount} users ({usersWithNoGuilds.Count - deletedCount} already deleted)");
+            }
+            else
+            {
+                Log.Information($"Completed {nameof(CleanupStaleUsers)}: No users to delete");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(CleanupStaleUsers));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs user data (username, avatar) from the platform for users who can still be resolved.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncUserData()
+    {
+        Log.Information($"Running {nameof(SyncUserData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncUserData)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbUsers = await userService.GetUserBatchAsync(batchSize, skip);
+                if (dbUsers.Count == 0) break;
+
+                foreach (var dbUser in dbUsers)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordUser = (await userResolver.GetUserAsync((ulong)dbUser.UserId)).AsMaybe();
+                        if (discordUser.HasValue)
+                        {
+                            var synced = await userService.SyncUserFromDiscordAsync(dbUser, discordUser.Value);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync user {dbUser.UserId}");
+                    }
+
+                    // Rate-limit REST API calls to Discord
+                    await Task.Delay(10000);
+                }
+
+                skip += batchSize;
+
+                await Task.Delay(15000);
+            }
+
+            Log.Information($"Completed {nameof(SyncUserData)}: Processed {totalProcessed} users, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncUserData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild data (name, icon) from the platform.
+    /// Processes in batches to avoid memory issues.
+    /// </summary>
+    public async Task SyncGuildData()
+    {
+        Log.Information($"Running {nameof(SyncGuildData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncGuildData)))
+            {
+                return;
+            }
+
+            const int batchSize = 50;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbGuilds = await guildService.GetGuildBatchAsync(batchSize, skip);
+                if (dbGuilds.Count == 0) break;
+
+                foreach (var dbGuild in dbGuilds)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuild.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
+                        {
+                            var synced = await guildService.SyncGuildFromDiscordAsync(dbGuild, discordGuild.Value);
+                            if (synced)
+                            {
+                                totalSynced++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild {dbGuild.GuildId}");
+                    }
+                }
+
+                skip += batchSize;
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildData)}: Processed {totalProcessed} guilds, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildData));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Syncs guild member data (avatar) from the platform.
+    /// Uses REST API calls to fetch members (not cache) to ensure all members can be synced.
+    /// Processes in batches to avoid memory issues and rate limits.
+    /// </summary>
+    public async Task SyncGuildMemberData()
+    {
+        Log.Information($"Running {nameof(SyncGuildMemberData)}");
+
+        try
+        {
+            if (HasClientNoGuilds(nameof(SyncGuildMemberData)))
+            {
+                return;
+            }
+
+            const int batchSize = 100;
+            var skip = 0;
+            var totalProcessed = 0;
+            var totalSynced = 0;
+
+            while (true)
+            {
+                var dbGuildMembers = await guildService.GetGuildMemberBatchAsync(batchSize, skip);
+                if (dbGuildMembers.Count == 0) break;
+
+                var deletedInBatch = 0;
+                foreach (var dbGuildMember in dbGuildMembers)
+                {
+                    totalProcessed++;
+
+                    try
+                    {
+                        var discordGuild = client.Cache.Guilds.GetValueOrDefault((ulong)dbGuildMember.GuildId).AsMaybe();
+                        if (discordGuild.HasValue)
+                        {
+                            // Use REST API call instead of cache lookup
+                            var discordGuildUser = await client.Rest.GetGuildUserAsync((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                            if (discordGuildUser != null)
+                            {
+                                var synced = await guildService.SyncGuildMemberFromDiscordAsync(dbGuildMember, discordGuildUser);
+                                if (synced)
+                                {
+                                    totalSynced++;
+                                }
+                            }
+                        }
+                    }
+                    catch (NetCord.Rest.RestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        // Member no longer in guild — remove stale record
+                        await guildService.DeleteGuildMember((ulong)dbGuildMember.GuildId, (ulong)dbGuildMember.UserId);
+                        deletedInBatch++;
+                        Log.Information($"Removed stale guild member {dbGuildMember.UserId} from guild {dbGuildMember.GuildId} during sync");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"Failed to sync guild member {dbGuildMember.GuildMemberId}");
+                    }
+
+                    // Rate-limit REST API calls to Discord
+                    await Task.Delay(10000);
+                }
+
+                if (deletedInBatch == 0)
+                {
+                    skip += batchSize;
+                }
+
+                await Task.Delay(15000);
+            }
+
+            Log.Information($"Completed {nameof(SyncGuildMemberData)}: Processed {totalProcessed} guild members, synced {totalSynced}");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, nameof(SyncGuildMemberData));
+            throw;
+        }
+    }
+
+    private bool HasClientNoGuilds(string jobName)
+    {
+        if (client.Cache.Guilds.Count == 0)
+        {
+            Log.Information($"Client guilds not available, cancelling {jobName}");
+            return true;
+        }
+
+        return false;
     }
 }
