@@ -28,4 +28,30 @@ public sealed class MessageHandlerTests
         Assert.True(firstUser);
         Assert.True(secondUser);
     }
+
+    [Fact]
+    public void TryBeginMessageTrackingCooldown_AllowsFirstGuildUserMessageAndBlocksImmediateRepeat()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+
+        var first = MessageHandler.TryBeginMessageTrackingCooldown(cache, guildId: 10UL, userId: 123UL);
+        var second = MessageHandler.TryBeginMessageTrackingCooldown(cache, guildId: 10UL, userId: 123UL);
+
+        Assert.True(first);
+        Assert.False(second);
+    }
+
+    [Fact]
+    public void TryBeginMessageTrackingCooldown_IsPerGuildUserPair()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+
+        var firstGuild = MessageHandler.TryBeginMessageTrackingCooldown(cache, guildId: 10UL, userId: 123UL);
+        var secondGuild = MessageHandler.TryBeginMessageTrackingCooldown(cache, guildId: 20UL, userId: 123UL);
+        var secondUser = MessageHandler.TryBeginMessageTrackingCooldown(cache, guildId: 10UL, userId: 456UL);
+
+        Assert.True(firstGuild);
+        Assert.True(secondGuild);
+        Assert.True(secondUser);
+    }
 }

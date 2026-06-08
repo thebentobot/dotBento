@@ -39,7 +39,7 @@ public sealed class StreamingApiServiceTests
     }
 
     [Fact]
-    public async Task SushiiImageStream_DisposesResponseContentWhenReturnedStreamIsDisposed()
+    public async Task SushiiImageStream_BuffersResponseAndDisposesHttpContent()
     {
         var stream = new TrackingStream([1, 2, 3]);
         using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.OK)
@@ -51,9 +51,10 @@ public sealed class StreamingApiServiceTests
         var result = await sut.GetSushiiImage("https://images.example/render", "<html></html>", 100, 100);
 
         Assert.True(result.IsSuccess);
-        Assert.False(stream.WasDisposed);
-        await result.Value.DisposeAsync();
         Assert.True(stream.WasDisposed);
+        Assert.IsType<MemoryStream>(result.Value);
+        Assert.Equal(3, result.Value.Length);
+        await result.Value.DisposeAsync();
     }
 
     [Fact]

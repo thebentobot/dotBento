@@ -25,6 +25,7 @@ public sealed class MessageHandler : IDisposable
     private readonly IMemoryCache _cache;
 
     private static readonly TimeSpan MessageXpCooldown = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan MessageTrackingCooldown = TimeSpan.FromMinutes(5);
 
     public MessageHandler(GatewayClient client,
         UserService userService,
@@ -76,12 +77,15 @@ public sealed class MessageHandler : IDisposable
             return;
         }
 
-        await _guildService.AddGuildAsync(context.Guild);
-        await _userService.CreateOrAddUserToCache(context.User);
-        var guildMember = await _memberLookup.GetOrFetchAsync(context.Guild.Id, context.User.Id, context.Guild);
-        if (guildMember != null)
+        if (TryBeginMessageTrackingCooldown(_cache, context.Guild.Id, context.User.Id))
         {
-            await _guildService.AddGuildMemberAsync(guildMember);
+            await _guildService.AddGuildAsync(context.Guild);
+            await _userService.CreateOrAddUserToCache(context.User);
+            var guildMember = await _memberLookup.GetOrFetchAsync(context.Guild.Id, context.User.Id, context.Guild);
+            if (guildMember != null)
+            {
+                await _guildService.AddGuildMemberAsync(guildMember);
+            }
         }
 
         if (!TryBeginMessageXpCooldown(_cache, context.User.Id))
@@ -168,6 +172,18 @@ public sealed class MessageHandler : IDisposable
         }
 
         cache.Set(key, true, MessageXpCooldown);
+        return true;
+    }
+
+    internal static bool TryBeginMessageTrackingCooldown(IMemoryCache cache, ulong guildId, ulong userId)
+    {
+        var key = $"message-tracking-cooldown:{guildId}:{userId}";
+        if (cache.TryGetValue(key, out _))
+        {
+            return false;
+        }
+
+        cache.Set(key, true, MessageTrackingCooldown);
         return true;
     }
 
