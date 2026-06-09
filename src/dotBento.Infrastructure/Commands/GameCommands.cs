@@ -4,11 +4,11 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Infrastructure.Commands;
 
-public sealed class GameCommands(GameService gameService)
+public sealed class GameCommands(GameService gameService, Func<int, int, int>? randomNext = null)
 {
     public async Task<(RpsGameChoice, RpsGameResult)> RockPaperScissorsAsync(RpsGameChoice playerChoice, long userId)
     {
-        var aiChoice = (RpsGameChoice)Random.Shared.Next(0, 3);
+        var aiChoice = (RpsGameChoice)(randomNext?.Invoke(0, 3) ?? Random.Shared.Next(0, 3));
 
         RpsGameResult result;
 
@@ -40,6 +40,7 @@ public sealed class GameCommands(GameService gameService)
     
     public static int Roll(int min, int max)
     {
-        return Random.Shared.Next(min, max + 1);
+        var random = new Random();
+        return random.Next(min, max);
     }
 }

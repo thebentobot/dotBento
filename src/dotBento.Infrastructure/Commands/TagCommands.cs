@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using dotBento.Domain;
 using dotBento.Domain.Entities.Tags;
@@ -36,15 +37,14 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("Tag not found.");
         }
-        if (userId != tagExistsCheck.Value.UserId && !hasMessageEditPerms)
+        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
         {
             return Result.Failure("You can only delete your own tags.");
         }
-        var ownerUserId = tagExistsCheck.Value.UserId;
-        await tagService.DeleteTagAsync(ownerUserId, guildId, name);
+        await tagService.DeleteTagAsync(userId, guildId, name);
         return Result.Success();
     }
-
+    
     public async Task<Result> UpdateTagAsync(long userId, long guildId, string name, string content, bool hasMessageEditPerms)
     {
         if (string.IsNullOrWhiteSpace(SanitizeTagContent(content)))
@@ -56,37 +56,35 @@ public sealed class TagCommands(TagService tagService)
         {
             return Result.Failure("Tag not found.");
         }
-        if (userId != tagExistsCheck.Value.UserId && !hasMessageEditPerms)
+        if (!hasMessageEditPerms || userId != tagExistsCheck.Value.UserId)
         {
             return Result.Failure("You can only update your own tags.");
         }
-        var ownerUserId = tagExistsCheck.Value.UserId;
-        await tagService.UpdateTagAsync(ownerUserId, guildId, name, SanitizeTagContent(content));
+        await tagService.UpdateTagAsync(userId, guildId, name, SanitizeTagContent(content));
         return Result.Success();
     }
-
+    
     public async Task<Result> RenameTagAsync(long userId, long guildId, string oldName, string newName, bool hasMessageEditPerms)
     {
+        var newTagExistsCheck = await tagService.FindTagAsync(guildId, newName);
+        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || newTagExistsCheck.HasValue)
+        {
+            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
+        }
         if (string.IsNullOrWhiteSpace(newName))
         {
             return Result.Failure("New tag name cannot be empty.");
         }
-        var newTagCheck = await tagService.FindTagAsync(guildId, newName);
-        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || newTagCheck.HasValue)
-        {
-            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
-        }
-        var oldTagCheck = await tagService.FindTagAsync(guildId, oldName);
-        if (!oldTagCheck.HasValue)
+        var oldTagExistsCheck = await tagService.FindTagAsync(guildId, oldName);
+        if (!oldTagExistsCheck.HasValue)
         {
             return Result.Failure("Tag not found.");
         }
-        if (userId != oldTagCheck.Value.UserId && !hasMessageEditPerms)
+        if (!hasMessageEditPerms || userId != oldTagExistsCheck.Value.UserId)
         {
             return Result.Failure("You can only rename your own tags.");
         }
-        var ownerUserId = oldTagCheck.Value.UserId;
-        await tagService.RenameTagAsync(ownerUserId, guildId, oldName, newName);
+        await tagService.RenameTagAsync(userId, guildId, oldName, newName);
         return Result.Success();
     }
     
@@ -99,13 +97,13 @@ public sealed class TagCommands(TagService tagService)
     public async Task<Result<List<BentoTags>>> FindTagsAsync(long guildId, bool top, Maybe<long> authorId)
     {
         var tags = await tagService.FindTagsAsync(guildId, top, authorId);
-        return tags.IsSuccess && tags.Value.Count != 0
+        return tags.IsSuccess
             ? Result.Success(tags.Value.Select(x => x.ToBentoTag()).ToList())
             : Result.Failure<List<BentoTags>>("No tags found.");
     }
 
-    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, string? query, Maybe<long> authorId) =>
-        await tagService.FindTagNamesForAutocompleteAsync(guildId, query, authorId);
+    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, Maybe<long> authorId, string? query) =>
+        await tagService.FindTagNamesForAutocompleteAsync(guildId, authorId, query);
     
     public async Task<Result<BentoTags>> GetRandomTagAsync(long userId, long guildId)
     {
@@ -113,16 +111,14 @@ public sealed class TagCommands(TagService tagService)
         return tag.HasValue ? Result.Success(tag.Value.ToBentoTag()) : Result.Failure<BentoTags>("No tags found.");
     }
     
+    [ExcludeFromCodeCoverage(Justification = "Wraps PostgreSQL ILike tag search methods that are not supported by the EF InMemory test provider.")]
     public async Task<Result<List<BentoTags>>> SearchTagsAsync(long guildId, string query)
     {
         var tagsByCommand = await tagService.SearchTagsByCommandAsync(guildId, query);
         var tagsByContent = await tagService.SearchTagsByContentAsync(guildId, query);
-        var tags = tagsByCommand.Concat(tagsByContent)
-            .DistinctBy(t => t.TagId)
-            .Select(x => x.ToBentoTag())
-            .ToList();
+        var tags = tagsByCommand.Concat(tagsByContent).ToList();
         return tags.Count != 0
-            ? Result.Success(tags)
+            ? Result.Success(tags.Select(x => x.ToBentoTag()).Distinct().ToList())
             : Result.Failure<List<BentoTags>>("No tags found.");
     }
     

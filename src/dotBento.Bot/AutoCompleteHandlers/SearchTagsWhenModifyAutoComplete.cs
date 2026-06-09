@@ -1,33 +1,24 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Gateway;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
-using dotBento.Bot.Extensions;
-using dotBento.Bot.Services;
+using Discord;
+using Discord.Interactions;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands, GuildMemberLookupService memberLookup) : IAutocompleteProvider<AutocompleteInteractionContext>
+public sealed class SearchTagsWhenModifyAutoComplete(TagCommands tagCommands) : AutocompleteHandler
 {
-    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
+        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
-        var guildUser = context.Guild is not null
-            ? await memberLookup.GetOrFetchAsync(context.Guild.Id, context.User.Id, context.Guild)
-            : null;
-        var hasManageMessages = guildUser is not null
-            && context.Guild is not null
-            && guildUser.HasGuildPermission(context.Guild, Permissions.ManageMessages);
-        var authorId = hasManageMessages
-            ? Maybe<long>.None
-            : (long)context.User.Id;
+        var guildUser = await context.Guild.GetUserAsync(context.User.Id);
+        var userId = guildUser.GuildPermissions.ManageMessages ? (long)context.User.Id : Maybe<long>.None;
+        var searchValue = autocompleteInteraction.Data?.Current?.Value?.ToString();
         var results = await tagCommands.FindTagNamesForAutocompleteAsync(
-            (long)context.Guild!.Id,
-            option.Value?.ToString(),
-            authorId);
+            (long)context.Guild.Id,
+            userId,
+            searchValue);
 
-        return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+        return AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s)));
     }
 }

@@ -1,31 +1,30 @@
-using NetCord;
-using NetCord.Services.Commands;
+using CSharpFunctionalExtensions;
+using Discord.Commands;
+using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
-using dotBento.Bot.Services;
 using Fergun.Interactive;
 using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Banner")]
+[Name("Banner")]
 public sealed class BannerTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService,
-    BannerCommand bannerCommand,
-    IDiscordUserResolver userResolver) : BaseCommandModule(botSettings)
+    BannerCommand bannerCommand) : BaseCommandModule(botSettings)
 {
-    [Command("banner")]
+    [Command("banner", RunMode = RunMode.Async)]
     [Summary("Get the banner of a User Profile")]
     [Examples("banner", "banner @Banner", "banner 232584569289703424")]
-    public async Task BannerCommand(User? user = null)
+    public async Task BannerCommand(SocketUser? user = null)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
+        _ = Context.Channel.TriggerTypingAsync();
         user ??= Context.User;
         await user.ReturnIfBot(Context, interactiveService);
-        var restUser = await userResolver.GetRestUserAsync(user.Id);
-        await Context.SendResponse(interactiveService, await bannerCommand.Command(restUser));
-    }
+        var restUser = (await Context.Client.Rest.GetUserAsync(user.Id)).AsMaybe();
+        await Context.SendResponse(interactiveService, await bannerCommand.Command(restUser)); 
+    }   
 }

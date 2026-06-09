@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
@@ -10,12 +11,13 @@ public sealed class TagService(
     IMemoryCache cache,
     IDbContextFactory<BotDbContext> contextFactory)
 {
+    private const int AutocompleteLimit = 25;
+
     private readonly MemoryCacheEntryOptions _cacheOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
         SlidingExpiration = TimeSpan.FromMinutes(2)
     };
-    private readonly Dictionary<long, List<string>> _cacheKeysByGuild = new();
 
     public async Task<Tag> CreateTagAsync(long userId, long guildId, string name, string content)
     {
@@ -34,7 +36,6 @@ public sealed class TagService(
 
         // TODO: should we invalidate instead of adding to cache?
         InvalidateTagCache(guildId, name);
-        InvalidateTagsCache(guildId);
 
         return tag;
     }
@@ -52,7 +53,6 @@ public sealed class TagService(
         await context.SaveChangesAsync();
 
         InvalidateTagCache(guildId, name);
-        InvalidateTagsCache(guildId);
     }
 
     public async Task UpdateTagAsync(long userId, long guildId, string name, string content)
@@ -68,7 +68,6 @@ public sealed class TagService(
         await context.SaveChangesAsync();
 
         InvalidateTagCache(guildId, name);
-        InvalidateTagsCache(guildId);
     }
 
     public async Task<Maybe<Tag>> FindTagAsync(long guildId, string name)
@@ -76,77 +75,51 @@ public sealed class TagService(
         var cacheKey = GetTagCacheKey(guildId, name);
         if (cache.TryGetValue(cacheKey, out Maybe<Tag> tag)) return tag;
         await using var context = await contextFactory.CreateDbContextAsync();
-        tag = (await context.Tags.FirstOrDefaultAsync(x => x.GuildId == guildId && x.Command == name))?.AsMaybe() ?? Maybe<Tag>.None;
+        tag = (await context.Tags
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.GuildId == guildId && x.Command == name))?.AsMaybe() ?? Maybe<Tag>.None;
             
         cache.Set(cacheKey, tag, _cacheOptions);
-        AddCacheKey(guildId, cacheKey);
         return tag;
     }
 
     public async Task<Result<List<Tag>>> FindTagsAsync(long guildId, bool top, Maybe<long> authorId)
     {
-        var cacheKey = GetTagsCacheKey(guildId, authorId);
-        if (cache.TryGetValue(cacheKey, out Result<List<Tag>> tags))
-            return top
-                ? tags.Value.OrderByDescending(x => x.Count).ToList()
-                : tags.Value;
-        {
-            await using var context = await contextFactory.CreateDbContextAsync();
-            var query = context.Tags.Where(x => x.GuildId == guildId);
-            if (authorId.HasValue)
-            {
-                query = query.Where(x => x.UserId == authorId.Value);
-            }
-            tags = await query.ToListAsync();
-            cache.Set(cacheKey, tags, _cacheOptions);
-            AddCacheKey(guildId, cacheKey);
-        }
-
-        return top
-            ? tags.Value.OrderByDescending(x => x.Count).ToList()
-            : tags.Value;
-    }
-
-    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, string? query, Maybe<long> authorId, int limit = 25)
-    {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var tags = context.Tags.AsNoTracking().Where(x => x.GuildId == guildId);
+        var query = context.Tags
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId);
+
         if (authorId.HasValue)
         {
-            tags = tags.Where(x => x.UserId == authorId.Value);
+            query = query.Where(x => x.UserId == authorId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(query))
-        {
-            var normalizedQuery = query.ToLowerInvariant();
-            tags = tags.Where(x => x.Command.ToLower().StartsWith(normalizedQuery));
-        }
+        query = top
+            ? query.OrderByDescending(x => x.Count)
+            : query.OrderBy(x => x.Command);
 
-        return await tags
-            .OrderByDescending(x => x.Count)
-            .ThenBy(x => x.Command)
-            .Select(x => x.Command)
-            .Take(limit)
-            .ToListAsync();
+        var tags = await query.ToListAsync();
+        return Result.Success(tags);
     }
 
     public async Task<Maybe<Tag>> GetRandomTagAsync(long userId, long guildId)
     {
-        var cacheKey = GetTagsCacheKey(guildId);
-        if (cache.TryGetValue(cacheKey, out Result<List<Tag>> tags))
-        {
-            var random = new Random();
-            var tag = tags.Value[random.Next(tags.Value.Count)];
-            return tag.AsMaybe();
-        }
         await using var context = await contextFactory.CreateDbContextAsync();
-        var query = context.Tags.Where(x => x.GuildId == guildId);
-        tags = await query.ToListAsync();
-        cache.Set(cacheKey, tags, _cacheOptions);
-        AddCacheKey(guildId, cacheKey);
-        return tags.Value.Count != 0
-            ? tags.Value[new Random().Next(tags.Value.Count)].AsMaybe()
-            : Maybe<Tag>.None;
+        var query = context.Tags
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId);
+        var count = await query.CountAsync();
+        if (count == 0)
+        {
+            return Maybe<Tag>.None;
+        }
+
+        var tag = await query
+            .OrderBy(x => x.TagId)
+            .Skip(Random.Shared.Next(count))
+            .FirstOrDefaultAsync();
+        return tag.AsMaybe();
     }
 
     public async Task RenameTagAsync(long userId, long guildId, string oldName, string newName)
@@ -162,8 +135,7 @@ public sealed class TagService(
         await context.SaveChangesAsync();
 
         InvalidateTagCache(guildId, oldName);
-        //InvalidateTagCache(guildId, newName);
-        InvalidateTagsCache(guildId);
+        InvalidateTagCache(guildId, newName);
     }
 
     public async Task IncrementTagCountAsync(long tagId)
@@ -177,26 +149,51 @@ public sealed class TagService(
         tag.Count++;
         await context.SaveChangesAsync();
 
-        InvalidateTagsCache(tag.GuildId);
+        InvalidateTagCache(tag.GuildId, tag.Command);
     }
 
-    // TODO: use cache for search
+    [ExcludeFromCodeCoverage(Justification = "Uses PostgreSQL ILike, which is not supported by the EF InMemory test provider.")]
     public async Task<List<Tag>> SearchTagsByCommandAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var normalizedQuery = query.ToLowerInvariant();
         return await context.Tags
-            .Where(x => x.GuildId == guildId && x.Command.ToLower().Contains(normalizedQuery))
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId && EF.Functions.ILike(x.Command, $"%{query}%"))
             .ToListAsync();
     }
 
-    // TODO: use cache for search
+    [ExcludeFromCodeCoverage(Justification = "Uses PostgreSQL ILike, which is not supported by the EF InMemory test provider.")]
     public async Task<List<Tag>> SearchTagsByContentAsync(long guildId, string query)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var normalizedQuery = query.ToLowerInvariant();
         return await context.Tags
-            .Where(x => x.GuildId == guildId && x.Content.ToLower().Contains(normalizedQuery))
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId && EF.Functions.ILike(x.Content, $"%{query}%"))
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> FindTagNamesForAutocompleteAsync(long guildId, Maybe<long> authorId, string? query)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var tags = context.Tags
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId);
+
+        if (authorId.HasValue)
+        {
+            tags = tags.Where(x => x.UserId == authorId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            tags = tags.Where(x => x.Command.StartsWith(query));
+        }
+
+        return await tags
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Command)
+            .Select(x => x.Command)
+            .Take(AutocompleteLimit)
             .ToListAsync();
     }
 
@@ -204,44 +201,7 @@ public sealed class TagService(
     {
         var cacheKey = GetTagCacheKey(guildId, name);
         cache.Remove(cacheKey);
-        RemoveCacheKey(guildId, cacheKey);
-    }
-
-    private void InvalidateTagsCache(long guildId)
-    {
-        if (!_cacheKeysByGuild.TryGetValue(guildId, out var cacheKeys)) return;
-        foreach (var cacheKey in cacheKeys)
-        {
-            cache.Remove(cacheKey);
-        }
-        _cacheKeysByGuild.Remove(guildId);
     }
 
     private string GetTagCacheKey(long guildId, string name) => $"Tag_{guildId}_{name}";
-    
-    private string GetTagsCacheKey(long guildId, Maybe<long> authorId = default) =>
-        authorId.HasValue
-            ? $"Tags_{guildId}_Author_{authorId.Value}"
-            : $"Tags_{guildId}";
-    
-    private void AddCacheKey(long guildId, string cacheKey)
-    {
-        if (!_cacheKeysByGuild.TryGetValue(guildId, out var value))
-        {
-            value = ([]);
-            _cacheKeysByGuild[guildId] = value;
-        }
-
-        value.Add(cacheKey);
-    }
-
-    private void RemoveCacheKey(long guildId, string cacheKey)
-    {
-        if (!_cacheKeysByGuild.TryGetValue(guildId, out var cacheKeys)) return;
-        cacheKeys.Remove(cacheKey);
-        if (cacheKeys.Count == 0)
-        {
-            _cacheKeysByGuild.Remove(guildId);
-        }
-    }
 }

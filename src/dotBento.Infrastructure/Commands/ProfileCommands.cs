@@ -1,6 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using CSharpFunctionalExtensions;
-using NetCord;
+using Discord.WebSocket;
 using dotBento.Domain.Entities;
 using dotBento.Infrastructure.Extensions;
 using dotBento.Infrastructure.Services;
@@ -22,13 +23,26 @@ public sealed class ProfileCommands(
     private const ulong BentoSupportServerId = 714496317522444352;
     private const long DeveloperUserId = 232584569289703424;
 
+    [ExcludeFromCodeCoverage(Justification = "Discord.NET SocketGuildUser image entry point; GenerateProfileHtml covers the render workflow.")]
     public async Task<Result<Stream>> GetProfileAsync(string imageServerHost, string lastFmApiKey, long userId,
-        long guildId, NetCord.GuildUser guildMember, int guildMemberCount, string botAvatarUrl)
+        long guildId, SocketGuildUser guildMember, int guildMemberCount, string botAvatarUrl)
     {
         var profileDb = await profileService.GetProfileAsync(userId);
         var profile = profileDb.HasValue ? MergeWithDefaults(profileDb.Value.Map()) : DefaultProfile(userId);
 
-        var html = GenerateProfileHtml(profile, lastFmApiKey, guildId, guildMember, guildMemberCount, botAvatarUrl);
+        var profileUser = new ProfileDiscordUser(
+            guildMember.GetDisplayAvatarUrl(),
+            guildMember.Discriminator,
+            guildMember.DisplayName,
+            guildMember.Nickname);
+        var html = GenerateProfileHtml(
+            profile,
+            lastFmApiKey,
+            guildId,
+            profileUser,
+            guildMemberCount,
+            botAvatarUrl,
+            guildMember);
 
         var image = await sushiiImageServerService
             .GetSushiiImage(imageServerHost, await html, 600, 400);
@@ -39,20 +53,22 @@ public sealed class ProfileCommands(
     }
 
     // TODO Improve this mess of arguments
-    private async Task<string> GenerateProfileHtml(
+    internal async Task<string> GenerateProfileHtml(
         Profile profile,
         string lastFmApiKey,
         long guildId,
-        NetCord.GuildUser guildMember,
+        ProfileDiscordUser guildMember,
         int guildUsersAmount,
-        string botAvatarUrl)
+        string botAvatarUrl,
+        SocketGuildUser? socketGuildMember = null)
     {
         var lastFmBoard = profile.LastfmBoard == true ? await GetLastFmNowPlayingHtml(profile, lastFmApiKey) : null;
         var xpBoard = profile.XpBoard == true ? await GetUserXpBoardHtml(profile, guildId, botAvatarUrl) : null;
         // TODO: Make one data method to avoid overfetching and make it more readable
-        var bentoUser = userService.GetUserAsync((ulong)profile.UserId).Result.Value;
-        var bentoGuildUser = guildService
-            .GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, guildMember).Result.Value;
+        var bentoUser = (await userService.GetUserAsync((ulong)profile.UserId)).Value;
+        var bentoGuildUser = socketGuildMember is null
+            ? (await guildService.GetGuildMemberAsync((ulong)guildId, (ulong)profile.UserId)).Value
+            : (await guildService.GetOrCreateGuildMemberAsync((ulong)guildId, (ulong)profile.UserId, socketGuildMember)).Value;
         var bentoGameData = await bentoService.FindBentoAsync(profile.UserId);
         var bentoUserCount = await userService.GetTotalDiscordUserCountAsync();
         var bentoTotalUserCount = await bentoService.GetTotalCountOfBentoUsersAsync();
@@ -113,9 +129,9 @@ public sealed class ProfileCommands(
         var xpDoneGlobalColour3 =
             $"{profile.XpDoneGlobalColour3}{ConvertOpacityToHex(profile.XpDoneGlobalColour3Opacity)}";
 
-        var avatarUrl = GetDisplayAvatarUrl(guildMember) ??
-                        $"https://cdn.discordapp.com/embed/avatars/{guildMember.Discriminator % 5}.png";
-        var usernameSlot = guildMember.Nickname ?? guildMember.GlobalName ?? guildMember.Username;
+        var avatarUrl = guildMember.AvatarUrl ??
+                        $"https://cdn.discordapp.com/embed/avatars/{int.Parse(guildMember.Discriminator ?? "0") % 5}.png";
+        var usernameSlot = guildMember.DisplayName ?? "User";
         var discriminatorSlot = guildMember.Nickname ?? $"#{guildMember.Discriminator}";
         var usernameSize = UsernamePxSize(usernameSlot);
         var xpServer = bentoGuildUser.Xp;
@@ -149,13 +165,13 @@ public sealed class ProfileCommands(
                 --bgimage: url('{replacements["BACKGROUND_IMAGE"]}');
                 --user-color: {replacements["USER_COLOR"]};
             }}
-
+            
             body {{
                 margin: 0;
                 padding: 0;
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .wrapper {{
                 width: 600px;
                 height: 400px;
@@ -163,13 +179,13 @@ public sealed class ProfileCommands(
                 overflow: hidden;
                 border-radius: 10px;
             }}
-
+            
             .custom-bg {{
                 background-size: cover;
                 background-position: center;
                 background-image: var(--bgimage);
             }}
-
+            
             .sidebar {{
                 position: absolute;
                 left: 400px;
@@ -181,17 +197,17 @@ public sealed class ProfileCommands(
                 border-radius: 0 10px 10px 0;
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .blur {{
                 overflow: hidden;
                 backdrop-filter: blur({profile.SidebarBlur}px);
             }}
-
+            
             .avatar {{
                 width: 96px;
                 height: auto;
             }}
-
+            
             .avatar-container {{
                 position: absolute;
                 overflow: hidden;
@@ -205,7 +221,7 @@ public sealed class ProfileCommands(
                 border-color: white;
                 z-index: 2;
             }}
-
+            
             .sidebar-list {{
                 list-style: none;
                 text-align: center;
@@ -218,7 +234,7 @@ public sealed class ProfileCommands(
                 margin: auto;
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .sidebar-itemServer {{
                 padding-top: 13px;
                 height: auto;
@@ -270,26 +286,26 @@ public sealed class ProfileCommands(
                 color: {sidebarValueEmoteColour};
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .name-container {{
                 position: absolute;
                 top: 120px;
                 width: 200px;
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .badges {{
                 list-style: none;
                 padding: 0;
                 margin: 10px 10px 5px 20px;
                 color: {descriptionColour};
             }}
-
+            
             .badge-container {{
                 display: inline-block;
                 margin-right: 0;
             }}
-
+            
             .corner-logo {{
                 width: 30px;
                 height: 30px;
@@ -298,24 +314,24 @@ public sealed class ProfileCommands(
                 font-size: 30px;
                 z-index: 5;
             }}
-
+            
             svg {{
                 width: 100%;
                 height: 100%;
             }}
-
+            
             .username {{
                 font-family: 'Urbanist', sans-serif;
                 font-size: {replacements["USERNAME_SIZE"]};
                 fill: {profile.UsernameColour};
             }}
-
+            
             .discriminator {{
                 font-family: 'Urbanist', sans-serif;
                 font-size: 17px;
                 fill: {profile.DiscriminatorColour};
             }}
-
+            
             .footer {{
                 position: absolute;
                 width: 400px;
@@ -328,7 +344,7 @@ public sealed class ProfileCommands(
                 flex-direction: column;
                 gap: 8px;
             }}
-
+            
             .center-area {{
                 position: relative;
                 top: 20px;
@@ -340,7 +356,7 @@ public sealed class ProfileCommands(
                 color: {descriptionColour};
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .description {{
                 font-size: 20px;
                 height: auto;
@@ -351,12 +367,12 @@ public sealed class ProfileCommands(
                 position: absolute;
                 bottom: 0;
             }}
-
+            
             .description-text {{
                 margin: 0;
                 font-family: 'Urbanist', sans-serif;
             }}
-
+            
             .inner-wrapper {{
                 width: inherit;
                 height: inherit;
@@ -549,19 +565,19 @@ public sealed class ProfileCommands(
         var htmlString = $@"
             <div class='wrapper {replacements["WRAPPER_CLASS"]}'>
                 <div class='inner-wrapper {replacements["OVERLAY_CLASS"]}'>
-
+            
                     <div class='center-area'>
                         <div class='description'>
                             <p class='description-text'>{replacements["DESCRIPTION"]}</p>
                         </div>
                     </div>
-
+            
                     <div class='sidebar {replacements["SIDEBAR_CLASS"]}'>
-
+            
                         <div class='avatar-container'>
                             <img class='avatar' src='{replacements["AVATAR_URL"]}'>
                         </div>
-
+            
                         <div class='name-container'>
                             <svg width='200' height='50'>
                                 <text class='username' x='50%' y='30%' dominant-baseline='middle' text-anchor='middle'>
@@ -572,7 +588,7 @@ public sealed class ProfileCommands(
                                 </text>
                             </svg>
                         </div>
-
+            
                         <ul class='sidebar-list'>
                             <li class='sidebar-itemServer'>
                                 <span class='sidebar-valueServer'>Rank {replacements["SERVER_LEVEL"]}</span><br>
@@ -590,7 +606,7 @@ public sealed class ProfileCommands(
                                 {userTimezone} {userBirthday}
                             </li>
                         </ul>
-
+            
                     </div>
                     <div class='footer'>
                         {(lastFmBoard.HasValue ? lastFmBoard.Value.LastFmHtml : null)}
@@ -1018,13 +1034,12 @@ public sealed class ProfileCommands(
         int hexValue = (int)(opacityValue / 100.0 * 255);
         return hexValue.ToString("X2"); // Convert to a 2-character hex string
     }
-
-    private static string? GetDisplayAvatarUrl(NetCord.GuildUser member) =>
-        member.GuildAvatarHash != null
-            ? $"https://cdn.discordapp.com/guilds/{member.GuildId}/users/{member.Id}/avatars/{member.GuildAvatarHash}.png?size=256"
-            : member.AvatarHash != null
-                ? $"https://cdn.discordapp.com/avatars/{member.Id}/{member.AvatarHash}.png?size=256"
-                : null;
 }
 
 public sealed record LastFmHtmlBoardResult(string LastFmHtml, int LastFmTrackLength, int LastFmArtistLength);
+
+internal sealed record ProfileDiscordUser(
+    string? AvatarUrl,
+    string? Discriminator,
+    string? DisplayName,
+    string? Nickname);

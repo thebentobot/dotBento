@@ -7,103 +7,173 @@ namespace dotBento.Infrastructure.Tests.Services.Api;
 
 public sealed class StreamingApiServiceTests
 {
-    private sealed class TrackingStream(byte[] buffer) : MemoryStream(buffer)
+    [Fact]
+    public async Task BentoMediaProxyAsync_ReturnsStreamWithoutBufferingResponseBody()
     {
-        public bool WasDisposed { get; private set; }
+        var contentStream = new CountingStream(new byte[1024 * 1024]);
+        using var httpClient = CreateHttpClient(contentStream);
+        var service = new BentoMediaServerService(httpClient);
 
-        protected override void Dispose(bool disposing)
-        {
-            WasDisposed = true;
-            base.Dispose(disposing);
-        }
+        var result = await service.ProxyAsync("https://media.example", "https://cdn.example/video.mp4");
 
-        public override async ValueTask DisposeAsync()
-        {
-            WasDisposed = true;
-            await base.DisposeAsync();
-        }
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, contentStream.ReadCount);
+
+        var buffer = new byte[1024];
+        var read = await result.Value.ReadAsync(buffer.AsMemory(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(buffer.Length, read);
+        Assert.True(contentStream.ReadCount > 0);
+
+        await result.Value.DisposeAsync();
+        Assert.True(contentStream.IsDisposed);
     }
 
-    private static HttpClient CreateHttpClient(HttpResponseMessage response)
+    [Fact]
+    public async Task SushiiImageServer_ReturnsStreamWithoutBufferingResponseBody()
     {
-        var handler = new Mock<HttpMessageHandler>();
-        handler
+        var contentStream = new CountingStream(new byte[1024 * 1024]);
+        using var httpClient = CreateHttpClient(contentStream);
+        var service = new SushiiImageServerService(httpClient);
+
+        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, contentStream.ReadCount);
+
+        var buffer = new byte[1024];
+        var read = await result.Value.ReadAsync(buffer.AsMemory(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(buffer.Length, read);
+        Assert.True(contentStream.ReadCount > 0);
+
+        await result.Value.DisposeAsync();
+        Assert.True(contentStream.IsDisposed);
+    }
+
+    [Fact]
+    public async Task SushiiImageServerStream_DelegatesSyncMembersAndRejectsWrites()
+    {
+        var contentStream = new CountingStream([1, 2, 3, 4]);
+        using var httpClient = CreateHttpClient(contentStream);
+        var service = new SushiiImageServerService(httpClient);
+
+        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+
+        Assert.True(result.IsSuccess);
+        using var stream = result.Value;
+        Assert.True(stream.CanRead);
+        Assert.True(stream.CanSeek);
+        Assert.False(stream.CanWrite);
+        Assert.Equal(4, stream.Length);
+        Assert.Equal(0, stream.Position);
+
+        stream.Position = 1;
+        Assert.Equal(1, stream.Position);
+        Assert.Equal(2, stream.ReadByte());
+        Assert.Equal(0, stream.Seek(0, SeekOrigin.Begin));
+        Assert.Equal(1, stream.Read(new Span<byte>(new byte[1])));
+        Assert.Equal(1, await stream.ReadAsync(new byte[1], 0, 1, TestContext.Current.CancellationToken));
+        stream.Flush();
+        await stream.FlushAsync(TestContext.Current.CancellationToken);
+
+        Assert.Throws<NotSupportedException>(() => stream.SetLength(10));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1], 0, 1));
+        Assert.Throws<NotSupportedException>(() => stream.Write([1]));
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            stream.WriteAsync([1], 0, 1, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+            await stream.WriteAsync(new ReadOnlyMemory<byte>([1]), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task SushiiImageServer_DisposesResponseWhenStreamCreationFails()
+    {
+        using var httpClient = CreateHttpClient(new ThrowingStreamContent());
+        var service = new SushiiImageServerService(httpClient);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400));
+    }
+
+    private static HttpClient CreateHttpClient(Stream contentStream)
+    {
+        return CreateHttpClient(new StreamContent(contentStream));
+    }
+
+    private static HttpClient CreateHttpClient(HttpContent content)
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+
+        mockHandler
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(response);
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = content
+            });
 
-        return new HttpClient(handler.Object);
+        return new HttpClient(mockHandler.Object);
     }
 
-    [Fact]
-    public async Task SushiiImageStream_BuffersResponseAndDisposesHttpContent()
+    private sealed class ThrowingStreamContent : HttpContent
     {
-        var stream = new TrackingStream([1, 2, 3]);
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.OK)
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
         {
-            Content = new StreamContent(stream)
-        });
-        var sut = new SushiiImageServerService(httpClient);
+            length = 0;
+            return true;
+        }
 
-        var result = await sut.GetSushiiImage("https://images.example/render", "<html></html>", 100, 100);
-
-        Assert.True(result.IsSuccess);
-        Assert.True(stream.WasDisposed);
-        Assert.IsType<MemoryStream>(result.Value);
-        Assert.Equal(3, result.Value.Length);
-        await result.Value.DisposeAsync();
+        protected override Task<Stream> CreateContentReadStreamAsync() =>
+            throw new InvalidOperationException("stream failed");
     }
 
-    [Fact]
-    public async Task SushiiImageStream_DisposesResponseContentWhenRequestFails()
+    private sealed class CountingStream(byte[] buffer) : MemoryStream(buffer)
     {
-        var stream = new TrackingStream([1, 2, 3]);
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.BadGateway)
+        public int ReadCount { get; private set; }
+        public bool IsDisposed { get; private set; }
+
+        public override int Read(byte[] buffer, int offset, int count)
         {
-            Content = new StreamContent(stream)
-        });
-        var sut = new SushiiImageServerService(httpClient);
+            ReadCount++;
+            return base.Read(buffer, offset, count);
+        }
 
-        var result = await sut.GetSushiiImage("https://images.example/render", "<html></html>", 100, 100);
-
-        Assert.True(result.IsFailure);
-        Assert.True(stream.WasDisposed);
-    }
-
-    [Fact]
-    public async Task BentoProxyStream_DisposesResponseContentWhenReturnedStreamIsDisposed()
-    {
-        var stream = new TrackingStream([1, 2, 3]);
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.OK)
+        public override int Read(Span<byte> buffer)
         {
-            Content = new StreamContent(stream)
-        });
-        var sut = new BentoMediaServerService(httpClient);
+            ReadCount++;
+            return base.Read(buffer);
+        }
 
-        var result = await sut.ProxyAsync("https://media.example", "https://video.example/file.mp4");
-
-        Assert.True(result.IsSuccess);
-        Assert.False(stream.WasDisposed);
-        await result.Value.DisposeAsync();
-        Assert.True(stream.WasDisposed);
-    }
-
-    [Fact]
-    public async Task BentoProxyStream_DisposesResponseContentWhenRequestFails()
-    {
-        var stream = new TrackingStream([1, 2, 3]);
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.BadGateway)
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            Content = new StreamContent(stream)
-        });
-        var sut = new BentoMediaServerService(httpClient);
+            ReadCount++;
+            return base.ReadAsync(buffer, offset, count, cancellationToken);
+        }
 
-        var result = await sut.ProxyAsync("https://media.example", "https://video.example/file.mp4");
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            ReadCount++;
+            return base.ReadAsync(buffer, cancellationToken);
+        }
 
-        Assert.True(result.IsFailure);
-        Assert.True(stream.WasDisposed);
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed = true;
+            base.Dispose(disposing);
+        }
+
+        public override async ValueTask DisposeAsync()
+        {
+            IsDisposed = true;
+            await base.DisposeAsync();
+        }
     }
 }

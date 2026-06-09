@@ -1,6 +1,7 @@
-using NetCord.Gateway;
+using Discord.WebSocket;
 using Serilog;
 using Serilog.Configuration;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace dotBento.Bot.Logging;
@@ -19,7 +20,7 @@ public static class DiscordChannelSinkExtensions
     /// </summary>
     /// <param name="config">The sink configuration.</param>
     /// <param name="channelId">The Discord channel ID to send logs to.</param>
-    /// <param name="minimumLevel">The minimum log level to send to the log channel. Defaults to Warning.</param>
+    /// <param name="minimumLevel">The minimum log level to send to Discord. Defaults to Warning.</param>
     /// <returns>The logger configuration for method chaining.</returns>
     public static LoggerConfiguration DiscordChannel(
         this LoggerSinkConfiguration config,
@@ -38,8 +39,8 @@ public static class DiscordChannelSinkExtensions
     /// Activates the Discord channel sink with the given client.
     /// Call this when the Discord client is ready.
     /// </summary>
-    /// <param name="client">The NetCord gateway client.</param>
-    public static void ActivateDiscordChannelSink(GatewayClient client)
+    /// <param name="client">The Discord socket client.</param>
+    public static void ActivateDiscordChannelSink(DiscordSocketClient client)
     {
         lock (Lock)
         {

@@ -1,9 +1,8 @@
 using System.Reflection;
-using NetCord;
-using NetCord.Gateway;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
-using NetCord.Services.Commands;
+using Discord;
+using Discord.Commands;
+using Discord.Interactions;
+using Discord.WebSocket;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.EntityFramework.Context;
@@ -17,21 +16,17 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-#pragma warning disable CS9113 // text-command params kept for re-enablement; see TODO at StartAsync:44
-public sealed class BotService(GatewayClient client,
-    ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> interactions,
-    NetCord.Services.ComponentInteractions.ComponentInteractionService<NetCord.Services.ComponentInteractions.ComponentInteractionContext> componentInteractions,
-    NetCord.Services.ComponentInteractions.ComponentInteractionService<NetCord.Services.ComponentInteractions.ModalInteractionContext> modalInteractions,
+public sealed class BotService(DiscordSocketClient client,
+    InteractionService interactions,
     IDbContextFactory<BotDbContext> contextFactory,
     IPrefixService prefixService,
-    CommandService<CommandContext> commands,
+    CommandService commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
-#pragma warning restore CS9113
 {
-    private const ulong DefaultDevelopmentGuildId = 790353119795871744UL;
     private MetricPusher? _metricPusher;
+    private int _readyInitialized;
 
     public async Task StartAsync()
     {
@@ -52,20 +47,25 @@ public sealed class BotService(GatewayClient client,
         // Log.Information("Loading all prefixes");
         // await prefixService.LoadAllPrefixes();
 
-        // Log.Information("Loading command modules");
-        // commands.AddModules(Assembly.GetEntryAssembly()!);
-
         Log.Information("Starting bot");
+        var discordToken = config.Value.Discord.Token ??
+                           throw new InvalidOperationException("Discord:Token environment variable not set.");
+
+        // TODO: Re-enable when MessageContent intent is granted (see above).
+        // Log.Information("Loading command modules");
+        // await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Loading interaction modules");
-        RegisterInteractionModules(interactions, componentInteractions, modalInteractions, Assembly.GetEntryAssembly()!);
+        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
 
         client.Ready += OnReadyAsync;
 
-        Log.Information("Connecting to Discord");
+        Log.Information("Logging into Discord");
+        await client.LoginAsync(TokenType.Bot, discordToken);
+
         await client.StartAsync();
 
         await backgroundService.UpdateMetrics();
@@ -75,100 +75,47 @@ public sealed class BotService(GatewayClient client,
         StartMetricsPusher();
     }
 
-    public static void RegisterInteractionModules(
-        ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> applicationCommands,
-        NetCord.Services.ComponentInteractions.ComponentInteractionService<NetCord.Services.ComponentInteractions.ComponentInteractionContext> componentInteractions,
-        NetCord.Services.ComponentInteractions.ComponentInteractionService<NetCord.Services.ComponentInteractions.ModalInteractionContext> modalInteractions,
-        Assembly assembly)
+    private Task OnReadyAsync()
     {
-        applicationCommands.AddModules(assembly);
-        componentInteractions.AddModules(assembly);
-        modalInteractions.AddModules(assembly);
-    }
+        if (Interlocked.Exchange(ref _readyInitialized, 1) == 1)
+        {
+            return Task.CompletedTask;
+        }
 
-    private async ValueTask OnReadyAsync(ReadyEventArgs args)
-    {
-        Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                Log.Information("Client Ready - Registering slash commands and initializing bot site updater");
 
-        // Activate Discord channel logging sink now that client is ready
-        DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
+                // Activate Discord channel logging sink now that client is ready
+                DiscordChannelSinkExtensions.ActivateDiscordChannelSink(client);
 
-        await RegisterSlashCommands();
+                await RegisterSlashCommands();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while handling client ready event");
+            }
+        });
+
+        return Task.CompletedTask;
     }
 
     // public instead of private because of Hangfire BackgroundJob
     // ReSharper disable once MemberCanBePrivate.Global
     public async Task RegisterSlashCommands()
     {
-        var applicationId = client.Cache.User?.Id ?? throw new InvalidOperationException("Bot user ID not available");
-        var commandsToRegister = await GetRawApplicationCommandsAsync(interactions);
         Log.Information("Starting slash command registration");
 
 #if DEBUG
-        var developmentGuildId = config.Value.Discord.DevelopmentGuildId is 0
-            ? DefaultDevelopmentGuildId
-            : config.Value.Discord.DevelopmentGuildId;
-        Log.Information("Bulk overwriting slash commands to development guild {GuildId}", developmentGuildId);
-        var registered = await client.Rest.BulkOverwriteGuildApplicationCommandsAsync(
-            applicationId,
-            developmentGuildId,
-            commandsToRegister);
+        Log.Information("Registering slash commands to guild");
+        // TODO: Make this an env var for development discord server
+        await interactions.RegisterCommandsToGuildAsync(790353119795871744);
 #else
-        Log.Information("Bulk overwriting slash commands globally");
-        var registered = await client.Rest.BulkOverwriteGlobalApplicationCommandsAsync(
-            applicationId,
-            commandsToRegister);
+        Log.Information("Registering slash commands globally");
+        await interactions.RegisterCommandsGloballyAsync();
 #endif
-        foreach (var cmd in registered)
-        {
-            Log.Information("Registered command: {Name}", cmd.Name);
-            LogRegisteredOptions(cmd.Options, "  ");
-        }
-    }
-
-    private static async Task<IReadOnlyList<ApplicationCommandProperties>> GetRawApplicationCommandsAsync(
-        ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> applicationCommands)
-    {
-        var result = new List<ApplicationCommandProperties>();
-
-        foreach (var command in applicationCommands.GetCommands())
-        {
-            result.Add(await GetRawApplicationCommandAsync(command));
-        }
-
-        return result;
-    }
-
-    private static async Task<ApplicationCommandProperties> GetRawApplicationCommandAsync(object command)
-    {
-        var method = command.GetType().GetMethod(
-            "GetRawValueAsync",
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            ?? throw new InvalidOperationException($"{command.GetType().FullName} does not expose GetRawValueAsync.");
-
-        var rawTask = method.Invoke(command, [CancellationToken.None])
-            ?? throw new InvalidOperationException("GetRawValueAsync returned null.");
-        dynamic awaitable = rawTask;
-        return (ApplicationCommandProperties)await awaitable;
-    }
-
-    private static void LogRegisteredOptions(IEnumerable<ApplicationCommandOption>? options, string indent)
-    {
-        if (options is null)
-        {
-            return;
-        }
-
-        foreach (var option in options)
-        {
-            Log.Debug(
-                "{Indent}option: {Name} ({Type}) required={Required}",
-                indent,
-                option.Name,
-                option.Type,
-                option.Required);
-            LogRegisteredOptions(option.Options, indent + "  ");
-        }
     }
 
     private void StartMetricsPusher()

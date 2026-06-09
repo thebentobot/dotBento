@@ -1,5 +1,5 @@
-using NetCord;
-using NetCord.Services.Commands;
+using Discord.Commands;
+using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -9,18 +9,18 @@ using Microsoft.Extensions.Options;
 
 namespace dotBento.Bot.Commands.TextCommands;
 
-[ModuleName("Bento")]
+[Name("Bento")]
 public sealed class BentoTextCommand(
     IOptions<BotEnvConfig> botSettings,
     InteractiveService interactiveService, BentoCommand bentoCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("bento")]
+    [Command("bento", RunMode = RunMode.Async)]
     [Summary("Give a friend a Bento Box or check your status")]
     [Examples("bento", "bento @Alonzo", "bento 188980576483540992")]
-    public async Task BentoCommand(User? user = null)
+    public async Task BentoCommand(SocketUser? user = null)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
+        _ = Context.Channel.TriggerTypingAsync();
         if (user == null)
         {
             await Context.SendResponse(interactiveService, await bentoCommand.CheckBentoCommand(Context.User));

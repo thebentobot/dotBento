@@ -1,7 +1,7 @@
 using Fergun.Interactive;
 using Fergun.Interactive.Selection;
 
-namespace dotBento.Bot.Models.NetCord.MultiSelect;
+namespace dotBento.Bot.Models.Discord.MultiSelect;
 
 public sealed class MultiSelectBuilder<T> : BaseSelectionBuilder<MultiSelect<T>, MultiSelectOption, MultiSelectBuilder<T>>
 {

@@ -1,6 +1,6 @@
-using NetCord.Rest;
+using Discord;
 using dotBento.Bot.Enums;
-using dotBento.Bot.Models.NetCord;
+using dotBento.Bot.Models.Discord;
 using dotBento.Domain.Enums;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;
@@ -21,7 +21,7 @@ public sealed class ProfileEditCommand(ProfileService profileService)
             p.BackgroundUrl = url;
         });
 
-        return Ok("Background URL updated", $"Background image was set to: {url}");
+        return Ok("Background URL updated", $"Background image was set to:{url}");
     }
 
     public async Task<ResponseModel> SetLastFmBoardAsync(ulong userId, bool enabled)
@@ -149,7 +149,7 @@ public sealed class ProfileEditCommand(ProfileService profileService)
     {
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
         response.Embed
-            .WithColor(new NetCord.Color(50, 205, 50))
+            .WithColor(Color.Green)
             .WithTitle(title)
             .WithDescription(description);
         response.CommandResponse = CommandResponse.Ok;
@@ -160,7 +160,7 @@ public sealed class ProfileEditCommand(ProfileService profileService)
     {
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
         response.Embed
-            .WithColor(new NetCord.Color(255, 0, 0))
+            .WithColor(Color.Red)
             .WithTitle(title)
             .WithDescription(description);
         response.CommandResponse = CommandResponse.Error;

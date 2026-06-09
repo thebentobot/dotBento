@@ -41,12 +41,6 @@ public sealed class PrometheusConfig
 public sealed class DiscordConfig
 {
     public string Token { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Guild ID used for debug slash command registration. Set to 0 to use the built-in development guild.
-    /// Environment variable: Discord__DevelopmentGuildId
-    /// </summary>
-    public ulong DevelopmentGuildId { get; set; }
     
     public string LogWebhookId { get; set; } = string.Empty;
     

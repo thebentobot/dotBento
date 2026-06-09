@@ -1,4 +1,4 @@
-using NetCord.Services.Commands;
+using Discord.Commands;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
@@ -13,12 +13,12 @@ public sealed class SaveWeatherTextCommand(
     InteractiveService interactiveService, WeatherCommand weatherCommand) : BaseCommandModule(botSettings)
 {
 
-    [Command("saveWeather")]
+    [Command("saveWeather", RunMode = RunMode.Async)]
     [Summary("Save a city to check the weather for without having to provide it every time")]
     [Examples("saveWeather Guangzhou")]
-    public async Task SaveWeatherCommand([CommandParameter(Remainder = true)] string city)
+    public async Task SaveWeatherCommand([Remainder] string city)
     {
-        _ = Context.Channel?.TriggerTypingAsync();
+        _ = Context.Channel.TriggerTypingAsync();
         await Context.SendResponse(interactiveService, await weatherCommand.SaveWeatherAsync((long)Context.User.Id, city));
     }
 }

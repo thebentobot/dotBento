@@ -30,6 +30,11 @@ public sealed class PrefixService(IDbContextFactory<BotDbContext> contextFactory
 
     public void RemovePrefix(ulong key)
     {
+        if (!ServerPrefixes.ContainsKey(key))
+        {
+            return;
+        }
+
         ServerPrefixes.TryRemove(key, out _);
     }
 

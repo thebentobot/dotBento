@@ -42,6 +42,11 @@ public sealed class ImageCommands(SushiiImageServerService sushiiImageServerServ
             }
         }
 
+        if (rgbColour != null && rgbColour.Any(component => component is < 0 or > 255))
+        {
+            return Result.Failure<ColourResponseDto>("Please provide a valid RGB colour, e.g. `255,0,0`");
+        }
+
         if (hexColour != null)
         {
             var hexValue = int.Parse(hexColour, System.Globalization.NumberStyles.HexNumber);
@@ -49,11 +54,6 @@ public sealed class ImageCommands(SushiiImageServerService sushiiImageServerServ
             {
                 return Result.Failure<ColourResponseDto>("Please provide a valid hexcode, e.g. `#ff0000`");
             }
-        }
-
-        if (rgbColour != null && rgbColour.Any(component => component is < 0 or > 255))
-        {
-            return Result.Failure<ColourResponseDto>("Please provide a valid RGB colour, e.g. `255,0,0`");
         }
         
         var sanitizedHtml = htmlSanitizer.Sanitize($"<html><style>*{{margin:0;padding:0;}}</style><div style=\"background-color:{(hexColour != null ? $"#{hexColour}" : rgbColour)}; width:200px; height:200px\"></div></html>");

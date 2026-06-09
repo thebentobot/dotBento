@@ -1,21 +1,22 @@
 using CSharpFunctionalExtensions;
-using NetCord;
-using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
+using Discord;
+using Discord.Interactions;
+using dotBento.Domain.Extensions;
 using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.AutoCompleteHandlers;
 
-public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : IAutocompleteProvider<AutocompleteInteractionContext>
+public sealed class SearchTagsAutoComplete(TagCommands tagCommands) : AutocompleteHandler
 {
-    public async ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-        ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context,
+        IAutocompleteInteraction autocompleteInteraction, IParameterInfo parameter, IServiceProvider services)
     {
+        var searchValue = autocompleteInteraction.Data?.Current?.Value?.ToString();
         var results = await tagCommands.FindTagNamesForAutocompleteAsync(
-            (long)context.Guild!.Id,
-            option.Value?.ToString(),
-            Maybe<long>.None);
+            (long)context.Guild.Id,
+            Maybe<long>.None,
+            searchValue);
 
-        return results.Select(s => new ApplicationCommandOptionChoiceProperties(s, s));
+        return AutocompletionResult.FromSuccess(results.Select(s => new AutocompleteResult(s, s)));
     }
 }
