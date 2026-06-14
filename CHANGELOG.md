@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.20.0](https://github.com/thebentobot/dotBento/compare/v1.19.9...v1.20.0) (2026-06-14)
+
+
+### Features
+
+* migrate bot to NetCord ([#516](https://github.com/thebentobot/dotBento/issues/516)) ([7149ed7](https://github.com/thebentobot/dotBento/commit/7149ed7a270b712f02b9c2d35f2a4451cc9751fb))
+
+
+### Bug Fixes
+
+* bump-discord-net-3.20.1 ([a76af85](https://github.com/thebentobot/dotBento/commit/a76af856546b6a82f595945f3c2648b2d849ddad))
+
 ## [1.19.9](https://github.com/thebentobot/dotBento/compare/v1.19.8...v1.19.9) (2026-06-06)
 
 
