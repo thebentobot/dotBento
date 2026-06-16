@@ -1,6 +1,6 @@
 # Terms of Service for Bento
 
-*Last Revised: October 19, 2025*
+*Last Revised: June 16, 2026*
 
 These Terms of Service (“Terms”) constitute a legally binding agreement between you (“you”) and Bento (“we”, “us”, or “our”) concerning your access to and use of our Services (as defined below). By accessing or using any of our Services, you agree to these Terms. If you do not agree, do not use the Services.
 
@@ -146,5 +146,4 @@ The Services rely on **Discord’s minimum age** requirements. Do not use age-re
 
 ## 16) Contact
 
-- Support server: [https://discord.gg/dd68WwP](https://discord.gg/dd68WwP)  
-- Contact on Discord: **banner.**
+- Support server: [https://discord.gg/dd68WwP](https://discord.gg/dd68WwP)

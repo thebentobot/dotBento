@@ -1,6 +1,6 @@
 # Privacy
 
-*Last revised: October 19, 2025*
+*Last revised: June 16, 2026*
 
 ## Interpretation and Definitions
 
@@ -241,4 +241,3 @@ reasonable period, subject to backup and legal retention requirements.
 If you have any questions about this Privacy Policy, you can contact us:
 
 * Discord support server: [https://discord.gg/dd68WwP](https://discord.gg/dd68WwP)
-* Banner on Discord, the maintainer of Bento's username on Discord: **banner.**
