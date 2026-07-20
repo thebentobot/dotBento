@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.1](https://github.com/thebentobot/dotBento/compare/v1.20.0...v1.20.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* nitpicky update README.md ([ce9e716](https://github.com/thebentobot/dotBento/commit/ce9e7169ec09b516aff1b987844ee97f736c8283))
+
 ## [1.20.0](https://github.com/thebentobot/dotBento/compare/v1.19.9...v1.20.0) (2026-06-14)
 
 
