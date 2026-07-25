@@ -15,8 +15,8 @@ public sealed class AvatarCommand(StylingUtilities stylingUtilities, Serilog.ILo
     public async Task<ResponseModel> UserAvatarCommand(IUser user)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        var avatarForColour = user.GetDisplayAvatarUrl(ImageFormat.WebP);
-        var avatarForImage = user.GetDisplayAvatarUrl(size: 2048, format: ImageFormat.Auto);
+        var avatarForColour = user.GetAvatarUrl(ImageFormat.WebP) ?? user.GetDefaultAvatarUrl();
+        var avatarForImage = user.GetAvatarUrl(size: 2048, format: ImageFormat.Auto) ?? user.GetDefaultAvatarUrl();
         var userPfpColour = await GetAvatarColourAsync(avatarForColour);
         var name = user.GlobalName ?? user.Username;
         embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(name)} User Profile Avatar")
