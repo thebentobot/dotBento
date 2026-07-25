@@ -108,6 +108,9 @@ public sealed class InteractionHandler : IDisposable
                 case InteractionCommandError.Exception:
                 {
                     Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
+                    Log.Error(result is ExecuteResult executeResult ? executeResult.Exception : null,
+                        "Slash command {CommandName} failed for user {UserId} in guild {GuildId}: {ErrorReason}",
+                        command.Name, context.User.Id, context.Guild?.Id, result.ErrorReason);
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Exception")
                         .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
