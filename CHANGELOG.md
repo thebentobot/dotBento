@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.20.2](https://github.com/thebentobot/dotBento/compare/v1.20.1...v1.20.2) (2026-07-25)
+
+
+### Bug Fixes
+
+* align Docker SDK with global.json ([6fc8d0a](https://github.com/thebentobot/dotBento/commit/6fc8d0a9cc5f4bd17f80970ffee64dda348489ee))
+* align Docker SDK with global.json ([bc5f7e4](https://github.com/thebentobot/dotBento/commit/bc5f7e40d1fa84b8015ed8f9b6b68c9e71f9f16e))
+* make avatar commands resilient ([50714c0](https://github.com/thebentobot/dotBento/commit/50714c0230c50fa59bdbbc05c2face3c5205762c))
+* make avatar commands resilient ([f472040](https://github.com/thebentobot/dotBento/commit/f47204093ac91b5f5f9938da1ef6ab3805da1e3a))
+* use global avatar for user command ([30e3a44](https://github.com/thebentobot/dotBento/commit/30e3a44f055183e96297fd698103930de2e45524))
+* use global avatar for user command ([d4367db](https://github.com/thebentobot/dotBento/commit/d4367db7a753d68a183969278a60e2c9c818eb53))
+
 ## [1.20.1](https://github.com/thebentobot/dotBento/compare/v1.20.0...v1.20.1) (2026-07-17)
 
 
