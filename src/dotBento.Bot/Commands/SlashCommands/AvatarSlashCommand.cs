@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Extensions;
+using dotBento.Bot.Services;
 using dotBento.Infrastructure.Services;
 using Fergun.Interactive;
 
@@ -18,7 +19,12 @@ public sealed class AvatarSlashCommand(InteractiveService interactiveService, Av
         )
     {
         user ??= Context.User;
-        await user.ReturnIfBot(Context, interactiveService);
+        if (user.IsBot)
+        {
+            await user.ReturnIfBot(Context, interactiveService);
+            return;
+        }
+
         await Context.SendResponse(interactiveService, await avatarCommand.UserAvatarCommand(user), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
@@ -29,8 +35,22 @@ public sealed class AvatarSlashCommand(InteractiveService interactiveService, Av
         [Summary("hide", "Only show avatar for you")] bool? hide = null
     )
     {
-        user ??= Context.Guild.Users.Single(x => x.Id == Context.User.Id);
-        await user.ReturnIfBot(Context, interactiveService);
+        user ??= Context.Guild.GetUser(Context.User.Id);
+        if (user is null)
+        {
+            await Context.SendResponse(
+                interactiveService,
+                GenericEmbedService.ErrorEmbed("User unavailable", "Could not resolve your server profile."),
+                true);
+            return;
+        }
+
+        if (user.IsBot)
+        {
+            await user.ReturnIfBot(Context, interactiveService);
+            return;
+        }
+
         await Context.SendResponse(interactiveService, await avatarCommand.ServerAvatarCommand(user), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 }
