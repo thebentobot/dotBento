@@ -12,21 +12,45 @@ namespace dotBento.Bot.Tests.Commands.SharedCommands;
 public sealed class AvatarCommandTests
 {
     [Fact]
-    public async Task UserAvatarCommand_UsesDisplayAvatar_WhenUserHasNoCustomAvatar()
+    public async Task UserAvatarCommand_UsesGlobalAvatar_InsteadOfGuildDisplayAvatar()
     {
-        const string displayAvatarUrl = "https://cdn.example.com/display-avatar.png";
-        var user = new Mock<IUser>();
+        const string globalAvatarUrl = "https://cdn.example.com/global-avatar.png";
+        var user = new Mock<IGuildUser>();
         user.SetupGet(x => x.GlobalName).Returns("Example");
-        user.Setup(x => x.GetAvatarUrl(ImageFormat.WebP, 128)).Returns((string)null!);
-        user.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 2048)).Returns((string)null!);
-        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.WebP, 128)).Returns(displayAvatarUrl);
-        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.Auto, 2048)).Returns(displayAvatarUrl);
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.WebP, 128))
+            .Returns("https://cdn.example.com/global-avatar.webp");
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 2048)).Returns(globalAvatarUrl);
+        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.WebP, 128))
+            .Returns("https://cdn.example.com/server-avatar.webp");
+        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.Auto, 2048))
+            .Returns("https://cdn.example.com/server-avatar.png");
         var command = CreateCommand(_ => ImageResponse());
 
         var response = await command.UserAvatarCommand(user.Object);
         var embed = response.Embed.Build();
 
-        Assert.Equal(displayAvatarUrl, embed.Image?.Url);
+        Assert.Equal(globalAvatarUrl, embed.Image?.Url);
+    }
+
+    [Fact]
+    public async Task UserAvatarCommand_UsesDefaultAvatar_WhenUserHasNoGlobalAvatar()
+    {
+        const string defaultAvatarUrl = "https://cdn.example.com/default-avatar.png";
+        var user = new Mock<IGuildUser>();
+        user.SetupGet(x => x.GlobalName).Returns("Example");
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.WebP, 128)).Returns((string)null!);
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 2048)).Returns((string)null!);
+        user.Setup(x => x.GetDefaultAvatarUrl()).Returns(defaultAvatarUrl);
+        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.WebP, 128))
+            .Returns("https://cdn.example.com/server-avatar.webp");
+        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.Auto, 2048))
+            .Returns("https://cdn.example.com/server-avatar.png");
+        var command = CreateCommand(_ => ImageResponse());
+
+        var response = await command.UserAvatarCommand(user.Object);
+        var embed = response.Embed.Build();
+
+        Assert.Equal(defaultAvatarUrl, embed.Image?.Url);
     }
 
     [Fact]
@@ -34,9 +58,9 @@ public sealed class AvatarCommandTests
     {
         var user = new Mock<IUser>();
         user.SetupGet(x => x.GlobalName).Returns("Example");
-        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.WebP, 128))
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.WebP, 128))
             .Returns("https://cdn.example.com/avatar.webp");
-        user.Setup(x => x.GetDisplayAvatarUrl(ImageFormat.Auto, 2048))
+        user.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 2048))
             .Returns("https://cdn.example.com/avatar.png");
         var command = CreateCommand(_ => new HttpResponseMessage(HttpStatusCode.BadGateway));
 
