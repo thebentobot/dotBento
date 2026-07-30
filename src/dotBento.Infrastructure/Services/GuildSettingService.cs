@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,8 @@ namespace dotBento.Infrastructure.Services;
 
 public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
 {
+    private static readonly ConcurrentDictionary<long, SemaphoreSlim> NonRelationalPermissionLocks = new();
+
     public async Task<GuildSetting> GetOrCreateGuildSettingAsync(long guildId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -67,5 +70,125 @@ public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextF
         return isPublic;
     }
 
+    public async Task<CommandPermissions> GetCommandPermissionsAsync(long guildId)
+    {
+        var cacheKey = CommandPermissionsCacheKey(guildId);
+        if (cache.TryGetValue(cacheKey, out CommandPermissions? cached) && cached is not null)
+            return cached;
+
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var settings = await db.GuildSettings
+            .Where(s => s.GuildId == guildId)
+            .Select(s => new { s.DisabledCommands, s.AdminOnlyCommands })
+            .FirstOrDefaultAsync();
+
+        var permissions = settings is not null
+            ? new CommandPermissions(settings.DisabledCommands, settings.AdminOnlyCommands)
+            : new CommandPermissions([], []);
+
+        cache.Set(cacheKey, permissions, TimeSpan.FromMinutes(5));
+        return permissions;
+    }
+
+    public async Task SetCommandDisabledAsync(long guildId, string commandId, bool disabled)
+    {
+        await MutateCommandPermissionsAsync(guildId, setting =>
+        {
+            setting.DisabledCommands = UpdateCommandList(setting.DisabledCommands, commandId, disabled);
+            if (disabled)
+                setting.AdminOnlyCommands = UpdateCommandList(setting.AdminOnlyCommands, commandId, false);
+        });
+    }
+
+    public async Task SetCommandAdminOnlyAsync(long guildId, string commandId, bool adminOnly)
+    {
+        await MutateCommandPermissionsAsync(guildId, setting =>
+        {
+            setting.AdminOnlyCommands = UpdateCommandList(setting.AdminOnlyCommands, commandId, adminOnly);
+            if (adminOnly)
+                setting.DisabledCommands = UpdateCommandList(setting.DisabledCommands, commandId, false);
+        });
+    }
+
+    private async Task MutateCommandPermissionsAsync(long guildId, Action<GuildSetting> mutation)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        if (db.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "guildSetting" ("guildID")
+                VALUES ({guildId})
+                ON CONFLICT ("guildID") DO NOTHING
+                """);
+
+            var setting = await db.GuildSettings
+                .FromSqlInterpolated($"""
+                    SELECT *
+                    FROM "guildSetting"
+                    WHERE "guildID" = {guildId}
+                    FOR UPDATE
+                    """)
+                .SingleAsync();
+
+            mutation(setting);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        else
+        {
+            var permissionLock = NonRelationalPermissionLocks.GetOrAdd(guildId, _ => new SemaphoreSlim(1, 1));
+            await permissionLock.WaitAsync();
+            try
+            {
+                var setting = await db.GuildSettings.FirstOrDefaultAsync(s => s.GuildId == guildId);
+                if (setting is null)
+                {
+                    setting = new GuildSetting { GuildId = guildId };
+                    db.GuildSettings.Add(setting);
+                }
+
+                mutation(setting);
+                await db.SaveChangesAsync();
+            }
+            finally
+            {
+                permissionLock.Release();
+            }
+        }
+
+        InvalidateCommandPermissionsCache(guildId);
+    }
+
+    private static string[] UpdateCommandList(
+        IEnumerable<string> commands,
+        string commandId,
+        bool shouldContain)
+    {
+        var updated = commands.ToList();
+        if (shouldContain)
+        {
+            if (!updated.Contains(commandId, StringComparer.OrdinalIgnoreCase))
+                updated.Add(commandId);
+        }
+        else
+        {
+            updated.RemoveAll(command => command.Equals(commandId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return [..updated];
+    }
+
     private static string GuildSettingCacheKey(long guildId) => $"guild-setting-{guildId}";
+
+    private static string CommandPermissionsCacheKey(long guildId) => $"guild-command-permissions-{guildId}";
+
+    private void InvalidateCommandPermissionsCache(long guildId)
+    {
+        cache.Remove(CommandPermissionsCacheKey(guildId));
+    }
 }
+
+public sealed record CommandPermissions(string[] Disabled, string[] AdminOnly);
