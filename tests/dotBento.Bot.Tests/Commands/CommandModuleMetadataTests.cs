@@ -1,4 +1,5 @@
 using System.Reflection;
+using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using dotBento.Bot.Attributes;
@@ -80,6 +81,23 @@ public sealed class CommandModuleMetadataTests
         Assert.Equal("check", Attribute<SlashCommandAttribute>(Method<WeatherSlashCommand>(nameof(WeatherSlashCommand.UserCommand))).Name);
         Assert.Equal("set", Attribute<SlashCommandAttribute>(Method<WeatherSlashCommand>(nameof(WeatherSlashCommand.SetCommand))).Name);
         Assert.Equal("delete", Attribute<SlashCommandAttribute>(Method<WeatherSlashCommand>(nameof(WeatherSlashCommand.DeleteCommand))).Name);
+    }
+
+    [Fact]
+    public void ServerSlashCommand_ExposesSettingsWithoutCommandsSubgroup()
+    {
+        var group = Attribute<InteractionGroupAttribute>(typeof(ServerSlashCommand));
+        var settings = Method<ServerSlashCommand>(nameof(ServerSlashCommand.SettingsCommand));
+        var slashCommand = Attribute<SlashCommandAttribute>(settings);
+        var permission = Attribute<Discord.Interactions.RequireUserPermissionAttribute>(settings);
+
+        Assert.Equal("server", group.Name);
+        Assert.Equal("settings", slashCommand.Name);
+        Assert.NotNull(settings.GetCustomAttribute<GuildOnly>());
+        Assert.Equal(GuildPermission.ManageGuild, permission.GuildPermission);
+        Assert.DoesNotContain(
+            typeof(ServerSlashCommand).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic),
+            type => type.GetCustomAttribute<InteractionGroupAttribute>()?.Name == "commands");
     }
 
     [Fact]
