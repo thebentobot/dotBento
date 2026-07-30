@@ -334,10 +334,9 @@ public sealed class InteractionHandler : IDisposable
         if (permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
         {
             var user = context.Guild.GetUser(context.User.Id);
-            if (user is null || !user.GuildPermissions.ManageGuild)
             {
                 await context.Interaction.RespondAsync(
-                    $"The command `{commandId}` can only be used by server administrators.", ephemeral: true);
+                    $"The command `{commandId}` can only be used by members with the **Manage Server** permission.", ephemeral: true);
                 return false;
             }
         }
