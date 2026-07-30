@@ -5,6 +5,7 @@ using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
 using dotBento.Infrastructure.Services;
@@ -22,13 +23,15 @@ public sealed class InteractionHandler : IDisposable
     private readonly IServiceProvider _provider;
     private readonly UserService _userService;
     private readonly GuildService _guildService;
+    private readonly GuildSettingService _guildSettingService;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
         IServiceProvider provider,
         InteractiveService fergunInteractiveService,
         UserService userService,
-        GuildService guildService)
+        GuildService guildService,
+        GuildSettingService guildSettingService)
     {
         _client = client;
         _interactionService = interactionService;
@@ -36,6 +39,7 @@ public sealed class InteractionHandler : IDisposable
         _fergunInteractiveService = fergunInteractiveService;
         _userService = userService;
         _guildService = guildService;
+        _guildSettingService = guildSettingService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
         _client.SelectMenuExecuted += SelectMenuExecuted;
@@ -70,7 +74,7 @@ public sealed class InteractionHandler : IDisposable
 
             await EnsureGuildAndUserExists(context);
 
-            var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
+            var keepGoing = await CheckAttributes(context, commandSearch.Command);
 
             if (!keepGoing)
             {
@@ -164,7 +168,7 @@ public sealed class InteractionHandler : IDisposable
 
         await EnsureGuildAndUserExists(context);
 
-        var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
+        var keepGoing = await CheckAttributes(context, commandSearch.Command);
 
         if (!keepGoing)
         {
@@ -291,7 +295,7 @@ public sealed class InteractionHandler : IDisposable
             return;
         }
         
-        var keepGoing = await CheckAttributes(context, commandSearch.Command.Attributes);
+        var keepGoing = await CheckAttributes(context, commandSearch.Command);
 
         if (!keepGoing)
         {
@@ -303,23 +307,43 @@ public sealed class InteractionHandler : IDisposable
         Statistics.ButtonExecuted.Inc();
     }
     
-    private async Task<bool> CheckAttributes(SocketInteractionContext context, IReadOnlyCollection<Attribute>? attributes)
+    private async Task<bool> CheckAttributes(SocketInteractionContext context, ICommandInfo command)
     {
-        if (attributes == null)
+        if (command.Attributes.OfType<GuildOnly>().Any() && context.Guild == null)
         {
-            return true;
-        }
-        if (attributes.OfType<GuildOnly>().Any())
-        {
-            if (context.Guild != null) return true;
             await context.Interaction.RespondAsync("This command is not supported in DMs.");
             context.LogCommandUsed(CommandResponse.NotSupportedInDm);
             return false;
         }
 
+        if (context.Guild == null) return true;
+
+        var commandId = SlashCommandIdUtilities.ResolveCommandId(command);
+
+        if (SlashCommandIdUtilities.IsProtectedCommand(commandId)) return true;
+
+        var permissions = await _guildSettingService.GetCommandPermissionsAsync((long)context.Guild.Id);
+
+        if (permissions.Disabled.Contains(commandId, StringComparer.OrdinalIgnoreCase))
+        {
+            await context.Interaction.RespondAsync(
+                $"The command `{commandId}` has been disabled in this server.", ephemeral: true);
+            return false;
+        }
+
+        if (permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
+        {
+            var user = context.Guild.GetUser(context.User.Id);
+            if (user is null || !user.GuildPermissions.ManageGuild)
+            {
+                await context.Interaction.RespondAsync(
+                    $"The command `{commandId}` can only be used by server administrators.", ephemeral: true);
+                return false;
+            }
+        }
+
         return true;
     }
-
     public void Dispose()
     {
         _client.SlashCommandExecuted -= SlashCommandExecuted;
