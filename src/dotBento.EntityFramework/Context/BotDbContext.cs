@@ -32,6 +32,8 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<Weather> Weathers { get; set; }
     
+    // Comment out below field and constructor when creating migrations locally
+    // ReSharper disable once NotAccessedField.Local
     private readonly IConfiguration _configuration;
 
     // Comment out below constructor when creating migrations locally
@@ -117,6 +119,12 @@ public partial class BotDbContext : DbContext
             entity.Property(e => e.LeaderboardPublic)
                 .HasDefaultValue(false)
                 .HasColumnName("leaderboardPublic");
+            entity.Property(e => e.DisabledCommands)
+                .HasColumnType("jsonb")
+                .HasColumnName("disabledCommands");
+            entity.Property(e => e.AdminOnlyCommands)
+                .HasColumnType("jsonb")
+                .HasColumnName("adminOnlyCommands");
 
             entity.HasOne(d => d.Guild).WithOne(p => p.GuildSetting)
                 .HasForeignKey<GuildSetting>(d => d.GuildId)
