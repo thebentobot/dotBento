@@ -171,6 +171,7 @@ public class SettingsServicesTests
             persisted.DisabledCommands.Order(StringComparer.Ordinal),
             cached.Disabled.Order(StringComparer.Ordinal));
         Assert.Empty(cached.AdminOnly);
+        Assert.False(GuildSettingService.HasNonRelationalPermissionLock(guildId));
 
         Task RunConcurrentUpdateAsync(Func<Task> update) =>
             Task.Run(async () =>

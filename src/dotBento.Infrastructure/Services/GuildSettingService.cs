@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +7,8 @@ namespace dotBento.Infrastructure.Services;
 
 public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
 {
-    private static readonly ConcurrentDictionary<long, SemaphoreSlim> NonRelationalPermissionLocks = new();
+    private static readonly Lock NonRelationalPermissionLocksGate = new();
+    private static readonly Dictionary<long, PermissionLockEntry> NonRelationalPermissionLocks = [];
 
     public async Task<GuildSetting> GetOrCreateGuildSettingAsync(long guildId)
     {
@@ -139,24 +139,16 @@ public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextF
         }
         else
         {
-            var permissionLock = NonRelationalPermissionLocks.GetOrAdd(guildId, _ => new SemaphoreSlim(1, 1));
-            await permissionLock.WaitAsync();
-            try
+            using var permissionLock = await AcquireNonRelationalPermissionLockAsync(guildId);
+            var setting = await db.GuildSettings.FirstOrDefaultAsync(s => s.GuildId == guildId);
+            if (setting is null)
             {
-                var setting = await db.GuildSettings.FirstOrDefaultAsync(s => s.GuildId == guildId);
-                if (setting is null)
-                {
-                    setting = new GuildSetting { GuildId = guildId };
-                    db.GuildSettings.Add(setting);
-                }
+                setting = new GuildSetting { GuildId = guildId };
+                db.GuildSettings.Add(setting);
+            }
 
-                mutation(setting);
-                await db.SaveChangesAsync();
-            }
-            finally
-            {
-                permissionLock.Release();
-            }
+            mutation(setting);
+            await db.SaveChangesAsync();
         }
 
         InvalidateCommandPermissionsCache(guildId);
@@ -188,6 +180,79 @@ public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextF
     private void InvalidateCommandPermissionsCache(long guildId)
     {
         cache.Remove(CommandPermissionsCacheKey(guildId));
+    }
+
+    private static async Task<IDisposable> AcquireNonRelationalPermissionLockAsync(long guildId)
+    {
+        PermissionLockEntry entry;
+        lock (NonRelationalPermissionLocksGate)
+        {
+            if (!NonRelationalPermissionLocks.TryGetValue(guildId, out entry!))
+            {
+                entry = new PermissionLockEntry();
+                NonRelationalPermissionLocks.Add(guildId, entry);
+            }
+
+            entry.ReferenceCount++;
+        }
+
+        try
+        {
+            await entry.Semaphore.WaitAsync();
+            return new PermissionLockLease(guildId, entry);
+        }
+        catch
+        {
+            ReleaseNonRelationalPermissionLock(guildId, entry, releaseSemaphore: false);
+            throw;
+        }
+    }
+
+    private static void ReleaseNonRelationalPermissionLock(
+        long guildId,
+        PermissionLockEntry entry,
+        bool releaseSemaphore)
+    {
+        if (releaseSemaphore)
+            entry.Semaphore.Release();
+
+        var disposeSemaphore = false;
+        lock (NonRelationalPermissionLocksGate)
+        {
+            entry.ReferenceCount--;
+            if (entry.ReferenceCount == 0)
+            {
+                NonRelationalPermissionLocks.Remove(guildId);
+                disposeSemaphore = true;
+            }
+        }
+
+        if (disposeSemaphore)
+            entry.Semaphore.Dispose();
+    }
+
+    internal static bool HasNonRelationalPermissionLock(long guildId)
+    {
+        lock (NonRelationalPermissionLocksGate)
+            return NonRelationalPermissionLocks.ContainsKey(guildId);
+    }
+
+    private sealed class PermissionLockEntry
+    {
+        public SemaphoreSlim Semaphore { get; } = new(1, 1);
+        public int ReferenceCount { get; set; }
+    }
+
+    private sealed class PermissionLockLease(long guildId, PermissionLockEntry entry) : IDisposable
+    {
+        private PermissionLockEntry? _entry = entry;
+
+        public void Dispose()
+        {
+            var entryToRelease = Interlocked.Exchange(ref _entry, null);
+            if (entryToRelease is not null)
+                ReleaseNonRelationalPermissionLock(guildId, entryToRelease, releaseSemaphore: true);
+        }
     }
 }
 
