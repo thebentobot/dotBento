@@ -334,6 +334,7 @@ public sealed class InteractionHandler : IDisposable
         if (permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
         {
             var user = context.Guild.GetUser(context.User.Id);
+            if (!HasManageGuildPermission(user?.GuildPermissions))
             {
                 await context.Interaction.RespondAsync(
                     $"The command `{commandId}` can only be used by members with the **Manage Server** permission.", ephemeral: true);
@@ -343,6 +344,10 @@ public sealed class InteractionHandler : IDisposable
 
         return true;
     }
+
+    internal static bool HasManageGuildPermission(GuildPermissions? permissions) =>
+        permissions?.ManageGuild == true;
+
     public void Dispose()
     {
         _client.SlashCommandExecuted -= SlashCommandExecuted;
