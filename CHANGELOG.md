@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.21.0](https://github.com/thebentobot/dotBento/compare/v1.20.2...v1.21.0) (2026-08-02)
+
+
+### Features
+
+* **database:** persist guild command permissions ([40af33e](https://github.com/thebentobot/dotBento/commit/40af33e31b4996599c3bbdf1020b56662a70b4cc))
+* manage command permissions from server settings ([f36b6b4](https://github.com/thebentobot/dotBento/commit/f36b6b4cc815e5ceb395706c2f754d8b4d0f486e))
+* **server:** manage command permissions from settings ([2e09f1f](https://github.com/thebentobot/dotBento/commit/2e09f1f4c6244f79a5a0ec134880cdc7dd6dc4c0))
+
+
+### Bug Fixes
+
+* **InteractionHandler:** specify missing permission ([da54889](https://github.com/thebentobot/dotBento/commit/da54889f17bbb2160467b2afa5f644e0a5f1fc63))
+* persist command permission updates ([5363676](https://github.com/thebentobot/dotBento/commit/53636765c2143a47a5632cff8b9a261dd3236ba1))
+* persist command permission updates ([a18bf8c](https://github.com/thebentobot/dotBento/commit/a18bf8c185b961ea77bb8b976accc99597db5de6))
+* release non-relational permission locks ([85dd957](https://github.com/thebentobot/dotBento/commit/85dd957c6760afe35cf37a6dc36ba5845bc7d2eb))
+
 ## [1.20.2](https://github.com/thebentobot/dotBento/compare/v1.20.1...v1.20.2) (2026-07-25)
 
 
