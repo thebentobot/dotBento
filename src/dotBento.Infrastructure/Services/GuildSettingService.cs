@@ -116,26 +116,31 @@ public sealed class GuildSettingService(IDbContextFactory<BotDbContext> contextF
 
         if (db.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
         {
-            await using var transaction = await db.Database.BeginTransactionAsync();
+            var executionStrategy = db.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var retryDb = await contextFactory.CreateDbContextAsync();
+                await using var transaction = await retryDb.Database.BeginTransactionAsync();
 
-            await db.Database.ExecuteSqlInterpolatedAsync($"""
-                INSERT INTO "guildSetting" ("guildID")
-                VALUES ({guildId})
-                ON CONFLICT ("guildID") DO NOTHING
-                """);
+                await retryDb.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO "guildSetting" ("guildID")
+                    VALUES ({guildId})
+                    ON CONFLICT ("guildID") DO NOTHING
+                    """);
 
-            var setting = await db.GuildSettings
-                .FromSqlInterpolated($"""
-                    SELECT *
-                    FROM "guildSetting"
-                    WHERE "guildID" = {guildId}
-                    FOR UPDATE
-                    """)
-                .SingleAsync();
+                var setting = await retryDb.GuildSettings
+                    .FromSqlInterpolated($"""
+                        SELECT *
+                        FROM "guildSetting"
+                        WHERE "guildID" = {guildId}
+                        FOR UPDATE
+                        """)
+                    .SingleAsync();
 
-            mutation(setting);
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
+                mutation(setting);
+                await retryDb.SaveChangesAsync();
+                await transaction.CommitAsync();
+            });
         }
         else
         {

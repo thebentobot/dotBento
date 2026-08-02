@@ -50,5 +50,9 @@
       <ProjectReference Include="..\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <InternalsVisibleTo Include="dotBento.Bot.Tests" />
+    </ItemGroup>
+
 
 </Project>
