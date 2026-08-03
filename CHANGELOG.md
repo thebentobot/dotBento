@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.0](https://github.com/thebentobot/dotBento/compare/v1.21.0...v1.22.0) (2026-08-03)
+
+
+### Features
+
+* export slash commands for documentation ([4474333](https://github.com/thebentobot/dotBento/commit/4474333a74a13ab3d4a301630246cfd1948c220c))
+* export slash commands for documentation ([6c61296](https://github.com/thebentobot/dotBento/commit/6c61296e1f38b50fa504def90c8e13ee6fb5cb47))
+
 ## [1.21.0](https://github.com/thebentobot/dotBento/compare/v1.20.2...v1.21.0) (2026-08-02)
 
 
