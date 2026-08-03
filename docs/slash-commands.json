@@ -1,0 +1,2652 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    {
+      "id": "about:bento",
+      "path": [
+        "about",
+        "bento"
+      ],
+      "invocation": "/about bento",
+      "description": "Show info about Bento",
+      "groupPath": [
+        {
+          "name": "about",
+          "description": "Information about stuff related to Bento"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "avatar:server",
+      "path": [
+        "avatar",
+        "server"
+      ],
+      "invocation": "/avatar server",
+      "description": "Get the avatar of a Server Profile",
+      "groupPath": [
+        {
+          "name": "avatar",
+          "description": "Get the avatar of a user"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show avatar for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "avatar:user",
+      "path": [
+        "avatar",
+        "user"
+      ],
+      "invocation": "/avatar user",
+      "description": "Get the avatar of a User Profile",
+      "groupPath": [
+        {
+          "name": "avatar",
+          "description": "Get the avatar of a user"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show avatar for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "banner",
+      "path": [
+        "banner"
+      ],
+      "invocation": "/banner",
+      "description": "Get the banner of a User Profile",
+      "groupPath": [],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show banner for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "bento",
+      "path": [
+        "bento"
+      ],
+      "invocation": "/bento",
+      "description": "Give a friend a Bento Box",
+      "groupPath": [],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User. Omit to check status",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "choose:list",
+      "path": [
+        "choose",
+        "list"
+      ],
+      "invocation": "/choose list",
+      "description": "Get Bento to choose from a list of options",
+      "groupPath": [
+        {
+          "name": "choose",
+          "description": "Get help choosing something"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "options",
+          "description": "Write a list, separated by commas",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "game:8ball",
+      "path": [
+        "game",
+        "8ball"
+      ],
+      "invocation": "/game 8ball",
+      "description": "Ask the magic 8 ball a question",
+      "groupPath": [
+        {
+          "name": "game",
+          "description": "Play a game"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "question",
+          "description": "Ask the magic 8 ball a question",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "game:roll",
+      "path": [
+        "game",
+        "roll"
+      ],
+      "invocation": "/game roll",
+      "description": "Roll a random number",
+      "groupPath": [
+        {
+          "name": "game",
+          "description": "Play a game"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "min",
+          "description": "The minimum number to roll (default = 1)",
+          "type": "Integer",
+          "required": false,
+          "defaultValue": 1,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "max",
+          "description": "The maximum number to roll (default = 10)",
+          "type": "Integer",
+          "required": false,
+          "defaultValue": 10,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "game:rps",
+      "path": [
+        "game",
+        "rps"
+      ],
+      "invocation": "/game rps",
+      "description": "Play Rock Paper Scissors",
+      "groupPath": [
+        {
+          "name": "game",
+          "description": "Play a game"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "weapon",
+          "description": "Do you pick rock, paper or scissors?",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:collage",
+      "path": [
+        "lastfm",
+        "collage"
+      ],
+      "invocation": "/lastfm collage",
+      "description": "Generate a collage of your top artists, albums, or tracks",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "type",
+          "description": "Type of collage",
+          "type": "String",
+          "required": false,
+          "defaultValue": "Top Artists",
+          "choices": [
+            {
+              "name": "Top Artists",
+              "value": "Top Artists"
+            },
+            {
+              "name": "Top Albums",
+              "value": "Top Albums"
+            },
+            {
+              "name": "Top Tracks",
+              "value": "Top Tracks"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "time-period",
+          "description": "Time period",
+          "type": "String",
+          "required": false,
+          "defaultValue": "Overall",
+          "choices": [
+            {
+              "name": "Overall",
+              "value": "Overall"
+            },
+            {
+              "name": "7 Days",
+              "value": "7 Days"
+            },
+            {
+              "name": "1 Month",
+              "value": "1 Month"
+            },
+            {
+              "name": "3 Months",
+              "value": "3 Months"
+            },
+            {
+              "name": "6 Months",
+              "value": "6 Months"
+            },
+            {
+              "name": "1 Year",
+              "value": "1 Year"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "images",
+          "description": "Number of images to display",
+          "type": "String",
+          "required": false,
+          "defaultValue": "4x4",
+          "choices": [
+            {
+              "name": "1x1",
+              "value": "1x1"
+            },
+            {
+              "name": "2x2",
+              "value": "2x2"
+            },
+            {
+              "name": "3x3",
+              "value": "3x3"
+            },
+            {
+              "name": "4x4",
+              "value": "4x4"
+            },
+            {
+              "name": "5x5",
+              "value": "5x5"
+            },
+            {
+              "name": "6x6",
+              "value": "6x6"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:delete",
+      "path": [
+        "lastfm",
+        "delete"
+      ],
+      "invocation": "/lastfm delete",
+      "description": "Delete your lastfm username",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "lastfm:nowplaying",
+      "path": [
+        "lastfm",
+        "nowplaying"
+      ],
+      "invocation": "/lastfm nowplaying",
+      "description": "Show what you\u0027re currently listening to",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:recenttracks",
+      "path": [
+        "lastfm",
+        "recenttracks"
+      ],
+      "invocation": "/lastfm recenttracks",
+      "description": "Show a user\u0027s recent Last.fm tracks",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show recent tracks for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:save",
+      "path": [
+        "lastfm",
+        "save"
+      ],
+      "invocation": "/lastfm save",
+      "description": "Set your lastfm username",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "username",
+          "description": "For a user who has saved lastfm",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:topalbums",
+      "path": [
+        "lastfm",
+        "topalbums"
+      ],
+      "invocation": "/lastfm topalbums",
+      "description": "Show top albums for a user",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "time-period",
+          "description": "Time period",
+          "type": "String",
+          "required": false,
+          "defaultValue": "Overall",
+          "choices": [
+            {
+              "name": "Overall",
+              "value": "Overall"
+            },
+            {
+              "name": "7 Days",
+              "value": "7 Days"
+            },
+            {
+              "name": "1 Month",
+              "value": "1 Month"
+            },
+            {
+              "name": "3 Months",
+              "value": "3 Months"
+            },
+            {
+              "name": "6 Months",
+              "value": "6 Months"
+            },
+            {
+              "name": "1 Year",
+              "value": "1 Year"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "collage",
+          "description": "Show a collage of your top artists",
+          "type": "Boolean",
+          "required": false,
+          "defaultValue": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:topartists",
+      "path": [
+        "lastfm",
+        "topartists"
+      ],
+      "invocation": "/lastfm topartists",
+      "description": "Show top artists for a user",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "time-period",
+          "description": "Time period",
+          "type": "String",
+          "required": false,
+          "defaultValue": "Overall",
+          "choices": [
+            {
+              "name": "Overall",
+              "value": "Overall"
+            },
+            {
+              "name": "7 Days",
+              "value": "7 Days"
+            },
+            {
+              "name": "1 Month",
+              "value": "1 Month"
+            },
+            {
+              "name": "3 Months",
+              "value": "3 Months"
+            },
+            {
+              "name": "6 Months",
+              "value": "6 Months"
+            },
+            {
+              "name": "1 Year",
+              "value": "1 Year"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "collage",
+          "description": "Show a collage of your top artists",
+          "type": "Boolean",
+          "required": false,
+          "defaultValue": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:toptracks",
+      "path": [
+        "lastfm",
+        "toptracks"
+      ],
+      "invocation": "/lastfm toptracks",
+      "description": "Show top tracks for a user",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "time-period",
+          "description": "Time period",
+          "type": "String",
+          "required": false,
+          "defaultValue": "Overall",
+          "choices": [
+            {
+              "name": "Overall",
+              "value": "Overall"
+            },
+            {
+              "name": "7 Days",
+              "value": "7 Days"
+            },
+            {
+              "name": "1 Month",
+              "value": "1 Month"
+            },
+            {
+              "name": "3 Months",
+              "value": "3 Months"
+            },
+            {
+              "name": "6 Months",
+              "value": "6 Months"
+            },
+            {
+              "name": "1 Year",
+              "value": "1 Year"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "collage",
+          "description": "Show a collage of your top artists",
+          "type": "Boolean",
+          "required": false,
+          "defaultValue": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "lastfm:user",
+      "path": [
+        "lastfm",
+        "user"
+      ],
+      "invocation": "/lastfm user",
+      "description": "Show user info for a user",
+      "groupPath": [
+        {
+          "name": "lastfm",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "For a user who has saved lastfm",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:bento:global",
+      "path": [
+        "leaderboard",
+        "bento",
+        "global"
+      ],
+      "invocation": "/leaderboard bento global",
+      "description": "Global bento leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        },
+        {
+          "name": "bento",
+          "description": "Bento leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:bento:server",
+      "path": [
+        "leaderboard",
+        "bento",
+        "server"
+      ],
+      "invocation": "/leaderboard bento server",
+      "description": "Server bento leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        },
+        {
+          "name": "bento",
+          "description": "Bento leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:global",
+      "path": [
+        "leaderboard",
+        "global"
+      ],
+      "invocation": "/leaderboard global",
+      "description": "Global XP leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:rps:global",
+      "path": [
+        "leaderboard",
+        "rps",
+        "global"
+      ],
+      "invocation": "/leaderboard rps global",
+      "description": "Global RPS leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        },
+        {
+          "name": "rps",
+          "description": "RPS leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "type",
+          "description": "RPS weapon type filter",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "order",
+          "description": "Order by wins, ties, or losses",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:rps:server",
+      "path": [
+        "leaderboard",
+        "rps",
+        "server"
+      ],
+      "invocation": "/leaderboard rps server",
+      "description": "Server RPS leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        },
+        {
+          "name": "rps",
+          "description": "RPS leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "type",
+          "description": "RPS weapon type filter",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "order",
+          "description": "Order by wins, ties, or losses",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:server",
+      "path": [
+        "leaderboard",
+        "server"
+      ],
+      "invocation": "/leaderboard server",
+      "description": "Server XP leaderboard",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "leaderboard:user",
+      "path": [
+        "leaderboard",
+        "user"
+      ],
+      "invocation": "/leaderboard user",
+      "description": "View a user\u0027s ranking summary",
+      "groupPath": [
+        {
+          "name": "leaderboard",
+          "description": "View leaderboards"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a user",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "media:tiktok",
+      "path": [
+        "media",
+        "tiktok"
+      ],
+      "invocation": "/media tiktok",
+      "description": "Retrieve media from a TikTok video",
+      "groupPath": [
+        {
+          "name": "media",
+          "description": "Retrieve media from social platforms"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "url",
+          "description": "TikTok video URL",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "media:twitter",
+      "path": [
+        "media",
+        "twitter"
+      ],
+      "invocation": "/media twitter",
+      "description": "Retrieve media from a Twitter/X post",
+      "groupPath": [
+        {
+          "name": "media",
+          "description": "Retrieve media from social platforms"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "url",
+          "description": "Twitter or X post URL",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "ping",
+      "path": [
+        "ping"
+      ],
+      "invocation": "/ping",
+      "description": "Test Bento\u0027s latency",
+      "groupPath": [],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:background:colour",
+      "path": [
+        "profile",
+        "background",
+        "colour"
+      ],
+      "invocation": "/profile background colour",
+      "description": "Set your profile background colour (hex)",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "background",
+          "description": "Background settings for your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hex",
+          "description": "Hex colour like #1F2937 or 1F2937",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "opacity",
+          "description": "Optional opacity 0-100",
+          "type": "Integer",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:background:reset",
+      "path": [
+        "profile",
+        "background",
+        "reset"
+      ],
+      "invocation": "/profile background reset",
+      "description": "Reset your background image and colour settings to default",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "background",
+          "description": "Background settings for your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "profile:background:upload",
+      "path": [
+        "profile",
+        "background",
+        "upload"
+      ],
+      "invocation": "/profile background upload",
+      "description": "Upload an image to use as your background",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "background",
+          "description": "Background settings for your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "image",
+          "description": "Upload an image file",
+          "type": "Attachment",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:background:url",
+      "path": [
+        "profile",
+        "background",
+        "url"
+      ],
+      "invocation": "/profile background url",
+      "description": "Set the background image URL for your profile",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "background",
+          "description": "Background settings for your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "url",
+          "description": "Direct image URL (http/https)",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:birthday",
+      "path": [
+        "profile",
+        "birthday"
+      ],
+      "invocation": "/profile birthday",
+      "description": "Set your birthday (month and day only)",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "date",
+          "description": "Your birthday (MM-DD or M/D)",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:board:lastfm",
+      "path": [
+        "profile",
+        "board",
+        "lastfm"
+      ],
+      "invocation": "/profile board lastfm",
+      "description": "Enable or disable your Last.fm board on your profile",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "board",
+          "description": "Enable or disable boards on your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "enabled",
+          "description": "Enable (true) or disable (false)",
+          "type": "Boolean",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:board:xp",
+      "path": [
+        "profile",
+        "board",
+        "xp"
+      ],
+      "invocation": "/profile board xp",
+      "description": "Enable or disable your XP board on your profile",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "board",
+          "description": "Enable or disable boards on your profile"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "enabled",
+          "description": "Enable (true) or disable (false)",
+          "type": "Boolean",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:description",
+      "path": [
+        "profile",
+        "description"
+      ],
+      "invocation": "/profile description",
+      "description": "Set your profile description",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "text",
+          "description": "Your description (max 500 characters)",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:reset:background",
+      "path": [
+        "profile",
+        "reset",
+        "background"
+      ],
+      "invocation": "/profile reset background",
+      "description": "Reset your background image and colour settings to default",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "reset",
+          "description": "Reset profile settings to default"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "profile:reset:birthday",
+      "path": [
+        "profile",
+        "reset",
+        "birthday"
+      ],
+      "invocation": "/profile reset birthday",
+      "description": "Clear your birthday",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "reset",
+          "description": "Reset profile settings to default"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "profile:reset:description",
+      "path": [
+        "profile",
+        "reset",
+        "description"
+      ],
+      "invocation": "/profile reset description",
+      "description": "Clear your profile description",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "reset",
+          "description": "Reset profile settings to default"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "profile:reset:timezone",
+      "path": [
+        "profile",
+        "reset",
+        "timezone"
+      ],
+      "invocation": "/profile reset timezone",
+      "description": "Clear your timezone",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        },
+        {
+          "name": "reset",
+          "description": "Reset profile settings to default"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "profile:timezone",
+      "path": [
+        "profile",
+        "timezone"
+      ],
+      "invocation": "/profile timezone",
+      "description": "Set your profile timezone (IANA/Windows ID)",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "id",
+          "description": "Timezone ID, e.g. Europe/Oslo or Pacific Standard Time",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "profile:user",
+      "path": [
+        "profile",
+        "user"
+      ],
+      "invocation": "/profile user",
+      "description": "Show a user\u0027s Bento profile",
+      "groupPath": [
+        {
+          "name": "profile",
+          "description": "View and edit your Bento profile settings"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "remind:create",
+      "path": [
+        "remind",
+        "create"
+      ],
+      "invocation": "/remind create",
+      "description": "Create a reminder",
+      "groupPath": [
+        {
+          "name": "remind",
+          "description": "Manage reminders for yourself"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "content",
+          "description": "What do you need to be reminded of",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "date",
+          "description": "Write a date for the reminder",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "remind:delete",
+      "path": [
+        "remind",
+        "delete"
+      ],
+      "invocation": "/remind delete",
+      "description": "Delete a reminder",
+      "groupPath": [
+        {
+          "name": "remind",
+          "description": "Manage reminders for yourself"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "reminder-id",
+          "description": "Select a reminder",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "remind:info",
+      "path": [
+        "remind",
+        "info"
+      ],
+      "invocation": "/remind info",
+      "description": "Get information about a reminder",
+      "groupPath": [
+        {
+          "name": "remind",
+          "description": "Manage reminders for yourself"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "reminder-id",
+          "description": "Select a reminder",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "remind:list",
+      "path": [
+        "remind",
+        "list"
+      ],
+      "invocation": "/remind list",
+      "description": "List all your reminders",
+      "groupPath": [
+        {
+          "name": "remind",
+          "description": "Manage reminders for yourself"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "remind:update",
+      "path": [
+        "remind",
+        "update"
+      ],
+      "invocation": "/remind update",
+      "description": "Update a reminder",
+      "groupPath": [
+        {
+          "name": "remind",
+          "description": "Manage reminders for yourself"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "reminder-id",
+          "description": "Select a reminder",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "new-content",
+          "description": "Write a new content for the reminder",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "new-date",
+          "description": "Write a new date for the reminder",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "server:info",
+      "path": [
+        "server",
+        "info"
+      ],
+      "invocation": "/server info",
+      "description": "Show info for the server",
+      "groupPath": [
+        {
+          "name": "server",
+          "description": "Commands for the Discord Server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only show server info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "server:settings",
+      "path": [
+        "server",
+        "settings"
+      ],
+      "invocation": "/server settings",
+      "description": "View and manage server settings",
+      "groupPath": [
+        {
+          "name": "server",
+          "description": "Commands for the Discord Server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [
+        "ManageGuild"
+      ],
+      "options": []
+    },
+    {
+      "id": "server:user",
+      "path": [
+        "server",
+        "user"
+      ],
+      "invocation": "/server user",
+      "description": "Show info for a server user",
+      "groupPath": [
+        {
+          "name": "server",
+          "description": "Commands for the Discord Server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show server user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:create",
+      "path": [
+        "tag",
+        "create"
+      ],
+      "invocation": "/tag create",
+      "description": "Create a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "name",
+          "description": "Write a tag name",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "content",
+          "description": "Write message content",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment1",
+          "description": "Add a video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment2",
+          "description": "Add a video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment3",
+          "description": "Add a video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:delete",
+      "path": [
+        "tag",
+        "delete"
+      ],
+      "invocation": "/tag delete",
+      "description": "Delete a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "name",
+          "description": "Write a tag name",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:get",
+      "path": [
+        "tag",
+        "get"
+      ],
+      "invocation": "/tag get",
+      "description": "Get a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "name",
+          "description": "Write a tag name",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:info",
+      "path": [
+        "tag",
+        "info"
+      ],
+      "invocation": "/tag info",
+      "description": "Get info about a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "name",
+          "description": "Write a tag name",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:list",
+      "path": [
+        "tag",
+        "list"
+      ],
+      "invocation": "/tag list",
+      "description": "Get a list of tags (all by default)",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "top",
+          "description": "List the most used tags",
+          "type": "Boolean",
+          "required": false,
+          "defaultValue": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "by-author",
+          "description": "List tags by tags author",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:random",
+      "path": [
+        "tag",
+        "random"
+      ],
+      "invocation": "/tag random",
+      "description": "Get a random tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:rename",
+      "path": [
+        "tag",
+        "rename"
+      ],
+      "invocation": "/tag rename",
+      "description": "Rename a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "old-name",
+          "description": "Write the name of the tag you want to rename",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "new-name",
+          "description": "Write the new name of the tag",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:search",
+      "path": [
+        "tag",
+        "search"
+      ],
+      "invocation": "/tag search",
+      "description": "Search for a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "query",
+          "description": "Search for a tag by name and content",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tag:update",
+      "path": [
+        "tag",
+        "update"
+      ],
+      "invocation": "/tag update",
+      "description": "Update a tag",
+      "groupPath": [
+        {
+          "name": "tag",
+          "description": "Tags for the server"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "name",
+          "description": "Write the name of the tag you want to update",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "content",
+          "description": "Update message content",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment1",
+          "description": "Update video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment2",
+          "description": "Update video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment3",
+          "description": "Update video or photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only the result of the message to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tools:colour",
+      "path": [
+        "tools",
+        "colour"
+      ],
+      "invocation": "/tools colour",
+      "description": "Get the colour of a hex code or RGB",
+      "groupPath": [
+        {
+          "name": "tools",
+          "description": "Small tools for convenience"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "colour",
+          "description": "Hex code or RGB separated by commas",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show colour for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tools:dominantcolour",
+      "path": [
+        "tools",
+        "dominantcolour"
+      ],
+      "invocation": "/tools dominantcolour",
+      "description": "Get the dominant colour of an image, either by URL or by attachment",
+      "groupPath": [
+        {
+          "name": "tools",
+          "description": "Small tools for convenience"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "url",
+          "description": "URL of the image",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "attachment",
+          "description": "Add a photo",
+          "type": "Attachment",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show colour for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "tools:timezone",
+      "path": [
+        "tools",
+        "timezone"
+      ],
+      "invocation": "/tools timezone",
+      "description": "Show the current time in a timezone",
+      "groupPath": [
+        {
+          "name": "tools",
+          "description": "Small tools for convenience"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "timezone",
+          "description": "Timezone to look up, e.g. Europe/Copenhagen",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "compare",
+          "description": "Timezone to compare against (defaults to your profile timezone if set)",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": true,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show this result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "urban",
+      "path": [
+        "urban"
+      ],
+      "invocation": "/urban",
+      "description": "Search Urban Dictionary for a term",
+      "groupPath": [],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "define",
+          "description": "What do you want defined?",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "user:info",
+      "path": [
+        "user",
+        "info"
+      ],
+      "invocation": "/user info",
+      "description": "Show info for a user",
+      "groupPath": [
+        {
+          "name": "user",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "user:profile",
+      "path": [
+        "user",
+        "profile"
+      ],
+      "invocation": "/user profile",
+      "description": "Show a user\u0027s Bento profile",
+      "groupPath": [
+        {
+          "name": "user",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": true,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "user",
+          "description": "Pick a User",
+          "type": "User",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show user info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "user:settings",
+      "path": [
+        "user",
+        "settings"
+      ],
+      "invocation": "/user settings",
+      "description": "View and manage your personal settings",
+      "groupPath": [
+        {
+          "name": "user",
+          "description": "Commands for Discord Users"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "weather:check",
+      "path": [
+        "weather",
+        "check"
+      ],
+      "invocation": "/weather check",
+      "description": "Check the weather for a user",
+      "groupPath": [
+        {
+          "name": "weather",
+          "description": "Check the weather!"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "city",
+          "description": "Check the weather in a city. Add country if it returns falsely",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show weather info for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "weather:delete",
+      "path": [
+        "weather",
+        "delete"
+      ],
+      "invocation": "/weather delete",
+      "description": "Delete the city to check the weather for",
+      "groupPath": [
+        {
+          "name": "weather",
+          "description": "Check the weather!"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "weather:set",
+      "path": [
+        "weather",
+        "set"
+      ],
+      "invocation": "/weather set",
+      "description": "Set the city to check the weather for",
+      "groupPath": [
+        {
+          "name": "weather",
+          "description": "Check the weather!"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "city",
+          "description": "Set the city to check the weather for",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    }
+  ]
+}

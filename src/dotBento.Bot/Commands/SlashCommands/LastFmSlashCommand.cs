@@ -194,11 +194,11 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
             await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("recenttracks", "Show user info for a user")]
+    [SlashCommand("recenttracks", "Show a user's recent Last.fm tracks")]
     public async Task RecentTracksCommand(
         [Summary("user", "For a user who has saved lastfm")]
         SocketUser? user = null,
-        [Summary("hide", "Only show user info for you")]
+        [Summary("hide", "Only show recent tracks for you")]
         bool? hide = null)
     {
         user ??= Context.User;

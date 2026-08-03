@@ -85,3 +85,11 @@ jobs:
             # Pull the new image and redeploy the production bot
             docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-prod webapi
             docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-prod webapi
+
+      - name: Publish documentation for this release
+        env:
+          GH_TOKEN: ${{ secrets.BENTO_DOCS_DISPATCH_TOKEN }}
+        run: |
+          gh api --method POST repos/thebentobot/bento-docs/dispatches \
+            -f event_type=dotbento_release \
+            -f client_payload[ref]="${{ env.NEW_TAG }}"
