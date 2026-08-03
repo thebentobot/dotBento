@@ -23,5 +23,7 @@ jobs:
         run: dotnet restore dotBento.sln
       - name: Build
         run: dotnet build dotBento.sln --configuration Release --no-restore
+      - name: Check slash-command documentation manifest
+        run: dotnet run --project tools/dotBento.CommandDocs --configuration Release -- check --input docs/slash-commands.json
       - name: Run tests
         run: dotnet test dotBento.sln --configuration Release --no-build --verbosity normal

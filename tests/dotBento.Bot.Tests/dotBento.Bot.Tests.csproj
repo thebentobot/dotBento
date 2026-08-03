@@ -33,6 +33,7 @@
     <ProjectReference Include="..\..\src\dotBento.Bot\dotBento.Bot.csproj" />
     <ProjectReference Include="..\..\src\dotBento.Infrastructure\dotBento.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\dotBento.EntityFramework\dotBento.EntityFramework.csproj" />
+    <ProjectReference Include="..\..\tools\dotBento.CommandDocs\dotBento.CommandDocs.csproj" />
   </ItemGroup>
 
 </Project>
