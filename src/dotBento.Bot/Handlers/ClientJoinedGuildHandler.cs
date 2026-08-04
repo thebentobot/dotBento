@@ -90,10 +90,6 @@ public sealed class ClientJoinedGuildHandler : IDisposable
             "https://ko-fi.com/bentobot");
         responseToGuildOwner.Embed.WithFooter("Vote on top.gg and receive 5 Bento \ud83c\udf71",
             "https://top.gg/bot/787041583580184609/vote");
-        responseToGuildOwner.EmbedFooter
-            .WithText("Bento \ud83c\udf71 is created by `banner.`")
-            .WithIconUrl(_client.GetUser("232584569289703424").GetAvatarUrl());
-
         return Task.FromResult(responseToGuildOwner);
     }
 
