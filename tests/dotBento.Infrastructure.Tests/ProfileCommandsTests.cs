@@ -231,14 +231,14 @@ public class ProfileCommandsTests
     }
 
     [Fact]
-    public async Task GetUserEmotes_AddsSupportDeveloperAndPatreonEmotes()
+    public async Task GetUserEmotes_AddsSupportAndPatreonEmotes()
     {
-        const long developerUserId = 232584569289703424;
+        const long userId = 123456789012345678;
         const long supportGuildId = 714496317522444352;
         var factory = new InfrastructureTestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            db.Users.Add(new EfUser { UserId = developerUserId, Username = "Dev", Discriminator = "0001", Level = 1, Xp = 0 });
+            db.Users.Add(new EfUser { UserId = userId, Username = "User", Discriminator = "0001", Level = 1, Xp = 0 });
             db.Guilds.Add(new EfGuild
             {
                 GuildId = supportGuildId,
@@ -248,10 +248,10 @@ public class ProfileCommandsTests
                 Media = false,
                 Tiktok = false
             });
-            db.GuildMembers.Add(new EfGuildMember { GuildId = supportGuildId, UserId = developerUserId, Level = 1, Xp = 0 });
+            db.GuildMembers.Add(new EfGuildMember { GuildId = supportGuildId, UserId = userId, Level = 1, Xp = 0 });
             db.Patreons.Add(new Patreon
             {
-                UserId = developerUserId,
+                UserId = userId,
                 Name = "Patron",
                 Avatar = "avatar.png",
                 Sponsor = true,
@@ -264,10 +264,9 @@ public class ProfileCommandsTests
         }
         var command = CreateCommand(factory);
 
-        var emotes = await InvokePrivateInstanceAsync<string[]>(command, "GetUserEmotes", developerUserId);
+        var emotes = await InvokePrivateInstanceAsync<string[]>(command, "GetUserEmotes", userId);
 
         Assert.Contains("🍱", emotes);
-        Assert.Contains("👨‍💻", emotes);
         Assert.Contains("""<img src="one.png" width="24" height="24">""", emotes);
         Assert.Contains("""<img src="two.png" width="24" height="24">""", emotes);
         Assert.Contains("""<img src="three.png" width="24" height="24">""", emotes);

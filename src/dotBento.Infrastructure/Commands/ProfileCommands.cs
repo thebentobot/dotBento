@@ -21,7 +21,6 @@ public sealed class ProfileCommands(
 {
     // TODO: Make this an environment variable
     private const ulong BentoSupportServerId = 714496317522444352;
-    private const long DeveloperUserId = 232584569289703424;
 
     [ExcludeFromCodeCoverage(Justification = "Discord.NET SocketGuildUser image entry point; GenerateProfileHtml covers the render workflow.")]
     public async Task<Result<Stream>> GetProfileAsync(string imageServerHost, string lastFmApiKey, long userId,
@@ -857,7 +856,6 @@ public sealed class ProfileCommands(
         var emotes = new List<string> { GenerateRandomEmote() };
 
         await AddBentoSupportServerEmote(userId, emotes);
-        AddDeveloperEmote(userId, emotes);
         await AddPatreonEmotes(userId, emotes);
 
         return emotes.ToArray();
@@ -869,14 +867,6 @@ public sealed class ProfileCommands(
         if (guildMember.HasValue)
         {
             emotes.Add("🍱");
-        }
-    }
-
-    private void AddDeveloperEmote(long userId, List<string> emotes)
-    {
-        if (userId == DeveloperUserId)
-        {
-            emotes.Add("👨‍💻");
         }
     }
 

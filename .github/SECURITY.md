@@ -12,6 +12,6 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Contact [banner4422](https://github.com/banner4422) on GitHub or Discord, where his username is `banner.`
+Report vulnerabilities through the [Bento support server](https://discord.gg/dd68WwP).
 
 Vulnerabilities will be fixed ASAP.
