@@ -73,8 +73,11 @@ public sealed class ClientJoinedGuildHandler : IDisposable
             .WithIconUrl(_client.CurrentUser.GetAvatarUrl());
         responseToGuildOwner.Embed.WithTitle("Hello! My name is Bento \ud83c\udf71");
         responseToGuildOwner.Embed.WithDescription("Thank you for choosing me to service your server!");
-        responseToGuildOwner.Embed.AddField("Check out the website for more information and help with all commands and settings",
-            DiscordConstants.WebsiteUrl);
+        responseToGuildOwner.Embed.AddField("Configure Bento for your server",
+            "Run `/server settings` with the **Manage Server** permission to control website leaderboard visibility and make commands disabled or admin-only.\n" +
+            $"[Open the server settings guide]({DiscordConstants.ServerSettingsDocumentationUrl})");
+        responseToGuildOwner.Embed.AddField("Browse all commands and guides",
+            DiscordConstants.DocumentationUrl);
         responseToGuildOwner.Embed.AddField("Need help? Or do you have some ideas or feedback to Bento \ud83c\udf71? Feel free to join the support server!",
             "https://discord.gg/dd68WwP");
         responseToGuildOwner.Embed.AddField("Want to check out the code for Bento?",

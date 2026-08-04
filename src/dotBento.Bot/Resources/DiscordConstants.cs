@@ -31,7 +31,11 @@ public sealed class DiscordConstants
 
     public const string WebsiteUrl = "https://bentobot.xyz";
 
-    public const string TroubleshootingUrl = "https://docs.bentobot.xyz/troubleshooting/";
+    public const string DocumentationUrl = "https://docs.bentobot.xyz";
+
+    public const string ServerSettingsDocumentationUrl = DocumentationUrl + "/guides/server-settings/";
+
+    public const string TroubleshootingUrl = DocumentationUrl + "/troubleshooting/";
 
     public const string TroubleshootingHelp =
         "If the issue persists, see the [troubleshooting guide](" + TroubleshootingUrl + ").";
