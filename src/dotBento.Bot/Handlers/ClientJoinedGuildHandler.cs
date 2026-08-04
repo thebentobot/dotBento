@@ -78,6 +78,8 @@ public sealed class ClientJoinedGuildHandler : IDisposable
             $"[Open the server settings guide]({DiscordConstants.ServerSettingsDocumentationUrl})");
         responseToGuildOwner.Embed.AddField("Browse all commands and guides",
             DiscordConstants.DocumentationUrl);
+        responseToGuildOwner.Embed.AddField("Visit the Bento website",
+            DiscordConstants.WebsiteUrl);
         responseToGuildOwner.Embed.AddField("Need help? Or do you have some ideas or feedback to Bento \ud83c\udf71? Feel free to join the support server!",
             "https://discord.gg/dd68WwP");
         responseToGuildOwner.Embed.AddField("Want to check out the code for Bento?",
