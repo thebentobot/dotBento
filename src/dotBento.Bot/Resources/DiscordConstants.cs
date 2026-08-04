@@ -31,6 +31,11 @@ public sealed class DiscordConstants
 
     public const string WebsiteUrl = "https://bentobot.xyz";
 
+    public const string TroubleshootingUrl = "https://docs.bentobot.xyz/troubleshooting/";
+
+    public const string TroubleshootingHelp =
+        "If the issue persists, see the [troubleshooting guide](" + TroubleshootingUrl + ").";
+
     public const int PaginationTimeoutInSeconds = 120;
 
     public const string FiveOrMoreUp = "<:5_or_more_up:912380324841918504>";
