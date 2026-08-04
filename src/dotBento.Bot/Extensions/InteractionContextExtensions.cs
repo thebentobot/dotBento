@@ -49,7 +49,7 @@ public static class InteractionContextExtensions
             }
 
             await context.Interaction.FollowupAsync($"Sorry, something went wrong while trying to process `{commandName}`. Please try again later.\n" +
-                                                    $"*Reference id: `{referenceId}`*", ephemeral: true);
+                                                    $"*Reference id: `{referenceId}`*\n\n{DiscordConstants.TroubleshootingHelp}", ephemeral: true);
         }
 
     }

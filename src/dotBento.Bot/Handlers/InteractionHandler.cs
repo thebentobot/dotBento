@@ -5,6 +5,7 @@ using dotBento.Bot.Attributes;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
 using dotBento.Domain;
 using dotBento.Domain.Enums;
@@ -117,7 +118,7 @@ public sealed class InteractionHandler : IDisposable
                         command.Name, context.User.Id, context.Guild?.Id, result.ErrorReason);
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Exception")
-                        .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                         .WithColor(Color.Red);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
@@ -127,7 +128,7 @@ public sealed class InteractionHandler : IDisposable
                     Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Unsuccessful")
-                        .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                         .WithColor(Color.Red);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
@@ -207,7 +208,7 @@ public sealed class InteractionHandler : IDisposable
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Exception")
-                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
+                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                     .WithColor(Color.Red);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;
@@ -217,7 +218,7 @@ public sealed class InteractionHandler : IDisposable
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                 embed.Embed.WithTitle("Error: Unsuccessful")
-                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
+                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                     .WithColor(Color.Red);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;

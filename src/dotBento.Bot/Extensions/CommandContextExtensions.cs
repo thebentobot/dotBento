@@ -30,12 +30,12 @@ public static class CommandContextExtensions
             if (exception.Message.Contains("error 50013"))
             {
                 await context.Channel.SendMessageAsync("Sorry, something went wrong because the bot is missing permissions. Make sure the bot has `Embed links` and `Attach Files`.\n" +
-                                                       $"*Reference id: `{referenceId}`*", allowedMentions: AllowedMentions.None);
+                                                       $"*Reference id: `{referenceId}`*\n\n{DiscordConstants.TroubleshootingHelp}", allowedMentions: AllowedMentions.None);
             }
             else
             {
                 await context.Channel.SendMessageAsync("Sorry, something went wrong. Please try again later.\n" +
-                                                       $"*Reference id: `{referenceId}`*", allowedMentions: AllowedMentions.None);
+                                                       $"*Reference id: `{referenceId}`*\n\n{DiscordConstants.TroubleshootingHelp}", allowedMentions: AllowedMentions.None);
             }
         }
 

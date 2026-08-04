@@ -7,6 +7,7 @@ using dotBento.Bot.Commands.SharedCommands;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
 using dotBento.Bot.Services;
 using dotBento.Bot.Utilities;
 using dotBento.Domain;
@@ -207,7 +208,7 @@ public sealed class MessageHandler : IDisposable
                     Statistics.CommandsFailed.WithLabels(commandName).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Exception")
-                        .WithDescription($"An exception occurred while executing the command `{commandName}`\nDon't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithDescription($"An exception occurred while executing the command `{commandName}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                         .WithColor(Color.Red);
                     await context.SendResponse(_interactiveService, embed);
                     break;
@@ -217,7 +218,7 @@ public sealed class MessageHandler : IDisposable
                     Statistics.CommandsFailed.WithLabels(commandName).Inc();
                     var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
                     embed.Embed.WithTitle("Error: Unsuccessful")
-                        .WithDescription($"The command `{commandName}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible")
+                        .WithDescription($"The command `{commandName}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
                         .WithColor(Color.Red);
                     await context.SendResponse(_interactiveService, embed);
                     break;
