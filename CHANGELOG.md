@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.23.0](https://github.com/thebentobot/dotBento/compare/v1.22.0...v1.23.0) (2026-08-04)
+
+
+### Features
+
+* document server settings in welcome message ([d29b520](https://github.com/thebentobot/dotBento/commit/d29b5209232840e7fa89798dd3f3c7512ffbf5b8))
+* document server settings in welcome message ([eccef7b](https://github.com/thebentobot/dotBento/commit/eccef7b30991d8ab974646926e90a957f66ab4e0))
+* link command errors to troubleshooting docs ([490a5b1](https://github.com/thebentobot/dotBento/commit/490a5b10f29381618d8f947eba7e1ce63640ac87))
+* link command errors to troubleshooting docs ([2ab44e7](https://github.com/thebentobot/dotBento/commit/2ab44e7c9bdbb5f3d8d58460c994eb2a226adbf6))
+* refresh about command links and copy ([1703aa4](https://github.com/thebentobot/dotBento/commit/1703aa48f945a78ca1abe314ef5194fb53846634))
+* refresh about command links and copy ([acd8c39](https://github.com/thebentobot/dotBento/commit/acd8c3949d788324b850a6b5fd0558ec8b861619))
+
+
+### Bug Fixes
+
+* retain website link in welcome message ([f7a7c48](https://github.com/thebentobot/dotBento/commit/f7a7c4806e953e349626679f42bf4d37ed89a4ce))
+
 ## [1.22.0](https://github.com/thebentobot/dotBento/compare/v1.21.0...v1.22.0) (2026-08-03)
 
 
