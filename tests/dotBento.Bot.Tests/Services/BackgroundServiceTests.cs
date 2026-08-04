@@ -95,7 +95,7 @@ public sealed class BackgroundServiceTests
         var cache = new MemoryCache(new MemoryCacheOptions());
         var userService = new UserService(cache, dbFactory);
 
-        const ulong discordUserId = 232584569289703424UL;
+        const ulong discordUserId = 123456789012345678UL;
         var reminderId = await SeedReminderAsync(dbFactory, (long)discordUserId, DateTime.UtcNow.AddMinutes(-1));
 
         var reminderService = new ReminderService(cache, dbFactory);

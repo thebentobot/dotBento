@@ -18,7 +18,7 @@ public sealed class BannerTextCommand(
 {
     [Command("banner", RunMode = RunMode.Async)]
     [Summary("Get the banner of a User Profile")]
-    [Examples("banner", "banner @Banner", "banner 232584569289703424")]
+    [Examples("banner", "banner @User", "banner 123456789012345678")]
     public async Task BannerCommand(SocketUser? user = null)
     {
         _ = Context.Channel.TriggerTypingAsync();
