@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.23.1](https://github.com/thebentobot/dotBento/compare/v1.23.0...v1.23.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **docker:** bump bot image SDK pin to match global.json ([565a0b6](https://github.com/thebentobot/dotBento/commit/565a0b6580fe65b8cb761fa5e3609dfd0dbc1796))
+* **docker:** bump bot image SDK pin to match global.json ([382f282](https://github.com/thebentobot/dotBento/commit/382f282882aebccfa081f1135563ce743ed580ea))
+* migrate to Microsoft.Testing.Platform for xunit v4 ([b9fccd9](https://github.com/thebentobot/dotBento/commit/b9fccd97ae4bf4cf8e57586a55d5c0fe885bdf1f))
+
 ## [1.23.0](https://github.com/thebentobot/dotBento/compare/v1.22.0...v1.23.0) (2026-08-04)
 
 
