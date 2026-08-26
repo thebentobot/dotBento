@@ -14,6 +14,8 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<GuildSetting> GuildSettings { get; set; }
 
+    public virtual DbSet<Horoscope> Horoscopes { get; set; }
+
     public virtual DbSet<Lastfm> Lastfms { get; set; }
 
     public virtual DbSet<Patreon> Patreons { get; set; }
@@ -155,6 +157,26 @@ public partial class BotDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.GuildMembers)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("guildmember_user_userid_fk");
+        });
+
+        modelBuilder.Entity<Horoscope>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("horoscope_pk");
+
+            entity.ToTable("horoscope");
+
+            entity.HasIndex(e => e.UserId, "horoscope_userid_uindex").IsUnique();
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("userID");
+            entity.Property(e => e.Sign)
+                .HasMaxLength(11)
+                .HasColumnName("sign");
+
+            entity.HasOne(d => d.User).WithOne(p => p.Horoscope)
+                .HasForeignKey<Horoscope>(d => d.UserId)
+                .HasConstraintName("horoscope_user_userid_fk");
         });
 
         modelBuilder.Entity<Lastfm>(entity =>

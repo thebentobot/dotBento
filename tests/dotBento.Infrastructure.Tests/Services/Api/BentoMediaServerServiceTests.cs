@@ -8,6 +8,85 @@ namespace dotBento.Infrastructure.Tests.Services.Api;
 public sealed class BentoMediaServerServiceTests
 {
     [Fact]
+    public async Task GetHoroscopeAsync_DeserializesContractAndSendsApiKey()
+    {
+        HttpRequestMessage? request = null;
+        using var httpClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("""
+            {
+              "zodiac": "libra",
+              "window": "tomorrow",
+              "label": "Aug 9, 2026",
+              "reading": "Choose balance.",
+              "aspects": [{ "name": "Romance", "score": 4, "detail": "Be open." }]
+            }
+            """)
+        }, message => request = message);
+
+        var result = await new BentoMediaServerService(httpClient).GetHoroscopeAsync(
+            "https://media.example/",
+            "libra",
+            "tomorrow",
+            "secret");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Choose balance.", result.Value.Reading);
+        Assert.Equal(4, Assert.Single(result.Value.Aspects).Score);
+        Assert.Equal("secret", request!.Headers.GetValues("X-API-Key").Single());
+        Assert.Equal(
+            "https://media.example/horoscope/libra?window=tomorrow",
+            request.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetHoroscopeAsync_ReturnsFailureForHttpErrorNullPayloadAndException()
+    {
+        using var errorClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.BadGateway,
+            Content = new StringContent("upstream down")
+        });
+        using var nullClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("null")
+        });
+        using var throwingClient = CreateHttpClient(new HttpRequestException("offline"));
+
+        var httpError = await new BentoMediaServerService(errorClient)
+            .GetHoroscopeAsync("https://media.example", "aries", "today");
+        var nullPayload = await new BentoMediaServerService(nullClient)
+            .GetHoroscopeAsync("https://media.example", "aries", "today");
+        var exception = await new BentoMediaServerService(throwingClient)
+            .GetHoroscopeAsync("https://media.example", "aries", "today");
+
+        Assert.Contains("502", httpError.Error);
+        Assert.Equal("Empty response from media server", nullPayload.Error);
+        Assert.Contains("offline", exception.Error);
+    }
+
+    [Fact]
+    public async Task GetHoroscopeAsync_OmitsApiKeyWhenNotConfigured()
+    {
+        HttpRequestMessage? request = null;
+        using var httpClient = CreateHttpClient(new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("""
+            { "zodiac": "aries", "window": "weekly", "label": "This week", "reading": "Act.", "aspects": [] }
+            """)
+        }, message => request = message);
+
+        var result = await new BentoMediaServerService(httpClient)
+            .GetHoroscopeAsync("https://media.example", "aries", "weekly");
+
+        Assert.True(result.IsSuccess);
+        Assert.False(request!.Headers.Contains("X-API-Key"));
+    }
+
+    [Fact]
     public async Task ResolveAsync_ReturnsResponseAndSendsApiKey()
     {
         HttpRequestMessage? request = null;

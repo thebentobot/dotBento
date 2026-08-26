@@ -10,7 +10,7 @@ public sealed class CommandManifestBuilderTests
         var manifest = await CommandManifestBuilder.BuildAsync();
 
         Assert.Equal(1, manifest.SchemaVersion);
-        Assert.Equal(69, manifest.Commands.Count);
+        Assert.Equal(77, manifest.Commands.Count);
         Assert.Equal(
             manifest.Commands.Select(command => command.Invocation).Order(StringComparer.Ordinal),
             manifest.Commands.Select(command => command.Invocation));
@@ -89,6 +89,10 @@ public sealed class CommandManifestBuilderTests
         Assert.DoesNotContain(
             manifest.Commands.SelectMany(command => command.Options),
             option => option.MinValue is -9007199254740991 || option.MaxValue is 9007199254740991);
+
+        var horoscopeToday = Assert.Single(manifest.Commands, command => command.Id == "horoscope:today");
+        Assert.Equal(["sign", "hide"], horoscopeToday.Options.Select(option => option.Name));
+        Assert.All(horoscopeToday.Options, option => Assert.False(option.Required));
     }
 
     [Fact]

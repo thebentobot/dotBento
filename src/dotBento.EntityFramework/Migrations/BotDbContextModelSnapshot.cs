@@ -628,6 +628,27 @@ namespace dotBento.EntityFramework.Migrations
                     b.ToTable("tag", (string)null);
                 });
 
+            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("userID");
+
+                    b.Property<string>("Sign")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("sign");
+
+                    b.HasKey("UserId")
+                        .HasName("horoscope_pk");
+
+                    b.HasIndex(new[] { "UserId" }, "horoscope_userid_uindex")
+                        .IsUnique();
+
+                    b.ToTable("horoscope", (string)null);
+                });
+
             modelBuilder.Entity("dotBento.EntityFramework.Entities.User", b =>
                 {
                     b.Property<long>("UserId")
@@ -662,6 +683,18 @@ namespace dotBento.EntityFramework.Migrations
                         .IsUnique();
 
                     b.ToTable("user", (string)null);
+                });
+
+            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
+                {
+                    b.HasOne("dotBento.EntityFramework.Entities.User", "User")
+                        .WithOne("Horoscope")
+                        .HasForeignKey("dotBento.EntityFramework.Entities.Horoscope", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("horoscope_user_userid_fk");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("dotBento.EntityFramework.Entities.UserSetting", b =>
@@ -876,6 +909,8 @@ namespace dotBento.EntityFramework.Migrations
                     b.Navigation("Bento");
 
                     b.Navigation("GuildMembers");
+
+                    b.Navigation("Horoscope");
 
                     b.Navigation("Lastfm");
 

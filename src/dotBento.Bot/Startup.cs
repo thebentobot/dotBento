@@ -229,6 +229,8 @@ public sealed class Startup
             .AddSingleton<BentoService>()
             .AddSingleton<WeatherService>()
             .AddSingleton<WeatherCommand>()
+            .AddSingleton<HoroscopeService>()
+            .AddSingleton<HoroscopeCommand>()
             .AddSingleton<LastFmCommands>()
             .AddSingleton<LastFmService>()
             .AddSingleton<LastFmCommand>()

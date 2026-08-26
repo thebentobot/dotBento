@@ -84,6 +84,29 @@ public sealed class CommandModuleMetadataTests
     }
 
     [Fact]
+    public void HoroscopeSlashCommand_ExposesAllPeriodsAndManagementCommands()
+    {
+        var group = Attribute<InteractionGroupAttribute>(typeof(HoroscopeSlashCommand));
+        Assert.Equal("horoscope", group.Name);
+
+        var names = typeof(HoroscopeSlashCommand)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(method => method.GetCustomAttribute<SlashCommandAttribute>()?.Name)
+            .Where(name => name is not null)
+            .ToHashSet();
+
+        Assert.Equal(
+            ["today", "yesterday", "tomorrow", "weekly", "monthly", "save", "remove", "list"],
+            names);
+        var todayParameters = Method<HoroscopeSlashCommand>(nameof(HoroscopeSlashCommand.TodayCommand))
+            .GetParameters();
+        Assert.Equal("sign", Attribute<Discord.Interactions.SummaryAttribute>(todayParameters[0]).Name);
+        Assert.Equal("hide", Attribute<Discord.Interactions.SummaryAttribute>(todayParameters[1]).Name);
+        Assert.True(todayParameters[0].HasDefaultValue);
+        Assert.True(todayParameters[1].HasDefaultValue);
+    }
+
+    [Fact]
     public void ServerSlashCommand_ExposesSettingsWithoutCommandsSubgroup()
     {
         var group = Attribute<InteractionGroupAttribute>(typeof(ServerSlashCommand));
@@ -144,5 +167,18 @@ public sealed class CommandModuleMetadataTests
         Assert.Equal(["weather", "weather Copenhagen"], examples.Examples);
         Assert.NotNull(parameter.GetCustomAttribute<RemainderAttribute>());
         Assert.Equal(typeof(string), Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType);
+    }
+
+    [Fact]
+    public void HoroscopeTextCommand_ExposesLegacyAliasesAndRemainderInput()
+    {
+        var method = Method<HoroscopeTextCommand>(nameof(HoroscopeTextCommand.HoroscopeCommand));
+        var command = Attribute<CommandAttribute>(method);
+        var aliases = Attribute<AliasAttribute>(method);
+
+        Assert.Equal("horoscope", command.Text);
+        Assert.Equal(CommandRunMode.Async, command.RunMode);
+        Assert.Equal(["horo", "astro", "zodiac", "hs"], aliases.Aliases);
+        Assert.NotNull(method.GetParameters().Single().GetCustomAttribute<RemainderAttribute>());
     }
 }

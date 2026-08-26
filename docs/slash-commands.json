@@ -328,6 +328,256 @@
       ]
     },
     {
+      "id": "horoscope:list",
+      "path": [
+        "horoscope",
+        "list"
+      ],
+      "invocation": "/horoscope list",
+      "description": "List all zodiac signs",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "horoscope:monthly",
+      "path": [
+        "horoscope",
+        "monthly"
+      ],
+      "invocation": "/horoscope monthly",
+      "description": "Read this month\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:remove",
+      "path": [
+        "horoscope",
+        "remove"
+      ],
+      "invocation": "/horoscope remove",
+      "description": "Remove your saved zodiac sign",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "horoscope:save",
+      "path": [
+        "horoscope",
+        "save"
+      ],
+      "invocation": "/horoscope save",
+      "description": "Save your zodiac sign",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "The zodiac sign to save",
+          "type": "String",
+          "required": true,
+          "defaultValue": "",
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:today",
+      "path": [
+        "horoscope",
+        "today"
+      ],
+      "invocation": "/horoscope today",
+      "description": "Read today\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:tomorrow",
+      "path": [
+        "horoscope",
+        "tomorrow"
+      ],
+      "invocation": "/horoscope tomorrow",
+      "description": "Read tomorrow\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:weekly",
+      "path": [
+        "horoscope",
+        "weekly"
+      ],
+      "invocation": "/horoscope weekly",
+      "description": "Read this week\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:yesterday",
+      "path": [
+        "horoscope",
+        "yesterday"
+      ],
+      "invocation": "/horoscope yesterday",
+      "description": "Read yesterday\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
       "id": "lastfm:collage",
       "path": [
         "lastfm",

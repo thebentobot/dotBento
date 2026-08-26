@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using dotBento.Infrastructure.Models.BentoMedia;
+using dotBento.Infrastructure.Models.Horoscope;
 
 namespace dotBento.Infrastructure.Services.Api;
 
@@ -45,6 +46,39 @@ public sealed class BentoMediaServerService(HttpClient httpClient)
         catch (Exception ex)
         {
             return Result.Failure<MediaResolveResponse>($"Failed to reach media server: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<HoroscopeResponse>> GetHoroscopeAsync(
+        string baseUrl,
+        string zodiac,
+        string window,
+        string? apiKey = null)
+    {
+        var requestUrl = $"{baseUrl.TrimEnd('/')}/horoscope/{Uri.EscapeDataString(zodiac)}" +
+                         $"?window={Uri.EscapeDataString(window)}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        if (!string.IsNullOrEmpty(apiKey))
+            request.Headers.Add("X-API-Key", apiKey);
+
+        try
+        {
+            using var response = await httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                return Result.Failure<HoroscopeResponse>(
+                    $"Media server returned {(int)response.StatusCode}: {error}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<HoroscopeResponse>(JsonOptions);
+            return result is null
+                ? Result.Failure<HoroscopeResponse>("Empty response from media server")
+                : Result.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<HoroscopeResponse>($"Failed to reach media server: {ex.Message}");
         }
     }
 

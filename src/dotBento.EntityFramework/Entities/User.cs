@@ -17,6 +17,8 @@ public partial class User
     public virtual Bento? Bento { get; set; }
 
     public virtual ICollection<GuildMember> GuildMembers { get; set; } = new List<GuildMember>();
+
+    public virtual Horoscope? Horoscope { get; set; }
     
     public virtual Lastfm? Lastfm { get; set; }
     
