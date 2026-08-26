@@ -68,6 +68,10 @@ public sealed class WeatherCommandTests
         Assert.Contains("Light rain", embed.Title);
         Assert.Contains("Copenhagen", embed.Title);
         Assert.Contains("mm the last hour", embed.Description);
+        Assert.Contains(
+            "🗺️ [See on Google Maps](https://www.google.com/maps/search/?api=1&query=55.6761,12.5683)",
+            embed.Description);
+        Assert.Equal("https://openweathermap.org/city/2618425", embed.Url);
         Assert.Equal("OpenWeather", embed.Author!.Value.Name);
     }
 
