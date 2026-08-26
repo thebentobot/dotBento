@@ -60,7 +60,11 @@ public sealed class WeatherCommand(
 
         var title = $"{currentWeather.Description.CapitalizeFirstLetter()} {WeatherEmote(currentWeather.Id)} in {weatherData.Name}, {GetFlagEmoji(weatherData.Sys.Country)} {GetCountryFromEnglishName(cultureInfo)}";
         var rainOrSnow = string.Join("\n", IfRainOrSnow(weatherData.Rain, weatherData.Snow));
-        var description = CreateWeatherDescription(weatherData, cultureInfo);
+        var mapsCoordinates = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{weatherData.Coord.Lat},{weatherData.Coord.Lon}");
+        var description = CreateWeatherDescription(weatherData, cultureInfo) +
+                          $"\n\n🗺️ [See on Google Maps](https://www.google.com/maps/search/?api=1&query={mapsCoordinates})";
 
         embed.Embed
             .WithAuthor(openWeatherAuthor)
