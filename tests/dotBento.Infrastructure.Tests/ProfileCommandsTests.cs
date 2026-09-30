@@ -204,7 +204,6 @@ public class ProfileCommandsTests
             {
                 GuildId = 100,
                 GuildName = "Guild",
-                Prefix = "!",
                 Icon = "guild.png",
                 Leaderboard = true,
                 Media = false,
@@ -243,7 +242,6 @@ public class ProfileCommandsTests
             {
                 GuildId = supportGuildId,
                 GuildName = "Support",
-                Prefix = "!",
                 Leaderboard = true,
                 Media = false,
                 Tiktok = false
@@ -334,7 +332,6 @@ public class ProfileCommandsTests
             {
                 GuildId = 100,
                 GuildName = "Guild",
-                Prefix = "!",
                 Icon = "guild.png",
                 MemberCount = 1234,
                 Leaderboard = true,
@@ -465,7 +462,6 @@ public class ProfileCommandsTests
         {
             GuildId = 100,
             GuildName = "Guild",
-            Prefix = "!",
             Icon = "guild.png",
             MemberCount = 1234,
             Leaderboard = true,

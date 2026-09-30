@@ -1,12 +1,10 @@
 using System.Reflection;
 using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
 using dotBento.EntityFramework.Context;
-using dotBento.Infrastructure.Interfaces;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +17,6 @@ namespace dotBento.Bot.Services;
 public sealed class BotService(DiscordSocketClient client,
     InteractionService interactions,
     IDbContextFactory<BotDbContext> contextFactory,
-    IPrefixService prefixService,
-    CommandService commands,
     IServiceProvider provider,
     BackgroundService backgroundService,
     IOptions<BotEnvConfig> config)
@@ -42,18 +38,9 @@ public sealed class BotService(DiscordSocketClient client,
             throw;
         }
 
-        // TODO: Text commands are disabled because the bot does not have the MessageContent intent.
-        // Re-enable these (and the command parsing in MessageHandler) when the intent is granted.
-        // Log.Information("Loading all prefixes");
-        // await prefixService.LoadAllPrefixes();
-
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
                            throw new InvalidOperationException("Discord:Token environment variable not set.");
-
-        // TODO: Re-enable when MessageContent intent is granted (see above).
-        // Log.Information("Loading command modules");
-        // await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Loading interaction modules");
         await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);

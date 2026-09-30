@@ -1,0 +1,176 @@
+using Discord;
+using dotBento.Bot.Enums;
+using dotBento.Bot.Models;
+using dotBento.Bot.Models.Discord;
+using dotBento.Bot.Resources;
+using dotBento.Bot.Services;
+using dotBento.Infrastructure.Commands;
+using dotBento.Infrastructure.Services;
+using dotBento.Infrastructure.Utilities;
+using Microsoft.Extensions.Options;
+using SkiaSharp;
+
+namespace dotBento.Bot.Commands.CommandHandlers;
+
+public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities, ProfileService profileService)
+{
+    public async Task<ResponseModel> GetColour(string colour)
+    {
+        var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
+        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, colour);
+        
+        if (colourImage.IsFailure)
+        {
+            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
+        }
+
+        embed.Stream = colourImage.Value.Image;
+        embed.FileName = "colour.png";
+
+        if (colourImage.Value.IsHex)
+        {
+            var (r, g, b) = HexToRgb(colour);
+        
+            embed.Embed
+                .WithTitle($"Colour `{(colourImage.Value.IsHex ? colour : $"{r},{g},{b}")}`")
+                .WithFooter($"{(colourImage.Value.IsHex ? $"RGB: {HexToRgb(colour)}" : $"Hex: {RgbToHex([r, g, b])}")} | HSV: {RgbToHsv(r, g, b)}")
+                .WithImageUrl($"attachment://colour.png")
+                .WithColor(new Color(Convert.ToUInt32(colour.Replace("#", ""), 16)));
+        
+            return embed;   
+        }
+        else
+        {
+            var (r, g, b) = RgbStringToRgb(colour);
+            embed.Embed
+                .WithTitle($"Colour `{colour}`")
+                .WithFooter($"Hex: #{RgbToHex([r, g, b])} | HSV: {RgbToHsv(r, g, b)}")
+                .WithImageUrl($"attachment://colour.png")
+                .WithColor(new Color(r, g, b));
+        
+            return embed;
+        }
+    }
+    
+    public async Task<ResponseModel> GetDominantColour(string url)
+    {
+        var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
+        var getDominantColorAsync = await stylingUtilities.TryGetDominantColorAsync(url);
+        
+        if (getDominantColorAsync.IsFailure)
+        {
+            return GenericEmbedService.ErrorEmbed("Error", $"Could not get the dominant colour by your provided input: `{url}`");
+        }
+        
+        var dominantColor = getDominantColorAsync.Value;
+        
+        var hexColor = $"#{dominantColor.R:X2}{dominantColor.G:X2}{dominantColor.B:X2}";
+        var rgbColor = $"{dominantColor.R},{dominantColor.G},{dominantColor.B}";
+        var hsvColor = RgbToHsv(dominantColor.R, dominantColor.G, dominantColor.B);
+        
+        var colourImage = await imageCommands.GetColour(botEnvConfig.Value.ImageServer.Url, hexColor);
+        
+        if (colourImage.IsFailure)
+        {
+            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
+        }
+
+        embed.Stream = colourImage.Value.Image;
+        embed.FileName = "colour.png";
+        
+        embed.Embed
+            .WithTitle("Dominant Colour")
+            .WithFooter($"Hex: {hexColor} | RGB: {rgbColor} | HSV: {hsvColor}")
+            .WithImageUrl($"attachment://colour.png")
+            .WithColor(dominantColor);
+        
+        return embed;
+    }
+
+    public async Task<ResponseModel> GetTimezone(string timezoneId, string? compareTimezoneId = null, ulong? userId = null)
+    {
+        var embed = new ResponseModel { ResponseType = ResponseType.Embed };
+
+        if (!ProfileValidationUtilities.TryValidateTimezone(timezoneId))
+        {
+            return GenericEmbedService.ErrorEmbed("Invalid timezone",
+                $"The timezone `{timezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
+        }
+
+        if (compareTimezoneId != null && !ProfileValidationUtilities.TryValidateTimezone(compareTimezoneId))
+        {
+            return GenericEmbedService.ErrorEmbed("Invalid comparison timezone",
+                $"The timezone `{compareTimezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
+        }
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        var nowUtc = DateTimeOffset.UtcNow;
+        var localTime = TimeZoneInfo.ConvertTime(nowUtc, zone);
+        var offset = zone.GetUtcOffset(nowUtc);
+        var sign = offset < TimeSpan.Zero ? "-" : "+";
+        var offsetStr = $"UTC{sign}{offset.Duration():hh\\:mm}";
+
+        embed.Embed
+            .WithColor(DiscordConstants.BentoYellow)
+            .WithTitle($"Current time in {zone.Id}")
+            .WithDescription($"**{localTime:dddd, MMMM d yyyy}**\n**{localTime:HH:mm:ss}** ({offsetStr})");
+
+        // Resolve comparison timezone: explicit parameter takes priority, then profile fallback
+        var resolvedCompareId = compareTimezoneId;
+        if (resolvedCompareId == null && userId.HasValue)
+        {
+            var profile = await profileService.GetProfileAsync((long)userId.Value);
+            if (profile.HasValue && !string.IsNullOrEmpty(profile.Value.Timezone)
+                && ProfileValidationUtilities.TryValidateTimezone(profile.Value.Timezone))
+            {
+                resolvedCompareId = profile.Value.Timezone;
+            }
+        }
+
+        if (resolvedCompareId != null)
+        {
+            var compareZone = TimeZoneInfo.FindSystemTimeZoneById(resolvedCompareId);
+            var compareOffset = compareZone.GetUtcOffset(nowUtc);
+            var diff = (offset - compareOffset).TotalHours;
+            var absHours = Math.Abs(diff);
+            var hourWord = absHours == 1 ? "hour" : "hours";
+            var diffStr = diff switch
+            {
+                0 => $"same time as {compareZone.Id}",
+                > 0 => $"{absHours:0.#} {hourWord} ahead of {compareZone.Id}",
+                _ => $"{absHours:0.#} {hourWord} behind {compareZone.Id}"
+            };
+            embed.Embed.WithFooter(diffStr);
+        }
+
+        return embed;
+    }
+
+    private static (int R, int G, int B) HexToRgb(string hexColor)
+    {
+        hexColor = hexColor.Replace("#", "");
+    
+        var r = int.Parse(hexColor.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        var g = int.Parse(hexColor.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        var b = int.Parse(hexColor.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+    
+        return (r, g, b);
+    }
+
+    private static (float H, float S, float V) RgbToHsv(int r, int g, int b)
+    {
+        new SKColor((byte)r, (byte)g, (byte)b).ToHsv(out var h, out var s, out var v);
+        return ((float)Math.Round(h), (float)Math.Round(s), (float)Math.Round(v));
+    }
+
+    private static string RgbToHex(int[] rgb)
+    {
+        return rgb.Select(component => component.ToString("X2")).Aggregate((a, b) => a + b);
+    }
+    
+    private static (int R, int G, int B) RgbStringToRgb(string rgb)
+    {
+        var rgbArray = rgb.Split(',');
+        return (int.Parse(rgbArray[0]), int.Parse(rgbArray[1]), int.Parse(rgbArray[2]));
+    }
+}

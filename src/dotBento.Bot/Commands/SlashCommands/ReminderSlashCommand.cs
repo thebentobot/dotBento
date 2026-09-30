@@ -1,7 +1,7 @@
 using System.Globalization;
 using Discord.Interactions;
 using dotBento.Bot.AutoCompleteHandlers;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;

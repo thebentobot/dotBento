@@ -6,8 +6,6 @@ public partial class Guild
 
     public string GuildName { get; set; } = null!;
 
-    public string Prefix { get; set; } = null!;
-
     public bool Tiktok { get; set; }
 
     public bool Leaderboard { get; set; }

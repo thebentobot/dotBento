@@ -12,5 +12,5 @@ public sealed class AboutSlashCommand(InteractiveService interactiveService, Use
     [SlashCommand("bento", "Show info about Bento")]
     public async Task AboutCommand(
         [Summary("hide", "Only show info for you")] bool? hide = null) =>
-        await Context.SendResponse(interactiveService, await SharedCommands.AboutCommand.Command(Context), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        await Context.SendResponse(interactiveService, await CommandHandlers.AboutCommand.Command(Context), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 }
