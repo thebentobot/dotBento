@@ -16,17 +16,6 @@ public class LastFmTimePeriodUtilitiesTests
             new object[] { "1 Year", LastFmTimeSpan.Year }
         };
 
-    public static IEnumerable<object[]> TextCommandOptions =>
-        new List<object[]>
-        {
-            new object[] { "all", LastFmTimeSpan.Overall },
-            new object[] { "week", LastFmTimeSpan.Week },
-            new object[] { "month", LastFmTimeSpan.Month },
-            new object[] { "quarter", LastFmTimeSpan.Quarter },
-            new object[] { "half", LastFmTimeSpan.HalfYear },
-            new object[] { "year", LastFmTimeSpan.Year }
-        };
-
     [Theory]
     [MemberData(nameof(SlashCommandOptions))]
     public void LastFmTimeSpanFromUserOptionSlashCommand_ReturnsCorrectValue(string input, string expected)
@@ -40,20 +29,5 @@ public class LastFmTimePeriodUtilitiesTests
     {
         var result = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand("invalid_option");
         Assert.Equal(LastFmTimeSpan.Overall, result);
-    }
-
-    [Theory]
-    [MemberData(nameof(TextCommandOptions))]
-    public void LastFmTimeSpanFromUserOptionTextCommand_ReturnsCorrectValue(string input, string expected)
-    {
-        var result = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionTextCommand(input);
-        Assert.Equal(expected, result);
-    }
-
-    [Fact]
-    public void LastFmTimeSpanFromUserOptionTextCommand_ReturnsNullForUnknownValue()
-    {
-        var result = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionTextCommand("invalid_option");
-        Assert.Null(result);
     }
 }

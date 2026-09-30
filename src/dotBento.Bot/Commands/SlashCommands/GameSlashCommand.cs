@@ -1,6 +1,6 @@
 using Discord;
 using Discord.Interactions;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Domain.Enums.Games;
 using dotBento.Infrastructure.Services;

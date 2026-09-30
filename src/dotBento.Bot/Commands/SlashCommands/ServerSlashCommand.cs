@@ -3,7 +3,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Services;

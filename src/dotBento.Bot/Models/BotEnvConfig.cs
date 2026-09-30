@@ -54,8 +54,6 @@ public sealed class DatabaseConfig
 
 public sealed class BotConfig
 {
-    public string Prefix { get; set; } = string.Empty;
-
     public ulong BaseServerId { get; set; }
 
     public ulong AnnouncementChannelId { get; set; }
