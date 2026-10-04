@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.2](https://github.com/thebentobot/dotBento/compare/v1.23.1...v1.23.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* **docker:** align bot SDK with global.json ([f95ee91](https://github.com/thebentobot/dotBento/commit/f95ee91215417dc4cc05c8da97a5e4b3f23e1075))
+* **docker:** align bot SDK with global.json ([6f22a1e](https://github.com/thebentobot/dotBento/commit/6f22a1e2faa796f0db52727bc6df4c3d84538cd6))
+
 ## [1.23.1](https://github.com/thebentobot/dotBento/compare/v1.23.0...v1.23.1) (2026-08-24)
 
 
