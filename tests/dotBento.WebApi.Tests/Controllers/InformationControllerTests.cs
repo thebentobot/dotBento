@@ -88,7 +88,6 @@ public class InformationControllerTests
         {
             GuildId = guildId,
             GuildName = "TestGuild",
-            Prefix = "!",
             Leaderboard = true,
             Media = false,
             Tiktok = false,
@@ -123,7 +122,6 @@ public class InformationControllerTests
             {
                 GuildId = 1,
                 GuildName = "Guild One",
-                Prefix = "!",
                 Tiktok = false,
                 Leaderboard = true,
                 Media = true,
@@ -133,7 +131,6 @@ public class InformationControllerTests
             {
                 GuildId = 2,
                 GuildName = "Guild Two",
-                Prefix = "?",
                 Tiktok = true,
                 Leaderboard = false,
                 Media = false,

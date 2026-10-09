@@ -117,7 +117,6 @@ public sealed class DiscordChannelSink : ILogEventSink, IDisposable
                 source.StartsWith("Discord.Net", StringComparison.OrdinalIgnoreCase) ||
                 source.StartsWith("Discord.WebSocket", StringComparison.OrdinalIgnoreCase) ||
                 source.StartsWith("Discord.Rest", StringComparison.OrdinalIgnoreCase) ||
-                source.StartsWith("Discord.Commands", StringComparison.OrdinalIgnoreCase) ||
                 source.Contains("DiscordChannelSink", StringComparison.OrdinalIgnoreCase))
             {
                 return true;

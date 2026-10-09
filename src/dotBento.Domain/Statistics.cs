@@ -58,22 +58,12 @@ public static class Statistics
                 LabelNames = new[] { "method" }
             });
 
-    public static readonly Counter CommandsExecuted = Metrics
-        .CreateCounter("bot_commands_executed", "Amount of commands executed",
-            new CounterConfiguration
-            {
-                LabelNames = new[] { "name" }
-            });
-
     public static readonly Counter SlashCommandsExecuted = Metrics
         .CreateCounter("bot_slash_commands_executed", "Amount of slash commands executed",
             new CounterConfiguration
             {
                 LabelNames = new[] { "name" }
             });
-
-    public static readonly Histogram TextCommandHandlerDuration = Metrics
-        .CreateHistogram("bot_text_command_handler_duration", "Histogram of text command handler duration");
 
     public static readonly Histogram SlashCommandHandlerDuration = Metrics
         .CreateHistogram("bot_slash_command_handler_duration", "Histogram of slash command handler duration");
@@ -123,13 +113,6 @@ public static class Statistics
         .CreateGauge("bot_active_users_count_30d", "Total count of users who've used the bot in the last 30 days");
     */
 
-    public static readonly Counter CommandsFailed = Metrics
-        .CreateCounter("bot_commands_failed", "Amount of commands that failed",
-            new CounterConfiguration
-            {
-                LabelNames = new[] { "name" }
-            });
-    
     public static readonly Counter SlashCommandsFailed = Metrics
         .CreateCounter("bot_slash_commands_failed", "Amount of slash commands that failed",
             new CounterConfiguration

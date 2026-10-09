@@ -4,7 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.AutoCompleteHandlers;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Infrastructure.Dto.Tags;
 using dotBento.Infrastructure.Services;
