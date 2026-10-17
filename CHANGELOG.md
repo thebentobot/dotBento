@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.0](https://github.com/thebentobot/dotBento/compare/v1.23.1...v2.0.0) (2026-10-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bot:** Text commands and guild command prefixes are removed. The migration drops stored guild prefixes; use slash commands instead.
+
+### Bug Fixes
+
+* **docker:** align bot SDK with global.json ([f95ee91](https://github.com/thebentobot/dotBento/commit/f95ee91215417dc4cc05c8da97a5e4b3f23e1075))
+* **docker:** align bot SDK with global.json ([6f22a1e](https://github.com/thebentobot/dotBento/commit/6f22a1e2faa796f0db52727bc6df4c3d84538cd6))
+
+
+### Code Refactoring
+
+* **bot:** remove text commands and rename command handlers ([0869504](https://github.com/thebentobot/dotBento/commit/08695046f689592909020e0b12623a5ac6380e23))
+
 ## [1.23.1](https://github.com/thebentobot/dotBento/compare/v1.23.0...v1.23.1) (2026-08-24)
 
 
