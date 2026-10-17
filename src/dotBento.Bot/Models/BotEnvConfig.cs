@@ -4,6 +4,10 @@ public sealed class BotEnvConfig
 {
     public string Environment { get; set; } = string.Empty;
 
+    public dotBento.Domain.Branding Branding { get; set; } = new();
+    public ThemeConfig Theme { get; set; } = new();
+    public PaginationConfig Pagination { get; set; } = new();
+
     public DiscordConfig Discord { get; set; } = new DiscordConfig();
     
     public PrometheusConfig Prometheus { get; set; } = new PrometheusConfig();

@@ -170,6 +170,9 @@ public sealed class Startup
     private void ConfigureServices(IServiceCollection services)
     {
         services.Configure<BotEnvConfig>(Configuration);
+        var config = Configuration.Get<BotEnvConfig>() ?? new();
+        var presentation = new BotPresentation(config);
+        services.AddSingleton(presentation).AddSingleton(config.Branding);
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
