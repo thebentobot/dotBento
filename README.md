@@ -1,102 +1,75 @@
 # Bento
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
-[![Build dotBento](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml/badge.svg)](https://github.com/thebentobot/dotBento/actions/workflows/dotnet.yml)
-[![Discord Bots](https://top.gg/api/widget/servers/787041583580184609.svg)](https://top.gg/bot/787041583580184609)
-![Code coverage](https://img.shields.io/badge/coverage-96.7%25-brightgreen)
 
-A Discord bot written in .NET. This repository is the improved .NET rewrite of [Bento](https://github.com/thebentobot/Bento).
+The Discord bot behind [Bento](https://bentobot.xyz), written in .NET 10 with Discord.NET. Uses PostgreSQL for storage, Valkey for shared caching, and a separate ASP.NET Core API for [bento-web](https://github.com/thebentobot/bento-web).
 
-## Features (high level)
-- Slash commands
-- Modular command architecture with [Discord.NET](https://docs.discordnet.dev/) (Interactions)
-- PostgreSQL database via Entity Framework Core
-- Optional Prometheus metrics and Loki/Serilog logging
-- Valkey caching between bot and web api instances
-- Docker-ready deployment
-- Separate Web API for public endpoints
+Command reference and guides: [docs.bentobot.xyz](https://docs.bentobot.xyz).
 
-## Tech stack
-- .NET 10
-- Discord.NET
-- ASP.NET Core + EF Core (PostgreSQL)
-- Serilog (with Grafana Loki sink) and optional Discord webhook logging
-- Prometheus client for metrics
+## Local development
 
-## Getting started
+Use the .NET SDK specified in [global.json](global.json), Docker Compose, and a Discord bot token.
 
-### Prerequisites
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker](https://docs.docker.com/get-docker/) (for local infrastructure)
-- A Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
+From the repository root, start PostgreSQL, Valkey, and the image server:
 
-### Local development
+```sh
+docker compose -f src/docker-compose.dev.yml up -d
+cp .env.example .env
+```
 
-1. **Start infrastructure** (Postgres, Valkey, Sushii image server):
-   ```bash
-   docker compose -f src/docker-compose.dev.yml up -d
-   ```
+In `.env`, set `Discord__Token` and change `Username=postgres` to `Username=username` in `PostgreSQL__ConnectionString` to match the development database. The example lists optional API keys for music, weather, and other integrations.
 
-2. **Configure environment** (first time only):
-   ```bash
-   cp .env.example .env
-   # Edit .env and set Discord__Token to your bot token
-   ```
+```sh
+dotnet run --project src/dotBento.Bot
+```
 
-3. **Run the bot:**
-   ```bash
-   dotnet run --project src/dotBento.Bot
-   ```
+The bot applies database migrations on startup. Stop the services with:
 
-4. **Optionally run the web API** (in a separate terminal):
-   ```bash
-   cp .env.webapi.example .env.webapi  # fill in ApiKey
-   dotnet run --project src/dotBento.WebApi
-   ```
+```sh
+docker compose -f src/docker-compose.dev.yml down
+```
 
-5. **Stop infrastructure** when done:
-   ```bash
-   docker compose -f src/docker-compose.dev.yml down
-   ```
+PostgreSQL data persists in a named Docker volume.
 
-Postgres data is persisted in a named Docker volume, so your database survives restarts.
+## Web API
 
-## Tests and coverage
+Run the bot once to apply database migrations, then open a separate terminal:
 
-Run the full test suite:
+```sh
+cd src/dotBento.WebApi
+cp ../../.env.webapi.example .env
+```
 
-```bash
+In this `.env`, set `ApiKey`, add `Discord__Token`, and change `Username=postgres` to `Username=username` in `DatabaseConnectionString`.
+
+```sh
+dotnet run --no-launch-profile --urls http://localhost:5072
+```
+
+The API loads `.env` from its working directory. Clients send `ApiKey` in the `X-Api-Key` header. For bento-web, use `API_URL=http://localhost:5072` and the same key as `API_KEY`.
+
+## Project layout
+
+- `src/dotBento.Bot/`: slash commands, Discord events, and bot startup.
+- `src/dotBento.Infrastructure/`: command logic, services, and external integrations.
+- `src/dotBento.Domain/`: domain models and constants.
+- `src/dotBento.EntityFramework/`: PostgreSQL entities, context, and migrations.
+- `src/dotBento.WebApi/`: endpoints used by the website.
+- `tests/`: xUnit tests for the bot, infrastructure, and API.
+
+## Development commands
+
+```sh
+dotnet build dotBento.sln
 dotnet test dotBento.sln
 ```
 
-Collect Coverlet coverage for all test projects:
+When changing slash commands, regenerate the manifest used by [bento-docs](https://github.com/thebentobot/bento-docs) and commit it:
 
-```bash
-dotnet test dotBento.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults/Coverage
+```sh
+dotnet run --project tools/dotBento.CommandDocs -- export --output docs/slash-commands.json
 ```
 
-Generate an HTML, text summary, and local badge report:
+Use Conventional Commits for commit messages. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for the contribution workflow.
 
-```bash
-dotnet tool restore
-dotnet reportgenerator -reports:"TestResults/Coverage/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;TextSummary;Badges"
-```
+[Privacy policy](PRIVACYPOLICY.md) · [Terms of service](TOS.md)
 
-Open `coverage-report/index.html` for the full report, read `coverage-report/Summary.txt` for a quick baseline, or inspect the generated `coverage-report/badge_*.svg` files locally.
-
-## Relevant links
-- The commit linting rules follows Conventional Commits. You can read about the linting rules specifically [here](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional)
-- [Privacy Policy](./PRIVACYPOLICY.md)
-- [Terms of Service](./TOS.md)
-
-## Contributing
-Pull requests are welcome! Please ensure your contributions include tests where appropriate and follow Conventional Commits for commit messages.
-
-## Development
-The bot is mainly developed by [Christian](https://github.com/christianhook).
-
-Pull requests are very welcome if the features/changes make sense and are up to par in quality.
-
-## License
-This project is licensed under the AGPL-3.0 License. See the LICENSE file for details: ./LICENSE
-
-The avatar illustration is done by [Dan](https://twitter.com/dannalanart).
+Licensed under AGPL-3.0. See [LICENSE](LICENSE). Avatar illustration by [Dan](https://twitter.com/dannalanart).
