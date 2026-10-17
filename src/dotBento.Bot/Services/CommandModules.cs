@@ -35,7 +35,13 @@ public static class CommandModules
                 if (invocations.Contains(string.Join(':', segments.Take(length))))
                     throw new ArgumentException($"Configured command conflicts with a group: {invocation}");
         }
-
+        if (!config.MediaEnabled)
+            await interactions.RemoveModuleAsync<MediaSlashCommand>();
+        if (!config.HoroscopeEnabled)
+        {
+            await interactions.RemoveModuleAsync<HoroscopeSlashCommand>();
+            await interactions.RemoveModuleAsync<HoroscopeSettingsComponentInteraction>();
+        }
     }
 
     private static void ValidateDescription(string description)
@@ -44,4 +50,8 @@ public static class CommandModules
             throw new ArgumentException("Configured command descriptions must contain 1–100 characters.");
     }
 
+    public static bool IsDisabled(string rootOrCustomId, BotEnvConfig config) =>
+        (!config.MediaEnabled && rootOrCustomId == "media") ||
+        (!config.HoroscopeEnabled && (rootOrCustomId == "horoscope" ||
+                                     rootOrCustomId.StartsWith("horoscope-settings:", StringComparison.Ordinal)));
 }

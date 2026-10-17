@@ -20,6 +20,8 @@ public sealed class MediaCommand(
 
     public async Task<ResponseModel> GetMediaResponseAsync(string url)
     {
+        if (!config.Value.MediaEnabled)
+            return _presentation.ErrorEmbed("Media commands are disabled", "This feature has been disabled by the bot operator.");
         var fetchResult = await FetchMediaAsync(url);
         if (fetchResult.IsFailure)
             return ErrorResponse(fetchResult.Error);

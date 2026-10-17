@@ -14,6 +14,54 @@ namespace dotBento.Bot.Tests.Services;
 public sealed class DeploymentConfigurationTests
 {
     [Fact]
+    public void EnvironmentOverrides_BindWithoutChangingOtherHosts()
+    {
+        const string prefix = "DOTBENTO_TEST_";
+        Environment.SetEnvironmentVariable(prefix + "Branding__Name", "Mochi");
+        Environment.SetEnvironmentVariable(prefix + "MediaServer__Enabled", "false");
+        try
+        {
+            var config = new ConfigurationBuilder().AddEnvironmentVariables(prefix).Build().Get<BotEnvConfig>()!;
+            Assert.Equal("Mochi", new BotPresentation(config).Brand.Name);
+            Assert.False(config.MediaEnabled);
+            Assert.False(config.HoroscopeEnabled);
+            Assert.Equal("Bento", new BotPresentation().Brand.Name);
+            Assert.True(new BotEnvConfig().MediaEnabled);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(prefix + "Branding__Name", null);
+            Environment.SetEnvironmentVariable(prefix + "MediaServer__Enabled", null);
+        }
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task FeatureSwitches_FilterCommandsAndPreserveUnrelatedCommands(bool master, bool media, bool horoscope)
+    {
+        var config = new BotEnvConfig
+        {
+            MediaServer = new() { Enabled = master },
+            Features = new() { MediaEnabled = media, HoroscopeEnabled = horoscope }
+        };
+        var manifest = await CommandManifestBuilder.BuildAsync(config);
+        Assert.Equal(master && media ? 2 : 0, manifest.Commands.Count(c => c.Path[0] == "media"));
+        Assert.Equal(master && horoscope ? 6 : 0, manifest.Commands.Count(c => c.Path[0] == "horoscope"));
+        Assert.Contains(manifest.Commands, c => c.Id == "ping");
+        Assert.Contains(manifest.Commands, c => c.Id == "server:settings");
+        Assert.Equal(!(master && media), CommandModules.IsDisabled("media", config));
+        Assert.Equal(!(master && horoscope), CommandModules.IsDisabled("horoscope-settings:remove:123", config));
+        Assert.False(CommandModules.IsDisabled("server-settings:root", config));
+    }
+
+    [Fact]
     public async Task Rebranding_ChangesInvocationsAndDescriptionsButPreservesPermissionIds()
     {
         var config = new BotEnvConfig
@@ -43,7 +91,7 @@ public sealed class DeploymentConfigurationTests
     [InlineData("horoscope")]
     public async Task CommandCollisions_FailBeforeRegistration(string name)
     {
-        var config = new BotEnvConfig { Branding = new() { GiftCommandName = name } };
+        var config = new BotEnvConfig { Branding = new() { GiftCommandName = name }, MediaServer = new() { Enabled = false } };
         await Assert.ThrowsAnyAsync<ArgumentException>(() => CommandManifestBuilder.BuildAsync(config));
     }
 
@@ -125,5 +173,56 @@ public sealed class DeploymentConfigurationTests
         Assert.Contains(custom.PaginationEmotes.Keys, emote => emote is Emote { Id: 883825508633182208 });
     }
 
+    [Fact]
+    public async Task DisabledApiFeatures_ReturnBeforeHttpOrDatabaseAccess()
+    {
+        var config = Options.Create(new BotEnvConfig { MediaServer = new() { Enabled = false } });
+        // Null collaborators deliberately fail if the disabled path attempts any access.
+        var media = new MediaCommand(null!, config);
+        var horoscope = new HoroscopeCommand(null!, null!, config);
+        var responses = new[]
+        {
+            await media.GetMediaResponseAsync("https://example.com/post"),
+            await horoscope.GetHoroscopeAsync(1, "today"),
+            await horoscope.SaveHoroscopeAsync(1, "aries"),
+            await horoscope.RemoveHoroscopeAsync(1),
+            await horoscope.GetSettingsAsync(1)
+        };
+        Assert.All(responses, response =>
+        {
+            Assert.Equal(ResponseType.Embed, response.ResponseType);
+            Assert.Equal(CommandResponse.Error, response.CommandResponse);
+            Assert.Contains("disabled", response.Embed.Title, StringComparison.OrdinalIgnoreCase);
+        });
+    }
 
+    [Fact]
+    public async Task HoroscopePreferences_SurviveDisablingAndReenabling()
+    {
+        var factory = new TestDbFactory();
+        var service = new dotBento.Infrastructure.Services.HoroscopeService(factory);
+        await service.SaveHoroscopeAsync(1, "libra");
+        var disabled = new HoroscopeCommand(service, null!, Options.Create(new BotEnvConfig
+        {
+            Features = new() { HoroscopeEnabled = false }
+        }));
+        Assert.Equal(CommandResponse.Error, (await disabled.SaveHoroscopeAsync(1, "aries")).CommandResponse);
+        Assert.Equal(CommandResponse.Error, (await disabled.RemoveHoroscopeAsync(1)).CommandResponse);
+        var enabled = new HoroscopeCommand(service, null!, Options.Create(new BotEnvConfig()));
+        var settings = await enabled.GetSettingsAsync(1);
+        Assert.Contains("Libra", settings.Embed.Description);
+        var saved = await service.GetHoroscopeAsync(1);
+        Assert.True(saved.HasValue);
+        Assert.Equal("libra", saved.Value.Sign);
+    }
+
+    [Fact]
+    public async Task EnabledWithoutApiConfiguration_ReturnsUnavailableResponse()
+    {
+        var config = Options.Create(new BotEnvConfig());
+        var media = await new MediaCommand(null!, config).GetMediaResponseAsync("https://example.com/post");
+        var horoscope = await new HoroscopeCommand(null!, null!, config).GetHoroscopeAsync(1, "today", "aries");
+        Assert.Equal("Media commands are not enabled", media.Embed.Title);
+        Assert.Equal("Horoscope commands are not enabled", horoscope.Embed.Title);
+    }
 }

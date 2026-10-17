@@ -23,6 +23,35 @@ public sealed class SettingsCommandTests
     }
 
     [Fact]
+    public async Task RebrandedPermissionMenu_UsesCanonicalValuesAndHidesDisabledFeatures()
+    {
+        var factory = new TestDbFactory();
+        var memory = new MemoryCache(new MemoryCacheOptions());
+        var guilds = new GuildSettingService(factory, memory);
+        await guilds.SetCommandDisabledAsync(100, "bento", true);
+        await guilds.SetCommandDisabledAsync(100, "media:tiktok", true);
+        var presentation = new dotBento.Bot.Services.BotPresentation(new()
+        {
+            Branding = new() { GiftCommandName = "cookie" },
+            MediaServer = new() { Enabled = false }
+        });
+        var command = new SettingsCommand(guilds,
+            new UserSettingService(factory, new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()))),
+            presentation);
+        var response = await command.GetCommandActionViewAsync(100, "Guild", null,
+            CommandPermissionAction.Enable, 0, ["bento", "ping"]);
+        var option = Assert.Single(SelectMenu(response.Components).Options);
+        Assert.Equal("cookie", option.Label);
+        Assert.Equal("bento", option.Value);
+        var permissions = await guilds.GetCommandPermissionsAsync(100);
+        Assert.Contains("media:tiktok", permissions.Disabled);
+        await command.ApplyCommandPermissionActionAsync(100, option.Value, CommandPermissionAction.Enable);
+        permissions = await guilds.GetCommandPermissionsAsync(100);
+        Assert.DoesNotContain("bento", permissions.Disabled);
+        Assert.Contains("media:tiktok", permissions.Disabled);
+    }
+
+    [Fact]
     public async Task GetServerSettingsAsync_CreatesDefaultPrivateSetting()
     {
         var (command, factory) = CreateCommand();

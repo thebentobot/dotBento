@@ -66,6 +66,7 @@ public sealed class InteractionHandler : IDisposable
         {
             var context = new SocketInteractionContext(_client, socketInteraction);
 
+            if (await RejectDisabledAsync(socketInteraction)) return;
 
             var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
 
@@ -244,6 +245,19 @@ public sealed class InteractionHandler : IDisposable
         }
     }
 
+    private async Task<bool> RejectDisabledAsync(SocketInteraction interaction)
+    {
+        var id = interaction switch
+        {
+            SocketSlashCommand slash => slash.CommandName,
+            SocketMessageComponent component => component.Data.CustomId,
+            _ => string.Empty
+        };
+        if (!CommandModules.IsDisabled(id, _presentation.Config)) return false;
+        await interaction.RespondAsync("This feature has been disabled by the bot operator.", ephemeral: true);
+        return true;
+    }
+
     private async Task EnsureGuildAndUserExists(SocketInteractionContext context)
     {
         if (context.Guild != null && !context.User.IsBot)
@@ -270,6 +284,7 @@ public sealed class InteractionHandler : IDisposable
 
     private async Task SelectMenuExecuted(SocketInteraction socketInteraction)
     {
+        if (await RejectDisabledAsync(socketInteraction)) return;
         Statistics.DiscordEvents.WithLabels(nameof(SelectMenuExecuted)).Inc();
 
         var context = new SocketInteractionContext(_client, socketInteraction);
@@ -290,6 +305,7 @@ public sealed class InteractionHandler : IDisposable
 
     private async Task ButtonExecuted(SocketMessageComponent socketMessageComponent)
     {
+        if (await RejectDisabledAsync(socketMessageComponent)) return;
         Statistics.DiscordEvents.WithLabels(nameof(ButtonExecuted)).Inc();
 
         var context = new SocketInteractionContext(_client, socketMessageComponent);

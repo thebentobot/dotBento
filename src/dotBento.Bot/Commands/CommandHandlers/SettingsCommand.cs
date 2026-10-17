@@ -98,11 +98,11 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
                 "Choose how slash commands behave in this server. Disabled and admin-only are mutually exclusive.")
             .WithColor(_presentation.Primary)
             .AddField(
-                $"Disabled Commands ({permissions.Disabled.Length})",
-                BuildCommandListPreview(permissions.Disabled))
+                $"Disabled Commands ({permissions.Disabled.Count(IsFeatureAvailable)})",
+                BuildCommandListPreview(permissions.Disabled.Where(IsFeatureAvailable)))
             .AddField(
-                $"Admin-Only Commands ({permissions.AdminOnly.Length})",
-                BuildCommandListPreview(permissions.AdminOnly));
+                $"Admin-Only Commands ({permissions.AdminOnly.Count(IsFeatureAvailable)})",
+                BuildCommandListPreview(permissions.AdminOnly.Where(IsFeatureAvailable)));
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
@@ -111,7 +111,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
         foreach (var action in Enum.GetValues<CommandPermissionAction>())
         {
-            var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds);
+            var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds, _presentation.Config);
             components.WithButton(new ButtonBuilder()
                 .WithLabel(action.ToLabel())
                 .WithCustomId($"server-settings:commands:page:{action.ToToken()}:0")
@@ -141,7 +141,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         const int pageSize = 25;
 
         var permissions = await guildSettingService.GetCommandPermissionsAsync(guildId);
-        var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds);
+        var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds, _presentation.Config);
         var pageCount = Math.Max(1, (int)Math.Ceiling(candidates.Count / (double)pageSize));
         var page = Math.Clamp(requestedPage, 0, pageCount - 1);
         var pageCandidates = candidates.Skip(page * pageSize).Take(pageSize).ToArray();
@@ -255,7 +255,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     public static IReadOnlyList<string> GetCommandActionCandidates(
         CommandPermissionAction action,
         CommandPermissions permissions,
-        IReadOnlyCollection<string> registeredCommandIds)
+        IReadOnlyCollection<string> registeredCommandIds,
+        dotBento.Bot.Models.BotEnvConfig? config = null)
     {
         var disabled = new HashSet<string>(permissions.Disabled, StringComparer.OrdinalIgnoreCase);
         var adminOnly = new HashSet<string>(permissions.AdminOnly, StringComparer.OrdinalIgnoreCase);
@@ -273,6 +274,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         };
 
         return candidates
+            .Where(id => !CommandModules.IsDisabled(id.Split(':')[0], config ?? new()))
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -304,6 +306,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
         return string.Join("\n", lines);
     }
+
+    private bool IsFeatureAvailable(string id) => !CommandModules.IsDisabled(id.Split(':')[0], _presentation.Config);
 
     private string WebsiteLink(string path)
     {

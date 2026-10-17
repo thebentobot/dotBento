@@ -44,6 +44,8 @@ public sealed class HoroscopeCommand(
     public async Task<ResponseModel> GetHoroscopeAsync(
         long userId, string window, string? sign = null, IChannel? channel = null)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var normalizedWindow = NormalizeWindow(window);
         if (normalizedWindow is null)
             return Error("Invalid horoscope period", "Use yesterday, today, tomorrow, weekly, or monthly.");
@@ -88,6 +90,8 @@ public sealed class HoroscopeCommand(
 
     public async Task<ResponseModel> SaveHoroscopeAsync(long userId, string? sign)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var normalizedSign = NormalizeSign(sign);
         if (normalizedSign is null)
             return InvalidSign(sign ?? string.Empty);
@@ -99,12 +103,16 @@ public sealed class HoroscopeCommand(
 
     public async Task<ResponseModel> RemoveHoroscopeAsync(long userId)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         await horoscopeService.DeleteHoroscopeAsync(userId);
         return await GetSettingsAsync(userId, "Your saved zodiac sign was removed.");
     }
 
     public async Task<ResponseModel> GetSettingsAsync(long userId, string? notice = null)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var saved = await horoscopeService.GetHoroscopeAsync(userId);
         var sign = saved.HasValue ? NormalizeSign(saved.Value.Sign) : null;
         var current = sign is null ? "No zodiac sign saved." :

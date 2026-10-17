@@ -7,6 +7,9 @@ public sealed class BotEnvConfig
     public dotBento.Domain.Branding Branding { get; set; } = new();
     public ThemeConfig Theme { get; set; } = new();
     public PaginationConfig Pagination { get; set; } = new();
+    public FeatureConfig Features { get; set; } = new();
+    public bool MediaEnabled => MediaServer.Enabled && Features.MediaEnabled;
+    public bool HoroscopeEnabled => MediaServer.Enabled && Features.HoroscopeEnabled;
 
     public DiscordConfig Discord { get; set; } = new DiscordConfig();
     
@@ -85,6 +88,7 @@ public sealed class ImageServerConfig
 
 public sealed class MediaServerConfig
 {
+    public bool Enabled { get; set; } = true;
     public string Url { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
 }
