@@ -92,9 +92,14 @@ public sealed class BackgroundService(UserService userService,
     public async Task UpdateStatus()
     {
         Log.Information($"Running {nameof(UpdateStatus)}");
-        var activity = GetRandomActivityStatus(client);
+        var activity = CreateActivity(client, botSettings.Value.Bot);
         await client.SetActivityAsync(activity);
     }
+
+    internal static Game CreateActivity(DiscordSocketClient client, BotConfig config) =>
+        string.IsNullOrWhiteSpace(config.Status)
+            ? GetRandomActivityStatus(client)
+            : new Game(config.Status, ActivityType.Watching);
 
     private static Game GetRandomActivityStatus(DiscordSocketClient client)
     {

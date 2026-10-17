@@ -173,6 +173,19 @@ public sealed class DeploymentConfigurationTests
         Assert.Contains(custom.PaginationEmotes.Keys, emote => emote is Emote { Id: 883825508633182208 });
     }
 
+    [Theory]
+    [InlineData("local", true)]
+    [InlineData("staging", true)]
+    [InlineData("production", false)]
+    [InlineData("PRODUCTION", false)]
+    public void GuildRetention_HasEnvironmentDefaultsAndExplicitOverrides(string environment, bool expected)
+    {
+        var config = new BotEnvConfig { Environment = environment };
+        Assert.Equal(expected, config.KeepGuildDataOnLeave);
+        config.Bot.KeepGuildDataOnLeave = !expected;
+        Assert.Equal(!expected, config.KeepGuildDataOnLeave);
+    }
+
     [Fact]
     public async Task DisabledApiFeatures_ReturnBeforeHttpOrDatabaseAccess()
     {
@@ -194,6 +207,17 @@ public sealed class DeploymentConfigurationTests
             Assert.Equal(CommandResponse.Error, response.CommandResponse);
             Assert.Contains("disabled", response.Embed.Title, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    [Fact]
+    public void Activity_UsesConfiguredTextAndFallsBackToLiveCounts()
+    {
+        using var client = new Discord.WebSocket.DiscordSocketClient();
+        var custom = dotBento.Bot.Services.BackgroundService.CreateActivity(client, new() { Status = "Eating cookies" });
+        Assert.Equal("Eating cookies", custom.Name);
+        Assert.Equal(ActivityType.Watching, custom.Type);
+        var automatic = dotBento.Bot.Services.BackgroundService.CreateActivity(client, new());
+        Assert.Equal("0 users on 0 servers", automatic.Name);
     }
 
     [Fact]

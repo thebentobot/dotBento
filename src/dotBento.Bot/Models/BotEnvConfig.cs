@@ -2,7 +2,7 @@ namespace dotBento.Bot.Models;
 
 public sealed class BotEnvConfig
 {
-    public string Environment { get; set; } = string.Empty;
+    public string Environment { get; set; } = "local";
 
     public dotBento.Domain.Branding Branding { get; set; } = new();
     public ThemeConfig Theme { get; set; } = new();
@@ -10,6 +10,8 @@ public sealed class BotEnvConfig
     public FeatureConfig Features { get; set; } = new();
     public bool MediaEnabled => MediaServer.Enabled && Features.MediaEnabled;
     public bool HoroscopeEnabled => MediaServer.Enabled && Features.HoroscopeEnabled;
+    public bool KeepGuildDataOnLeave => Bot.KeepGuildDataOnLeave ??
+        !Environment.Equals("production", StringComparison.OrdinalIgnoreCase);
 
     public DiscordConfig Discord { get; set; } = new DiscordConfig();
     
@@ -61,7 +63,9 @@ public sealed class DatabaseConfig
 
 public sealed class BotConfig
 {
-    public ulong BaseServerId { get; set; }
+    public ulong BaseServerId { get; set; } = dotBento.Domain.Constants.DefaultSupportGuildId;
+    public ulong CommandGuildId { get; set; }
+    public bool? KeepGuildDataOnLeave { get; set; }
 
     public ulong AnnouncementChannelId { get; set; }
 

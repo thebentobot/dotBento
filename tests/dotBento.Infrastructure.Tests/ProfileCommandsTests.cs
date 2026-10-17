@@ -451,6 +451,18 @@ public class ProfileCommandsTests
     }
 
     [Fact]
+    public async Task DisabledSupportBadge_DoesNotLookUpGuildMembership()
+    {
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["Bot:BaseServerId"] = "0" }).Build();
+        var command = new ProfileCommands(null!, null!, null!, null!, null!, null!, null!, configuration: config);
+        var emotes = new List<string>();
+        var method = typeof(ProfileCommands).GetMethod("AddBentoSupportServerEmote", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await (Task)method.Invoke(command, [10L, emotes])!;
+        Assert.Empty(emotes);
+    }
+
+    [Fact]
     public async Task GenerateProfileHtml_UsesEncodedBrandDefaultsAndPreservesSavedCustomisation()
     {
         var factory = new InfrastructureTestDbFactory();
@@ -508,7 +520,8 @@ public class ProfileCommandsTests
         InfrastructureTestDbFactory factory,
         HttpClient? lastFmClient = null,
         HttpClient? sushiiClient = null,
-        dotBento.Domain.Branding? branding = null)
+        dotBento.Domain.Branding? branding = null,
+        Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
     {
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
@@ -521,7 +534,7 @@ public class ProfileCommandsTests
             new LastFmService(factory),
             new UserService(memoryCache, factory),
             new GuildService(factory, memoryCache),
-            new BentoService(memoryCache, factory), branding);
+            new BentoService(memoryCache, factory), branding, configuration);
     }
 
     private static HttpClient CreateHttpClient(HttpResponseMessage response)

@@ -9,13 +9,16 @@ namespace dotBento.Bot.Handlers;
 public sealed class ClientLeftGuildHandler : IDisposable
 {
     private readonly IMemoryCache _cache;
+    private readonly dotBento.Bot.Models.BotEnvConfig _config;
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
 
     public ClientLeftGuildHandler(DiscordSocketClient client,
-        GuildService guildService, IMemoryCache cache)
+        GuildService guildService, IMemoryCache cache,
+        Microsoft.Extensions.Options.IOptions<dotBento.Bot.Models.BotEnvConfig>? config = null)
     {
         _cache = cache;
+        _config = config?.Value ?? new();
         _client = client;
         _guildService = guildService;
         _client.LeftGuild += ClientLeftGuildEvent;
@@ -40,7 +43,7 @@ public sealed class ClientLeftGuildHandler : IDisposable
         {
             keepData = true;
         }
-        if (_client.CurrentUser.Id == Constants.BotDevelopmentId)
+        if (_config.KeepGuildDataOnLeave)
         {
             keepData = true;
         }

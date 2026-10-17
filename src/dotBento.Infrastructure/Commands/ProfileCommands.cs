@@ -19,11 +19,12 @@ public sealed class ProfileCommands(
     UserService userService,
     GuildService guildService,
     BentoService bentoService,
-    Branding? branding = null
+    Branding? branding = null,
+    IConfiguration? configuration = null
 )
 {
     private readonly Branding _branding = branding ?? new();
-    private const ulong BentoSupportServerId = 714496317522444352;
+    private readonly ulong _supportServerId = ulong.TryParse(configuration?["Bot:BaseServerId"], out var supportServerId) ? supportServerId : Constants.DefaultSupportGuildId;
 
     [ExcludeFromCodeCoverage(Justification = "Discord.NET SocketGuildUser image entry point; GenerateProfileHtml covers the render workflow.")]
     public async Task<Result<Stream>> GetProfileAsync(string imageServerHost, string lastFmApiKey, long userId,
@@ -866,7 +867,8 @@ public sealed class ProfileCommands(
 
     private async Task AddBentoSupportServerEmote(long userId, List<string> emotes)
     {
-        var guildMember = await guildService.GetGuildMemberAsync(BentoSupportServerId, (ulong)userId);
+        if (_supportServerId == 0) return;
+        var guildMember = await guildService.GetGuildMemberAsync(_supportServerId, (ulong)userId);
         if (guildMember.HasValue)
         {
             emotes.Add(System.Security.SecurityElement.Escape(_branding.Emoji));

@@ -7,7 +7,7 @@ using Serilog;
 
 namespace dotBento.Bot.Services;
 
-public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> options)
+public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> options, Discord.WebSocket.DiscordSocketClient client)
 {
     private readonly BotEnvConfig _config = options.Value;
 
@@ -35,7 +35,7 @@ public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> option
         var postData = new Dictionary<string, object>
         {
             { "server_count",  guildCount },
-            { "bot_id", "787041583580184609" },
+            { "bot_id", client.CurrentUser.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) },
             { "top.gg", _config.BotLists.TopGgApiToken },
             { "discord.bots.gg", _config.BotLists.DiscordBotsGgToken },
             { "discordbotlist.com", _config.BotLists.DiscordBotListToken },
