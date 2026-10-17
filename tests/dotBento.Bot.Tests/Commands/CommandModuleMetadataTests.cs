@@ -1,15 +1,10 @@
 using System.Reflection;
 using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using dotBento.Bot.Attributes;
 using dotBento.Bot.Commands.SlashCommands;
-using dotBento.Bot.Commands.TextCommands;
 using dotBento.Domain.Enums.Games;
-using CommandAttribute = Discord.Commands.CommandAttribute;
-using CommandRunMode = Discord.Commands.RunMode;
 using InteractionGroupAttribute = Discord.Interactions.GroupAttribute;
-using SummaryAttribute = Discord.Commands.SummaryAttribute;
 
 namespace dotBento.Bot.Tests.Commands;
 
@@ -98,51 +93,5 @@ public sealed class CommandModuleMetadataTests
         Assert.DoesNotContain(
             typeof(ServerSlashCommand).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic),
             type => type.GetCustomAttribute<InteractionGroupAttribute>()?.Name == "commands");
-    }
-
-    [Fact]
-    public void ChooseTextCommand_ExposesExpectedTextMetadata()
-    {
-        var moduleName = Attribute<NameAttribute>(typeof(ChooseTextCommand));
-        var method = Method<ChooseTextCommand>(nameof(ChooseTextCommand.ChooseCommand));
-        var command = Attribute<CommandAttribute>(method);
-        var aliases = Attribute<AliasAttribute>(method);
-        var examples = Attribute<ExamplesAttribute>(method);
-
-        Assert.Equal("Choose", moduleName.Text);
-        Assert.Equal("choose", command.Text);
-        Assert.Equal(CommandRunMode.Async, command.RunMode);
-        Assert.Equal(["pick"], aliases.Aliases);
-        Assert.Equal(["choose option1, option2, option3"], examples.Examples);
-        Assert.Equal("List of options to choose between", Attribute<SummaryAttribute>(method.GetParameters()[0]).Text);
-    }
-
-    [Fact]
-    public void RollTextCommand_ExposesExpectedTextMetadata()
-    {
-        var method = Method<RollTextCommand>(nameof(RollTextCommand.RollCommand));
-        var command = Attribute<CommandAttribute>(method);
-        var examples = Attribute<ExamplesAttribute>(method);
-        var parameters = method.GetParameters();
-
-        Assert.Equal("roll", command.Text);
-        Assert.Equal(CommandRunMode.Async, command.RunMode);
-        Assert.Equal(["roll", "roll 1 10", "roll 1 1000"], examples.Examples);
-        Assert.All(parameters, parameter => Assert.Equal(typeof(int?), parameter.ParameterType));
-    }
-
-    [Fact]
-    public void WeatherTextCommand_ExposesExpectedTextMetadata()
-    {
-        var method = Method<WeatherTextCommand>(nameof(WeatherTextCommand.WeatherCommand));
-        var command = Attribute<CommandAttribute>(method);
-        var examples = Attribute<ExamplesAttribute>(method);
-        var parameter = method.GetParameters().Single();
-
-        Assert.Equal("weather", command.Text);
-        Assert.Equal(CommandRunMode.Async, command.RunMode);
-        Assert.Equal(["weather", "weather Copenhagen"], examples.Examples);
-        Assert.NotNull(parameter.GetCustomAttribute<RemainderAttribute>());
-        Assert.Equal(typeof(string), Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType);
     }
 }

@@ -1,6 +1,6 @@
 using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Domain.Enums.Leaderboard;
 using dotBento.Infrastructure.Services;

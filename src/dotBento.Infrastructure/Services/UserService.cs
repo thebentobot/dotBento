@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
@@ -220,13 +219,7 @@ public sealed class UserService(IMemoryCache cache,
         return maybeUser;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketCommandContext; internal overload covers the behavior.")]
-    public async Task AddExperienceAsync(SocketCommandContext context, Maybe<Patreon> patreonUser)
-    {
-        await AddExperienceAsync(context.User.Id, context.Guild.Id, patreonUser);
-    }
-
-    internal async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
+    public async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users

@@ -32,17 +32,17 @@ This is a Discord bot written in .NET 10 using Discord.NET, with a clean archite
 
 ### Projects
 
-- **dotBento.Bot** - Discord bot entry point and presentation layer. Contains slash commands, text commands, handlers for Discord events, and DI configuration in `Startup.cs`.
-- **dotBento.Infrastructure** - Business logic and external service integrations. Contains services, API clients, and command logic shared between slash/text commands.
+- **dotBento.Bot** - Discord bot entry point and presentation layer. Contains slash commands, handlers for Discord events, and DI configuration in `Startup.cs`.
+- **dotBento.Infrastructure** - Business logic and external service integrations. Contains services, API clients, and command logic used by interaction handlers.
 - **dotBento.Domain** - Domain models, constants, and statistics tracking.
 - **dotBento.EntityFramework** - EF Core database context (`BotDbContext`), entity definitions, and migrations for PostgreSQL.
 - **dotBento.WebApi** - ASP.NET Core web API for public endpoints (profile data, etc). Uses API key middleware for auth.
 
 ### Command Pattern
 
-Commands follow a two-layer pattern:
-1. **SlashCommands/TextCommands** (in `dotBento.Bot/Commands/`) - Thin presentation layer that handles Discord interaction context, parameter parsing, and response formatting.
-2. **SharedCommands** (in `dotBento.Bot/Commands/SharedCommands/`) - Reusable command logic shared between slash and text commands. These call services from Infrastructure.
+Commands follow a layered pattern:
+1. **SlashCommands** (in `dotBento.Bot/Commands/`) - Thin presentation layer that handles Discord interaction context, parameter parsing, and response formatting.
+2. **CommandHandlers** (in `dotBento.Bot/Commands/CommandHandlers/`) - Command logic kept separate from Discord interaction presentation. These call services from Infrastructure.
 3. **Infrastructure Commands** (in `dotBento.Infrastructure/Commands/`) - Complex command logic that involves multiple services (e.g., `LastFmCommands`, `GameCommands`).
 
 ### Key Services
@@ -59,7 +59,7 @@ Services in `dotBento.Infrastructure/Services/`:
 
 Discord event handlers in `dotBento.Bot/Handlers/`:
 - `InteractionHandler` - Routes slash commands, user commands, buttons, modals, autocomplete
-- `MessageHandler` - Text command parsing with configurable prefix
+- `MessageHandler` - Message-driven user, guild member, and experience tracking
 - Guild/member lifecycle handlers for tracking joins/leaves
 
 ### Configuration

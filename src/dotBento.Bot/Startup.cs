@@ -1,9 +1,8 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using DotNetEnv;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
@@ -27,7 +26,6 @@ using Serilog.Exceptions;
 using Serilog.Sinks.Discord;
 using Serilog.Sinks.Grafana.Loki;
 using BackgroundService = dotBento.Bot.Services.BackgroundService;
-using RunMode = Discord.Commands.RunMode;
 
 namespace dotBento.Bot;
 
@@ -175,7 +173,6 @@ public sealed class Startup
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
-            // TODO: Add GatewayIntents.MessageContent when we have permission from Discord
             GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages |
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
@@ -190,11 +187,6 @@ public sealed class Startup
             .AddSingleton(discordClient)
             .AddSingleton<IDiscordUserResolver, DiscordUserResolver>()
             .AddSingleton<IDmSender, DmSender>()
-            .AddSingleton(new CommandService(new CommandServiceConfig
-            {
-                LogLevel = LogSeverity.Info,
-                DefaultRunMode = RunMode.Async
-            }))
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
                 new InteractionServiceConfig()
                 {
@@ -204,7 +196,6 @@ public sealed class Startup
             .AddSingleton<UserService>()
             .AddSingleton<InteractiveService>()
             .AddSingleton<GuildService>()
-            .AddSingleton<IPrefixService, PrefixService>()
             .AddSingleton<SupporterService>()
             .AddSingleton<BackgroundService>()
             .AddSingleton<MessageHandler>()

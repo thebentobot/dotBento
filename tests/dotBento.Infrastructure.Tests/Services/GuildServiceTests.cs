@@ -18,7 +18,6 @@ public class GuildServiceTests
     {
         GuildId = id,
         GuildName = $"Guild{id}",
-        Prefix = "!",
         Leaderboard = true,
         Media = false,
         Tiktok = false,
@@ -115,25 +114,6 @@ public class GuildServiceTests
         Assert.Equal(("avatar.png", 1, 0), (member.AvatarUrl, member.Level, member.Xp));
         Assert.True(cache.TryGetValue("guild-member-100-10", out GuildMember? cachedMember));
         Assert.Equal("avatar.png", cachedMember!.AvatarUrl);
-    }
-
-    [Fact]
-    public async Task UpdateGuildPrefixAsync_UpdatesExistingAndReturnsNoneForMissing()
-    {
-        var factory = new InfrastructureTestDbFactory();
-        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
-        {
-            db.Guilds.Add(Guild(100));
-            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-        }
-        var service = CreateService(factory);
-
-        var updated = await service.UpdateGuildPrefixAsync(100, "?");
-        var missing = await service.UpdateGuildPrefixAsync(999, "?");
-
-        Assert.True(updated.HasValue);
-        Assert.Equal("?", updated.Value.Prefix);
-        Assert.True(missing.HasNoValue);
     }
 
     [Fact]

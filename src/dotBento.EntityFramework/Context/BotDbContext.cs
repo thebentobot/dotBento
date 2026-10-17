@@ -99,9 +99,6 @@ public partial class BotDbContext : DbContext
             entity.Property(e => e.Leaderboard).HasColumnName("leaderboard");
             entity.Property(e => e.Media).HasColumnName("media");
             entity.Property(e => e.MemberCount).HasColumnName("memberCount");
-            entity.Property(e => e.Prefix)
-                .HasMaxLength(16)
-                .HasColumnName("prefix");
             entity.Property(e => e.Tiktok).HasColumnName("tiktok");
         });
 
