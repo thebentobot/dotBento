@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.0](https://github.com/thebentobot/dotBento/compare/v2.0.1...v2.1.0) (2026-10-17)
+
+
+### Features
+
+* add horoscope readings, private sign settings, and weather map links ([c2bb745](https://github.com/thebentobot/dotBento/commit/c2bb74520545e5ac94b01df7534b96a23c952fe7))
+* **horoscope:** add private sign settings and age-aware aspects ([2989434](https://github.com/thebentobot/dotBento/commit/29894343658b5808185f8f8c88afd8f6e322d748))
+
+
+### Bug Fixes
+
+* **horoscope:** support first-time DM users and bound embed pages ([2cb99f8](https://github.com/thebentobot/dotBento/commit/2cb99f8ad3cc519b55f4773c51fd7d57da642d16))
+
 ## [2.0.1](https://github.com/thebentobot/dotBento/compare/v2.0.0...v2.0.1) (2026-10-17)
 
 
