@@ -31,6 +31,40 @@ public sealed class DeploymentConfigurationTests
     }
 
     [Fact]
+    public async Task MatchingPrimaryAndErrorColours_DoNotChangeResponseStatus()
+    {
+        var presentation = new BotPresentation(new() { Theme = new() { Primary = "FF0000", Error = "#FF0000" } });
+        var success = await ChooseCommand.Command("one,two", presentation);
+        var failure = await ChooseCommand.Command("one", presentation);
+        Assert.Equal(new Color(0xFF0000), success.Embed.Color);
+        Assert.Equal(success.Embed.Color, failure.Embed.Color);
+        Assert.Equal(CommandResponse.Ok, success.CommandResponse);
+        Assert.Equal(CommandResponse.Error, failure.CommandResponse);
+    }
+
+    [Fact]
+    public void EmptyLinks_AreOmittedAndBrandingIsApplied()
+    {
+        var presentation = new BotPresentation(new()
+        {
+            Branding = new()
+            {
+                Name = "Mochi", Emoji = "🍡", Description = "Hello there",
+                WebsiteUrl = "", DocumentationUrl = "", PatreonUrl = "", KoFiUrl = "", VoteUrl = "", SupportUrl = ""
+            },
+            Theme = new() { Primary = "123456" }
+        });
+        var response = AboutCommand.BuildEmbed("https://example.com/avatar.png", presentation);
+        Assert.Equal("About Mochi Bot 🍡", response.Embed.Title);
+        Assert.Equal("Hello there", response.Embed.Description);
+        Assert.Equal(new Color(0x123456), response.Embed.Color);
+        Assert.Empty(response.Embed.Fields);
+        Assert.Equal("", presentation.TroubleshootingHelp);
+        Assert.Equal("https://example.com/docs/troubleshooting/", Branding.JoinUrl("https://example.com/docs/", "/troubleshooting/"));
+        Assert.Equal("", Branding.JoinUrl("", "leaderboard"));
+    }
+
+    [Fact]
     public void Pagination_UsesPortableDefaultsAndAcceptsCustomEmoji()
     {
         var portable = new BotPresentation();

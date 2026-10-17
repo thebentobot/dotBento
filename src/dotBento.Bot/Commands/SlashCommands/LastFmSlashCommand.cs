@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using System.Runtime.Serialization;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -10,8 +11,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("lastfm", "Commands for Discord Users")]
-public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("nowplaying", "Show what you're currently listening to")]
     public async Task NowPlayingCommand(
@@ -80,7 +81,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
         catch (Exception e)
         {
-            await Context.HandleCommandException(e);
+            await Context.HandleCommandException(e, presentation: Presentation);
         }
     }
 
@@ -126,7 +127,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
         catch (Exception e)
         {
-            await Context.HandleCommandException(e);
+            await Context.HandleCommandException(e, presentation: Presentation);
         }
     }
 
@@ -172,7 +173,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
         catch (Exception e)
         {
-            await Context.HandleCommandException(e);
+            await Context.HandleCommandException(e, presentation: Presentation);
         }
     }
 
@@ -274,7 +275,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         }
         catch (Exception e)
         {
-            await Context.HandleCommandException(e);
+            await Context.HandleCommandException(e, presentation: Presentation);
         }
     }
 }

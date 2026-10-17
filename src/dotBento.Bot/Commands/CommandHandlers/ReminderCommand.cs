@@ -9,18 +9,20 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class ReminderCommand(ReminderCommands reminderCommands)
+public sealed class ReminderCommand(ReminderCommands reminderCommands, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> CreateReminderAsync(long userId, string content, DateTimeOffset date)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         var result = await reminderCommands.CreateReminderAsync(userId, content, date);
         if (result.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", result.Error);
+            return _presentation.ErrorEmbed("Error", result.Error);
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(_presentation.Success)
             .WithTitle("Reminder created successfully.")
             .WithDescription($"A reminder `{content}` for <t:{date.ToUnixTimeSeconds()}:R> has been created.\nRemember to have DMs enabled to receive reminders.");
         return embed;
@@ -32,10 +34,10 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.DeleteReminderAsync(userId, reminderId);
         if (result.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", result.Error);
+            return _presentation.ErrorEmbed("Error", result.Error);
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(_presentation.Success)
             .WithTitle("Reminder deleted successfully.")
             .WithDescription($"Reminder with ID `{reminderId}` has been deleted.");
         return embed;
@@ -47,7 +49,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.UpdateReminderAsync(userId, reminderId, newContent, newDate);
         if (result.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", result.Error);
+            return _presentation.ErrorEmbed("Error", result.Error);
         }
         var description = $"Reminder with ID `{reminderId}` has been updated.";
         if (newContent != null)
@@ -59,7 +61,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
             description += $"\nNew date: <t:{newDate.Value.ToUnixTimeSeconds()}:R>";
         }
         embed.Embed
-            .WithColor(Color.Green)
+            .WithColor(_presentation.Success)
             .WithTitle("Reminder updated successfully.\nRemember to have DMs enabled to receive reminders.")
             .WithDescription(description);
         return embed;
@@ -71,11 +73,11 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.GetReminderAsync(userId, reminderId);
         if (result.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", result.Error);
+            return _presentation.ErrorEmbed("Error", result.Error);
         }
         var reminder = result.Value;
         embed.Embed
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(_presentation.Primary)
             .WithTitle("Reminder")
             .WithDescription($"ID: `{reminder.Id}`\nContent: `{reminder.Content}`\nDate: <t:{reminder.Date.ToUnixTimeSeconds()}:R>");
         return embed;
@@ -87,7 +89,7 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         var result = await reminderCommands.GetRemindersAsync(userId);
         if (result.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", result.Error);
+            return _presentation.ErrorEmbed("Error", result.Error);
         }
         var reminders = result.Value;
 
@@ -95,13 +97,13 @@ public sealed class ReminderCommand(ReminderCommands reminderCommands)
         
         var pages = remindersPageChunks
             .Select(remindersPageChunk => new PageBuilder()
-                .WithColor(DiscordConstants.BentoYellow)
+                .WithColor(_presentation.Primary)
                 .WithFooter(new EmbedFooterBuilder()
                     { Text = $"{reminders.Count} {(reminders.Count != 1 ? "reminders" : "reminder")} found" })
                 .WithDescription(string.Join("\n", remindersPageChunk.Select(x => $"ID: `{x.Id}`\nContent: `{x.Content}`\nDate: <t:{x.Date.ToUnixTimeSeconds()}:R>")))
             ).ToList();
         
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation);
         embed.ResponseType = ResponseType.Paginator;
         
         return embed;

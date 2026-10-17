@@ -12,8 +12,8 @@ public sealed class MediaSlashCommand(
     InteractiveService interactiveService,
     MediaCommand mediaCommand,
     MediaRateLimitService rateLimitService,
-    UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("tiktok", "Retrieve media from a TikTok video")]
     public async Task TikTokCommand(
@@ -50,7 +50,7 @@ public sealed class MediaSlashCommand(
         }
         catch (Exception ex)
         {
-            await Context.HandleCommandException(ex);
+            await Context.HandleCommandException(ex, presentation: Presentation);
         }
     }
 }

@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
@@ -7,8 +8,10 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class ProfileEditCommand(ProfileService profileService)
+public sealed class ProfileEditCommand(ProfileService profileService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> SetBackgroundUrlAsync(ulong userId, string url)
     {
         if (!ProfileValidationUtilities.IsValidHttpUrl(url))
@@ -145,22 +148,22 @@ public sealed class ProfileEditCommand(ProfileService profileService)
         return Ok("Birthday reset", "Your birthday has been cleared.");
     }
 
-    private static ResponseModel Ok(string title, string description)
+    private ResponseModel Ok(string title, string description)
     {
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
         response.Embed
-            .WithColor(Color.Green)
+            .WithColor(_presentation.Success)
             .WithTitle(title)
             .WithDescription(description);
         response.CommandResponse = CommandResponse.Ok;
         return response;
     }
 
-    private static ResponseModel Error(string title, string description)
+    private ResponseModel Error(string title, string description)
     {
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
         response.Embed
-            .WithColor(Color.Red)
+            .WithColor(_presentation.Error)
             .WithTitle(title)
             .WithDescription(description);
         response.CommandResponse = CommandResponse.Error;

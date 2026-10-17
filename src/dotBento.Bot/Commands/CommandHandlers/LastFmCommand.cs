@@ -19,22 +19,24 @@ public sealed class LastFmCommand(
     LastFmService lastFmService,
     LastFmCommands lastFmCommands,
     IOptions<BotEnvConfig> config,
-    SpotifyApiService spotifyApiService)
+    SpotifyApiService spotifyApiService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> GetNowPlaying(long userId, string discordName, string discordAvatarUrl)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Embed };
         var lastFmUser = await lastFmService.GetLastFmAsync(userId);
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
         var response = await lastFmCommands.NowPlaying(lastFmUser.Value.Lastfm1, config.Value.LastFmApiKey);
         if (response.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + response.Error);
+            return _presentation.ErrorEmbed("Error: " + response.Error);
         }
 
         var bentoLastFmRecentTracks = response.Value.RecentTracks;
@@ -73,7 +75,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -82,7 +84,7 @@ public sealed class LastFmCommand(
 
         if (topArtistsResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topArtistsResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topArtistsResponse.Error);
         }
 
         var topArtists = topArtistsResponse.Value;
@@ -129,7 +131,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation);
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -147,7 +149,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -156,7 +158,7 @@ public sealed class LastFmCommand(
 
         if (topAlbumsResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topAlbumsResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topAlbumsResponse.Error);
         }
 
         var topAlbums = topAlbumsResponse.Value;
@@ -200,7 +202,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation);
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -218,7 +220,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -227,7 +229,7 @@ public sealed class LastFmCommand(
 
         if (topTracksResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topTracksResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topTracksResponse.Error);
         }
 
         var topTracks = topTracksResponse.Value;
@@ -274,7 +276,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation);
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -291,7 +293,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -299,7 +301,7 @@ public sealed class LastFmCommand(
 
         if (userInfoResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + userInfoResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + userInfoResponse.Error);
         }
 
         var userInfo = userInfoResponse.Value;
@@ -344,7 +346,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -353,7 +355,7 @@ public sealed class LastFmCommand(
 
         if (recentTracksResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + recentTracksResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + recentTracksResponse.Error);
         }
 
         var recentTracks = recentTracksResponse.Value;
@@ -399,7 +401,7 @@ public sealed class LastFmCommand(
             pages.Add(page);
         }
 
-        embed.StaticPaginator = pages.BuildSimpleStaticPaginator();
+        embed.StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation);
         embed.ResponseType = ResponseType.Paginator;
 
         return embed;
@@ -467,7 +469,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -477,7 +479,7 @@ public sealed class LastFmCommand(
 
         if (topArtistsResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topArtistsResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topArtistsResponse.Error);
         }
 
         var topArtists = topArtistsResponse.Value;
@@ -505,7 +507,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
+            return _presentation.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;
@@ -530,7 +532,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -540,7 +542,7 @@ public sealed class LastFmCommand(
 
         if (topAlbumsResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topAlbumsResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topAlbumsResponse.Error);
         }
 
         var topAlbums = topAlbumsResponse.Value;
@@ -553,7 +555,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
+            return _presentation.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;
@@ -578,7 +580,7 @@ public sealed class LastFmCommand(
 
         if (lastFmUser.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error: No Last.fm username saved",
+            return _presentation.ErrorEmbed("Error: No Last.fm username saved",
                 "Please save your Last.fm username with `/lastfm save`");
         }
 
@@ -588,7 +590,7 @@ public sealed class LastFmCommand(
 
         if (topTracksResponse.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + topTracksResponse.Error);
+            return _presentation.ErrorEmbed("Error: " + topTracksResponse.Error);
         }
 
         var topTracks = topTracksResponse.Value;
@@ -616,7 +618,7 @@ public sealed class LastFmCommand(
 
         if (image.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error: " + image.Error);
+            return _presentation.ErrorEmbed("Error: " + image.Error);
         }
 
         result.Stream = image.Value;

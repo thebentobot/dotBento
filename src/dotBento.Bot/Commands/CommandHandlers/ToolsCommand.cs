@@ -12,8 +12,10 @@ using SkiaSharp;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities, ProfileService profileService)
+public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvConfig> botEnvConfig, StylingUtilities stylingUtilities, ProfileService profileService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> GetColour(string colour)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.ImageWithEmbed };
@@ -21,7 +23,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (colourImage.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
+            return _presentation.ErrorEmbed("Error", colourImage.Error);
         }
 
         embed.Stream = colourImage.Value.Image;
@@ -59,7 +61,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (getDominantColorAsync.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", $"Could not get the dominant colour by your provided input: `{url}`");
+            return _presentation.ErrorEmbed("Error", $"Could not get the dominant colour by your provided input: `{url}`");
         }
         
         var dominantColor = getDominantColorAsync.Value;
@@ -72,7 +74,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         
         if (colourImage.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", colourImage.Error);
+            return _presentation.ErrorEmbed("Error", colourImage.Error);
         }
 
         embed.Stream = colourImage.Value.Image;
@@ -93,13 +95,13 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
 
         if (!ProfileValidationUtilities.TryValidateTimezone(timezoneId))
         {
-            return GenericEmbedService.ErrorEmbed("Invalid timezone",
+            return _presentation.ErrorEmbed("Invalid timezone",
                 $"The timezone `{timezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
         }
 
         if (compareTimezoneId != null && !ProfileValidationUtilities.TryValidateTimezone(compareTimezoneId))
         {
-            return GenericEmbedService.ErrorEmbed("Invalid comparison timezone",
+            return _presentation.ErrorEmbed("Invalid comparison timezone",
                 $"The timezone `{compareTimezoneId}` could not be found. Please use a valid IANA or Windows timezone ID (example: `Europe/Copenhagen`).");
         }
 
@@ -111,7 +113,7 @@ public sealed class ToolsCommand(ImageCommands imageCommands, IOptions<BotEnvCon
         var offsetStr = $"UTC{sign}{offset.Duration():hh\\:mm}";
 
         embed.Embed
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(_presentation.Primary)
             .WithTitle($"Current time in {zone.Id}")
             .WithDescription($"**{localTime:dddd, MMMM d yyyy}**\n**{localTime:HH:mm:ss}** ({offsetStr})");
 

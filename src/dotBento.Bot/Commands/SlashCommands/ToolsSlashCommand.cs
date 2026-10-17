@@ -11,7 +11,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("tools", "Small tools for convenience")]
-public sealed class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand, UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+public sealed class ToolsSlashCommand(InteractiveService interactiveService, ToolsCommand toolsCommand, UserSettingService userSettingService, BotPresentation? presentation = null) : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("colour", "Get the colour of a hex code or RGB")]
     public async Task GetColourCommand(
@@ -33,7 +33,7 @@ public sealed class ToolsSlashCommand(InteractiveService interactiveService, Too
         var effectiveHide = hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id);
         if (string.IsNullOrWhiteSpace(url))
         {
-            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("Please provide a URL or attach an image to the command."), effectiveHide);
+            await Context.SendResponse(interactiveService, Presentation.ErrorEmbed("Please provide a URL or attach an image to the command."), effectiveHide);
             return;
         }
 

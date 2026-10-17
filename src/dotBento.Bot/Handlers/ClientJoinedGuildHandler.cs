@@ -1,9 +1,10 @@
+using dotBento.Bot.Services;
+using dotBento.Domain;
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
-using dotBento.Domain;
 using dotBento.Infrastructure.Services;
 using Serilog;
 
@@ -13,11 +14,13 @@ public sealed class ClientJoinedGuildHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
+    private readonly BotPresentation _presentation;
 
     public ClientJoinedGuildHandler(DiscordSocketClient client,
-        GuildService guildService)
+        GuildService guildService, BotPresentation? presentation = null)
     {
         _client = client;
+        _presentation = presentation ?? new();
         _guildService = guildService;
         _client.JoinedGuild += ClientJoinedGuildEvent;
     }
@@ -63,33 +66,25 @@ public sealed class ClientJoinedGuildHandler : IDisposable
 
     private Task<ResponseModel> ResponseToNewGuild()
     {
-        var responseToGuildOwner = new ResponseModel
-        {
-            ResponseType = ResponseType.Embed
-        };
-        responseToGuildOwner.EmbedAuthor
-            .WithName(_client.CurrentUser.GlobalName)
-            .WithUrl(DiscordConstants.WebsiteUrl)
-            .WithIconUrl(_client.CurrentUser.GetAvatarUrl());
-        responseToGuildOwner.Embed.WithTitle("Hello! My name is Bento \ud83c\udf71");
-        responseToGuildOwner.Embed.WithDescription("Thank you for choosing me to service your server!");
-        responseToGuildOwner.Embed.AddField("Configure Bento for your server",
-            "Run `/server settings` with the **Manage Server** permission to control website leaderboard visibility and make commands disabled or admin-only.\n" +
-            $"[Open the server settings guide]({DiscordConstants.ServerSettingsDocumentationUrl})");
-        responseToGuildOwner.Embed.AddField("Browse all commands and guides",
-            DiscordConstants.DocumentationUrl);
-        responseToGuildOwner.Embed.AddField("Visit the Bento website",
-            DiscordConstants.WebsiteUrl);
-        responseToGuildOwner.Embed.AddField("Need help? Or do you have some ideas or feedback to Bento \ud83c\udf71? Feel free to join the support server!",
-            "https://discord.gg/dd68WwP");
-        responseToGuildOwner.Embed.AddField("Want to check out the code for Bento?",
-            "https://github.com/thebentobot/bento");
-        responseToGuildOwner.Embed.AddField("Want additional benefits when using Bento?",
-            "https://www.patreon.com/bentobot");
-        responseToGuildOwner.Embed.AddField("Get a Bento \ud83c\udf71 for each tip",
-            "https://ko-fi.com/bentobot");
-        responseToGuildOwner.Embed.WithFooter("Vote on top.gg and receive 5 Bento \ud83c\udf71",
-            "https://top.gg/bot/787041583580184609/vote");
+        var brand = _presentation.Brand;
+        var responseToGuildOwner = new ResponseModel { ResponseType = ResponseType.Embed };
+        var embed = responseToGuildOwner.Embed;
+        embed.WithColor(_presentation.Primary)
+            .WithAuthor(brand.Name, _client.CurrentUser.GetAvatarUrl(),
+                string.IsNullOrWhiteSpace(brand.WebsiteUrl) ? null : brand.WebsiteUrl)
+            .WithTitle($"Hello! My name is {brand.DisplayName}")
+            .WithDescription("Thank you for choosing me to service your server!");
+        var guide = BotPresentation.Link(Branding.JoinUrl(brand.DocumentationUrl, "guides/server-settings/"),
+            "Open the server settings guide");
+        embed.AddField($"Configure {brand.Name} for your server",
+            "Run `/server settings` with the **Manage Server** permission to control website leaderboard visibility and make commands disabled or admin-only.\n" + guide);
+        BotPresentation.AddLink(embed, "Browse all commands and guides", brand.DocumentationUrl);
+        BotPresentation.AddLink(embed, $"Visit the {brand.Name} website", brand.WebsiteUrl);
+        BotPresentation.AddLink(embed, $"Need help or have feedback for {brand.DisplayName}? Join the support server!", brand.SupportUrl);
+        BotPresentation.AddLink(embed, $"Want to check out the code for {brand.Name}?", brand.SourceUrl);
+        BotPresentation.AddLink(embed, $"Want additional benefits when using {brand.Name}?", brand.PatreonUrl);
+        BotPresentation.AddLink(embed, $"Get a {brand.GiftName} {brand.GiftEmoji} for each tip", brand.KoFiUrl);
+        BotPresentation.AddLink(embed, $"Vote on top.gg and receive 5 {brand.GiftPluralName} {brand.GiftEmoji}", brand.VoteUrl);
         return Task.FromResult(responseToGuildOwner);
     }
 

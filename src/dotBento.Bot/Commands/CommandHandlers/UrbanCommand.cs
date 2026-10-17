@@ -8,8 +8,10 @@ using dotBento.Infrastructure.Services.Api;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class UrbanCommand(UrbanDictionaryService urbanDictionaryService)
+public sealed class UrbanCommand(UrbanDictionaryService urbanDictionaryService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> Command(string query)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -21,7 +23,7 @@ public sealed class UrbanCommand(UrbanDictionaryService urbanDictionaryService)
         var urbanList = urbanResult?.List;
         if (urbanList == null || urbanList.Count == 0)
         {
-            var errorEmbed = GenericEmbedService.ErrorEmbed($"No results found for \"{query}\"");
+            var errorEmbed = _presentation.ErrorEmbed($"No results found for \"{query}\"");
             errorEmbed.Embed.WithAuthor(embedAuthor);
             return errorEmbed;
         }

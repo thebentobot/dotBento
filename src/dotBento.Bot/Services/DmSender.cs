@@ -16,7 +16,7 @@ public interface IDmSender
     Task<DmSendResult> SendReminderAsync(IUser user, string content);
 }
 
-public sealed class DmSender : IDmSender
+public sealed class DmSender(BotPresentation? presentation = null) : IDmSender
 {
     public async Task<DmSendResult> SendReminderAsync(IUser user, string content)
     {
@@ -24,7 +24,7 @@ public sealed class DmSender : IDmSender
         {
             var dmChannel = await user.CreateDMChannelAsync();
             await dmChannel.SendMessageAsync(embed: new EmbedBuilder()
-                .WithColor(DiscordConstants.BentoYellow)
+                .WithColor((presentation ?? new()).Primary)
                 .WithTitle("Reminder")
                 .WithDescription(content)
                 .Build());

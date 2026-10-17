@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
@@ -12,7 +13,7 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class BannerSlashCommand(
     InteractiveService interactiveService,
     BannerCommand bannerCommand,
-    UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null) : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("banner", "Get the banner of a User Profile")]
     public async Task UserBannerCommand(
@@ -24,7 +25,7 @@ public sealed class BannerSlashCommand(
         await user.ReturnIfBot(Context, interactiveService);
         var restUser = (await Context.Client.Rest.GetUserAsync(user.Id)).AsMaybe();
         var embed = await bannerCommand.Command(restUser);
-        var ephemeral = embed.Embed.Color == Color.Red || (hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        var ephemeral = embed.CommandResponse != dotBento.Domain.Enums.CommandResponse.Ok || (hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         await Context.SendResponse(interactiveService, embed, ephemeral);
     }
 }

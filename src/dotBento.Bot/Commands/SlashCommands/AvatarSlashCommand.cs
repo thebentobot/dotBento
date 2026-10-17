@@ -10,7 +10,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("avatar", "Get the avatar of a user")]
-public sealed class AvatarSlashCommand(InteractiveService interactiveService, AvatarCommand avatarCommand, UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+public sealed class AvatarSlashCommand(InteractiveService interactiveService, AvatarCommand avatarCommand, UserSettingService userSettingService, BotPresentation? presentation = null) : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("user", "Get the avatar of a User Profile")]
     public async Task UserAvatarCommand(
@@ -40,7 +40,7 @@ public sealed class AvatarSlashCommand(InteractiveService interactiveService, Av
         {
             await Context.SendResponse(
                 interactiveService,
-                GenericEmbedService.ErrorEmbed("User unavailable", "Could not resolve your server profile."),
+                Presentation.ErrorEmbed("User unavailable", "Could not resolve your server profile."),
                 true);
             return;
         }

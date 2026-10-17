@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using dotBento.Bot.Resources;
 using Fergun.Interactive;
@@ -7,8 +8,9 @@ namespace dotBento.Bot.Extensions;
 
 public static class PageBuilderExtensions
 {
-    public static StaticPaginator BuildStaticPaginator(this IList<PageBuilder> pages, string? customOptionId = null, IEmote? optionEmote = null)
+    public static StaticPaginator BuildStaticPaginator(this IList<PageBuilder> pages, string? customOptionId = null, IEmote? optionEmote = null, BotPresentation? presentation = null)
     {
+        presentation ??= new();
         var builder = new StaticPaginatorBuilder()
             .WithPages(pages)
             .WithFooter(PaginatorFooter.None)
@@ -16,7 +18,7 @@ public static class PageBuilderExtensions
 
         if (pages.Count != 1 || customOptionId != null)
         {
-            builder.WithOptions(DiscordConstants.PaginationEmotes);
+            builder.WithOptions(presentation.PaginationEmotes);
         }
 
         if (customOptionId != null && optionEmote != null)
@@ -26,15 +28,16 @@ public static class PageBuilderExtensions
 
         if (customOptionId == null && pages.Count >= 25)
         {
-            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump));
+            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(presentation.Jump, PaginatorAction.Jump));
         }
 
         return builder.Build();
     }
 
     public static StaticPaginator BuildStaticPaginatorWithSelectMenu(this IList<PageBuilder> pages,
-        SelectMenuBuilder selectMenuBuilder)
+        SelectMenuBuilder selectMenuBuilder, BotPresentation? presentation = null)
     {
+        presentation ??= new();
         var builder = new StaticPaginatorBuilder()
             .WithPages(pages)
             .WithFooter(PaginatorFooter.None)
@@ -42,12 +45,12 @@ public static class PageBuilderExtensions
 
         if (pages.Count != 1)
         {
-            builder.WithOptions(DiscordConstants.PaginationEmotes);
+            builder.WithOptions(presentation.PaginationEmotes);
         }
 
         if (pages.Count >= 10)
         {
-            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump));
+            builder.AddOption(new KeyValuePair<IEmote, PaginatorAction>(presentation.Jump, PaginatorAction.Jump));
         }
         
         builder.WithSelectMenus(new List<SelectMenuBuilder> { selectMenuBuilder });
@@ -55,8 +58,9 @@ public static class PageBuilderExtensions
         return builder.Build();
     }
 
-    public static StaticPaginator BuildSimpleStaticPaginator(this IList<PageBuilder> pages)
+    public static StaticPaginator BuildSimpleStaticPaginator(this IList<PageBuilder> pages, BotPresentation? presentation = null)
     {
+        presentation ??= new();
         var builder = new StaticPaginatorBuilder()
             .WithPages(pages)
             .WithFooter(PaginatorFooter.None)
@@ -64,9 +68,9 @@ public static class PageBuilderExtensions
 
         builder.WithOptions(new Dictionary<IEmote, PaginatorAction>
         {
-            { Emote.Parse("<:pages_previous:883825508507336704>"), PaginatorAction.Backward},
-            { Emote.Parse("<:pages_next:883825508087922739>"), PaginatorAction.Forward},
-            { Emote.Parse("<:pages_goto:1138849626234036264>"), PaginatorAction.Jump }
+            { presentation.PaginationEmotes.Single(x => x.Value == PaginatorAction.Backward).Key, PaginatorAction.Backward},
+            { presentation.PaginationEmotes.Single(x => x.Value == PaginatorAction.Forward).Key, PaginatorAction.Forward},
+            { presentation.Jump, PaginatorAction.Jump }
         });
 
         return builder.Build();

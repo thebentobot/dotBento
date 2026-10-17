@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Commands.CommandHandlers;
@@ -7,8 +8,8 @@ using Fergun.Interactive;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public sealed class BentoSlashCommand(InteractiveService interactiveService, BentoCommand bentoCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class BentoSlashCommand(InteractiveService interactiveService, BentoCommand bentoCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("bento", "Give a friend a Bento Box")]
     public async Task BentoCommand([Summary("user", "Pick a User. Omit to check status")] SocketUser? user = null,

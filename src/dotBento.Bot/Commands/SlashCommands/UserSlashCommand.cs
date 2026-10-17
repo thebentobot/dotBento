@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Attributes;
@@ -9,8 +10,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("user", "Commands for Discord Users")]
-public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("info", "Show info for a user")]
     public async Task InfoCommand([Summary("user", "Pick a User")] SocketUser? user = null,

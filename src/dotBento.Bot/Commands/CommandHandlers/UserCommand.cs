@@ -15,8 +15,10 @@ public sealed class UserCommand(
     StylingUtilities stylingUtilities,
     ProfileCommands profileCommands,
     IOptions<BotEnvConfig> config,
-    UserService userService)
+    UserService userService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> Command(SocketUser user)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -45,7 +47,7 @@ public sealed class UserCommand(
         var user = await userService.GetUserAsync((ulong)userId);
         if (user.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error", "Failed to create or retrieve user from database. Please try again later or contact support.");
+            return _presentation.ErrorEmbed("Error", "Failed to create or retrieve user from database. Please try again later or contact support.");
         }
         var imageServerHost = config.Value.ImageServer.Url;
         var lastFmApiKey = config.Value.LastFmApiKey;
@@ -54,11 +56,11 @@ public sealed class UserCommand(
 
         if (profile.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", "Something went wrong while trying to get the profile. Please try again later. Feel free to contact support if the issue persists.");
+            return _presentation.ErrorEmbed("Error", "Something went wrong while trying to get the profile. Please try again later. Feel free to contact support if the issue persists.");
         }
         
         result.Stream = profile.Value;
-        result.FileName = $"{guildMember.Username}_BentoProfile_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
+        result.FileName = $"{guildMember.Username}_{_presentation.Brand.Name}Profile_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
         
         return result;
     }

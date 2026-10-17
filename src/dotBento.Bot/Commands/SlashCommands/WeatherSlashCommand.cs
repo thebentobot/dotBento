@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
@@ -7,8 +8,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("weather", "Check the weather!")]
-public sealed class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("check", "Check the weather for a user")]
     public async Task UserCommand([Summary("city", "Check the weather in a city. Add country if it returns falsely")] string? city = null,

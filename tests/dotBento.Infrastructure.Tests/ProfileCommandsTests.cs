@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using System.Net;
 using CSharpFunctionalExtensions;
@@ -23,9 +24,9 @@ public class ProfileCommandsTests
     // Helper to invoke private static methods via reflection
     private static T? InvokePrivateStatic<T>(Type type, string methodName, params object?[]? args)
     {
-        var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+        var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(method);
-        var result = method.Invoke(null, args);
+        var result = method.Invoke(method.IsStatic ? null : CreateCommand(new InfrastructureTestDbFactory()), args);
         return result is null ? default : (T)result;
     }
 
@@ -449,6 +450,31 @@ public class ProfileCommandsTests
         Assert.Contains("Artist", html);
     }
 
+    [Fact]
+    public async Task GenerateProfileHtml_UsesEncodedBrandDefaultsAndPreservesSavedCustomisation()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await SeedProfileRenderDataAsync(factory);
+        var brand = new dotBento.Domain.Branding
+        {
+            Name = "Mochi <script>", Emoji = "🍡", GiftName = "Cookie", GiftEmoji = "🍪"
+        };
+        var command = CreateCommand(factory, branding: brand);
+        var profile = DefaultProfile(10) with { Description = null, XpBoard = false, LastfmBoard = false };
+        var user = new ProfileDiscordUser("avatar.png", "0007", "DisplayName", null);
+        var html = await command.GenerateProfileHtml(profile, "", 100, user, 1234, "bot.png");
+        Assert.Contains("Mochi &lt;script&gt;", html);
+        Assert.DoesNotContain("Mochi <script>", html);
+        Assert.Contains("Cookie Users", html);
+        Assert.DoesNotContain("happy user of Bento", html);
+
+        var customized = profile with { Description = "My own <text>", BackgroundColour = "#123456" };
+        html = await command.GenerateProfileHtml(customized, "", 100, user, 1234, "bot.png");
+        Assert.Contains("My own &lt;text&gt;", html);
+        Assert.Contains("#123456", html);
+        Assert.DoesNotContain("happy user of", html);
+    }
+
     private static DomainProfile DefaultProfile(long userId) =>
         InvokePrivateStatic<DomainProfile>(typeof(ProfileCommands), "DefaultProfile", userId)!;
 
@@ -481,7 +507,8 @@ public class ProfileCommandsTests
     private static ProfileCommands CreateCommand(
         InfrastructureTestDbFactory factory,
         HttpClient? lastFmClient = null,
-        HttpClient? sushiiClient = null)
+        HttpClient? sushiiClient = null,
+        dotBento.Domain.Branding? branding = null)
     {
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
@@ -494,7 +521,7 @@ public class ProfileCommandsTests
             new LastFmService(factory),
             new UserService(memoryCache, factory),
             new GuildService(factory, memoryCache),
-            new BentoService(memoryCache, factory));
+            new BentoService(memoryCache, factory), branding);
     }
 
     private static HttpClient CreateHttpClient(HttpResponseMessage response)

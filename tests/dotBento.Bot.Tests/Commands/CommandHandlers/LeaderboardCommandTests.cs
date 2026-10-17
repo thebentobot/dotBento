@@ -185,7 +185,7 @@ public class LeaderboardCommandTests
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
         var pages = result.StaticPaginator!.Pages.ToList();
         var embed = pages[0].GetEmbedArray()[0];
-        Assert.Equal("Bento Leaderboard for BentoServer", embed.Title);
+        Assert.Equal("Bento Box Leaderboard for BentoServer", embed.Title);
     }
 
     // --- Global Bento Leaderboard ---
@@ -210,7 +210,7 @@ public class LeaderboardCommandTests
         Assert.Equal(ResponseType.Paginator, result.ResponseType);
         var pages = result.StaticPaginator!.Pages.ToList();
         var embed = pages[0].GetEmbedArray()[0];
-        Assert.Equal("Global Bento Leaderboard", embed.Title);
+        Assert.Equal("Global Bento Box Leaderboard", embed.Title);
     }
 
     // --- Server RPS Leaderboard ---
@@ -310,7 +310,7 @@ public class LeaderboardCommandTests
         Assert.Equal("TestUser's Rankings", builtEmbed.Author!.Value.Name);
         Assert.Equal("https://avatar.url", builtEmbed.Author!.Value.IconUrl);
         Assert.Equal("https://avatar.url", builtEmbed.Thumbnail!.Value.Url);
-        Assert.Equal(DiscordConstants.BentoYellow, builtEmbed.Color!.Value);
+        Assert.Equal(new dotBento.Bot.Services.BotPresentation().Primary, builtEmbed.Color!.Value);
     }
 
     [Fact]
@@ -336,8 +336,8 @@ public class LeaderboardCommandTests
         var builtEmbed = result.Embed.Build();
         Assert.Contains("**CoolGuild Rank:** #2", builtEmbed.Description);
         Assert.Contains("**Global Rank:** #2", builtEmbed.Description);
-        Assert.Contains("**CoolGuild Bento Rank:** #2", builtEmbed.Description);
-        Assert.Contains("**Global Bento Rank:** #2", builtEmbed.Description);
+        Assert.Contains("**CoolGuild Bento Box Rank:** #2", builtEmbed.Description);
+        Assert.Contains("**Global Bento Box Rank:** #2", builtEmbed.Description);
     }
 
     [Fact]

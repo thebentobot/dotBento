@@ -67,7 +67,7 @@ public sealed class AvatarCommandTests
         var response = await command.UserAvatarCommand(user.Object);
         var embed = response.Embed.Build();
 
-        Assert.Equal(DiscordConstants.BentoYellow, embed.Color);
+        Assert.Equal(new dotBento.Bot.Services.BotPresentation().Primary, embed.Color);
         Assert.Equal("https://cdn.example.com/avatar.png", embed.Image?.Url);
     }
 

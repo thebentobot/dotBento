@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
@@ -13,8 +14,10 @@ namespace dotBento.Bot.Commands.CommandHandlers;
 
 public sealed class MediaCommand(
     BentoMediaServerService bentoMediaServerService,
-    IOptions<BotEnvConfig> config)
+    IOptions<BotEnvConfig> config, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> GetMediaResponseAsync(string url)
     {
         var fetchResult = await FetchMediaAsync(url);
@@ -68,7 +71,7 @@ public sealed class MediaCommand(
         return new ResponseModel { ResponseType = ResponseType.Embed, Embed = embed };
     }
 
-    private static ResponseModel BuildPaginatorResponse(
+    private ResponseModel BuildPaginatorResponse(
         MediaResolveResponse media,
         IReadOnlyList<MediaAttachment> attachments)
     {
@@ -93,18 +96,18 @@ public sealed class MediaCommand(
         return new ResponseModel
         {
             ResponseType     = ResponseType.Paginator,
-            StaticPaginator  = pages.BuildStaticPaginator(),
+            StaticPaginator  = pages.BuildStaticPaginator(presentation: _presentation),
             PaginatorTimeout = TimeSpan.FromMinutes(5),
         };
     }
 
-    private static EmbedBuilder BuildBaseEmbed(MediaResolveResponse media)
+    private EmbedBuilder BuildBaseEmbed(MediaResolveResponse media)
     {
         var (platformLabel, platformColor) = media.Platform switch
         {
             "tiktok"  => ("TikTok",      new Color(0x010101)),
             "twitter" => ("Twitter / X", new Color(0x1DA1F2)),
-            _         => (media.Platform, DiscordConstants.BentoYellow),
+            _         => (media.Platform, _presentation.Primary),
         };
 
         var embed = new EmbedBuilder()
@@ -148,20 +151,20 @@ public sealed class MediaCommand(
             ? $"{baseUrl}/proxy?url={Uri.EscapeDataString(attachment.Url)}"
             : attachment.Url;
 
-    private static ResponseModel ErrorResponse(string error)
+    private ResponseModel ErrorResponse(string error)
     {
-        var response = new ResponseModel { ResponseType = ResponseType.Embed };
+        var response = new ResponseModel { ResponseType = ResponseType.Embed, CommandResponse = dotBento.Domain.Enums.CommandResponse.Error };
         if (error == "not_configured")
         {
             response.Embed
-                .WithColor(Color.Orange)
+                .WithColor(_presentation.Warning)
                 .WithTitle("Media commands are not enabled")
-                .WithDescription("This bot instance has not been configured with bento-media-server. Contact the bot operator.");
+                .WithDescription("This feature is unavailable on this bot. Contact the bot operator.");
         }
         else
         {
             response.Embed
-                .WithColor(DiscordConstants.ErrorRed)
+                .WithColor(_presentation.Error)
                 .WithTitle("Failed to fetch media")
                 .WithDescription(error);
         }

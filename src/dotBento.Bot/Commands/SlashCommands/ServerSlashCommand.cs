@@ -13,8 +13,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("server", "Commands for the Discord Server")]
-public sealed class ServerSlashCommand(InteractiveService interactiveService, ServerCommand serverCommand, SettingsCommand settingsCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class ServerSlashCommand(InteractiveService interactiveService, ServerCommand serverCommand, SettingsCommand settingsCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("user", "Show info for a server user")]
     [GuildOnly]
@@ -26,7 +26,7 @@ public sealed class ServerSlashCommand(InteractiveService interactiveService, Se
         var guildMember = Context.Guild.Users.Single(guildUser => guildUser.Id == user.Id).AsMaybe();
         if (guildMember.HasNoValue)
         {
-            await Context.SendResponse(interactiveService, GenericEmbedService.ErrorEmbed("The user you inserted is not in this server"), true);
+            await Context.SendResponse(interactiveService, Presentation.ErrorEmbed("The user you inserted is not in this server"), true);
             return;
         }
         await Context.SendResponse(interactiveService, await serverCommand.UserServerCommand(guildMember.Value), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));

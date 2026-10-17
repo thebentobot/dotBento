@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using Discord.WebSocket;
 using dotBento.Bot.Commands.CommandHandlers;
@@ -12,8 +13,8 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class LeaderboardSlashCommand(
     InteractiveService interactiveService,
     LeaderboardCommand leaderboardCommand,
-    UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("server", "Server XP leaderboard")]
     public async Task ServerCommand(
@@ -55,8 +56,8 @@ public sealed class LeaderboardSlashCommand(
     public sealed class BentoGroup(
         InteractiveService interactiveService,
         LeaderboardCommand leaderboardCommand,
-        UserSettingService userSettingService)
-        : InteractionModuleBase<SocketInteractionContext>
+        UserSettingService userSettingService, BotPresentation? presentation = null)
+        : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
     {
         [SlashCommand("server", "Server bento leaderboard")]
         public async Task ServerCommand(
@@ -82,8 +83,8 @@ public sealed class LeaderboardSlashCommand(
     public sealed class RpsGroup(
         InteractiveService interactiveService,
         LeaderboardCommand leaderboardCommand,
-        UserSettingService userSettingService)
-        : InteractionModuleBase<SocketInteractionContext>
+        UserSettingService userSettingService, BotPresentation? presentation = null)
+        : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
     {
         [SlashCommand("server", "Server RPS leaderboard")]
         public async Task ServerCommand(
