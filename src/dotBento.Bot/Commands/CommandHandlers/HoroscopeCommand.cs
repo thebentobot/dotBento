@@ -1,4 +1,5 @@
 using Discord;
+using Discord.WebSocket;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
 using dotBento.Bot.Models;
@@ -37,7 +38,8 @@ public sealed class HoroscopeCommand(
             ["pisces"] = new("Pisces", "♓", "Feb 19 – Mar 20")
         };
 
-    public async Task<ResponseModel> GetHoroscopeAsync(long userId, string window, string? sign = null)
+    public async Task<ResponseModel> GetHoroscopeAsync(
+        long userId, string window, string? sign = null, IChannel? channel = null)
     {
         var normalizedWindow = NormalizeWindow(window);
         if (normalizedWindow is null)
@@ -54,7 +56,7 @@ public sealed class HoroscopeCommand(
             {
                 return Error(
                     "No zodiac sign saved",
-                    "Save one with `/horoscope save`. Use `/horoscope list` to see valid signs.");
+                    "Choose your sign in `/horoscope settings` so you won't need to select it every time, or choose a sign for this reading.");
             }
             normalizedSign = NormalizeSign(saved.Value.Sign);
             if (normalizedSign is null)
@@ -78,7 +80,7 @@ public sealed class HoroscopeCommand(
             apiKey);
         return result.IsFailure
             ? Error("Failed to fetch horoscope", result.Error)
-            : BuildReading(result.Value);
+            : BuildReading(result.Value, IsAgeRestrictedChannel(channel));
     }
 
     public async Task<ResponseModel> SaveHoroscopeAsync(long userId, string? sign)
@@ -89,41 +91,49 @@ public sealed class HoroscopeCommand(
 
         await horoscopeService.SaveHoroscopeAsync(userId, normalizedSign);
         var info = ZodiacSigns[normalizedSign];
-        return new ResponseModel
-        {
-            ResponseType = ResponseType.Embed,
-            Embed = new EmbedBuilder()
-                .WithColor(HoroscopePurple)
-                .WithTitle($"{info.Emoji} Zodiac saved")
-                .WithDescription($"Your zodiac sign is now **{info.DisplayName}**.")
-        };
+        return await GetSettingsAsync(userId, $"Your zodiac sign is now **{info.DisplayName}**.");
     }
 
     public async Task<ResponseModel> RemoveHoroscopeAsync(long userId)
     {
         await horoscopeService.DeleteHoroscopeAsync(userId);
-        return new ResponseModel
-        {
-            ResponseType = ResponseType.Embed,
-            Embed = new EmbedBuilder()
-                .WithColor(HoroscopePurple)
-                .WithTitle("Zodiac sign removed")
-                .WithDescription("Your saved zodiac sign was removed.")
-        };
+        return await GetSettingsAsync(userId, "Your saved zodiac sign was removed.");
     }
 
-    public ResponseModel ListHoroscopes()
+    public async Task<ResponseModel> GetSettingsAsync(long userId, string? notice = null)
     {
-        var description = string.Join(
-            "\n",
-            ZodiacSigns.Values.Select(info => $"{info.Emoji} **{info.DisplayName}**: {info.DateRange}"));
+        var saved = await horoscopeService.GetHoroscopeAsync(userId);
+        var sign = saved.HasValue ? NormalizeSign(saved.Value.Sign) : null;
+        var current = sign is null ? "No zodiac sign saved." :
+            $"Saved sign: {ZodiacSigns[sign].Emoji} **{ZodiacSigns[sign].DisplayName}**";
+        var description = $"{current}\n\nChoose your zodiac sign below to save it. " +
+                          "You won't need to select it every time you use `/horoscope today` or another reading command. " +
+                          "You can still choose a different sign for a one-off reading without changing your saved sign.";
+        if (notice is not null)
+            description = $"{notice}\n\n{description}";
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId($"horoscope-settings:sign:{userId}")
+            .WithPlaceholder("Choose your zodiac sign")
+            .WithMinValues(1)
+            .WithMaxValues(1);
+        foreach (var (value, info) in ZodiacSigns)
+        {
+            select.AddOption(info.DisplayName, value, info.DateRange,
+                new Emoji(info.Emoji), isDefault: value == sign);
+        }
+
         return new ResponseModel
         {
             ResponseType = ResponseType.Embed,
             Embed = new EmbedBuilder()
                 .WithColor(HoroscopePurple)
-                .WithTitle("🔮 Zodiac signs")
-                .WithDescription(description)
+                .WithTitle("🔮 Horoscope settings")
+                .WithDescription(description),
+            Components = new ComponentBuilder()
+                .WithSelectMenu(select)
+                .WithButton("Remove saved sign", $"horoscope-settings:remove:{userId}",
+                    ButtonStyle.Secondary, disabled: sign is null, row: 1)
         };
     }
 
@@ -145,7 +155,15 @@ public sealed class HoroscopeCommand(
         return ZodiacSigns.ContainsKey(normalized) ? normalized : null;
     }
 
-    private static ResponseModel BuildReading(HoroscopeResponse horoscope)
+    public static bool IsAgeRestrictedChannel(IChannel? channel) => channel switch
+    {
+        SocketThreadChannel thread => IsAgeRestrictedChannel(thread.ParentChannel),
+        ITextChannel text => text.IsNsfw,
+        IForumChannel forum => forum.IsNsfw,
+        _ => false
+    };
+
+    private static ResponseModel BuildReading(HoroscopeResponse horoscope, bool includeRomance)
     {
         var info = ZodiacSigns[horoscope.Zodiac];
         var temporalLabel = horoscope.Window switch
@@ -158,15 +176,17 @@ public sealed class HoroscopeCommand(
             _ => horoscope.Window
         };
         var title = $"{info.Emoji} {info.DisplayName} | {temporalLabel} · {horoscope.Label}";
-        var fields = horoscope.Aspects.Select(aspect =>
-        {
-            var score = Math.Clamp(aspect.Score, 0, 5);
-            var stars = new string('★', score) + new string('☆', 5 - score);
-            return new EmbedFieldBuilder()
-                .WithName($"{aspect.Name} {stars}")
-                .WithValue(Truncate(aspect.Detail, 1024))
-                .WithIsInline(false);
-        }).ToList();
+        var fields = horoscope.Aspects
+            .Where(aspect => includeRomance || !string.Equals(aspect.Name, "Romance", StringComparison.OrdinalIgnoreCase))
+            .Select(aspect =>
+            {
+                var score = Math.Clamp(aspect.Score, 0, 5);
+                var stars = new string('★', score) + new string('☆', 5 - score);
+                return new EmbedFieldBuilder()
+                    .WithName($"{aspect.Name} {stars}")
+                    .WithValue(Truncate(aspect.Detail, 1024))
+                    .WithIsInline(false);
+            }).ToList();
 
         var fieldCharacters = fields.Sum(field => field.Name.Length + field.Value.ToString()!.Length);
         var descriptionLimit = Math.Min(4096, Math.Max(500, 6000 - title.Length - fieldCharacters - 64));
@@ -222,7 +242,7 @@ public sealed class HoroscopeCommand(
 
     private static ResponseModel InvalidSign(string sign) => Error(
         "Invalid zodiac sign",
-        $"`{sign}` is not a valid zodiac sign. Use `/horoscope list` to see the twelve valid signs.");
+        $"`{sign}` is not a valid zodiac sign. Choose one in `/horoscope settings` or the reading command's sign dropdown.");
 
     private static ResponseModel Error(string title, string description, Color? color = null) => new()
     {

@@ -312,7 +312,20 @@
           "type": "String",
           "required": true,
           "defaultValue": "",
-          "choices": [],
+          "choices": [
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -326,24 +339,6 @@
           "channelTypes": []
         }
       ]
-    },
-    {
-      "id": "horoscope:list",
-      "path": [
-        "horoscope",
-        "list"
-      ],
-      "invocation": "/horoscope list",
-      "description": "List all zodiac signs",
-      "groupPath": [
-        {
-          "name": "horoscope",
-          "description": "Read and save zodiac horoscopes"
-        }
-      ],
-      "guildOnly": false,
-      "requiredUserPermissions": [],
-      "options": []
     },
     {
       "id": "horoscope:monthly",
@@ -367,7 +362,56 @@
           "description": "Use a zodiac sign without changing your saved sign",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -383,13 +427,13 @@
       ]
     },
     {
-      "id": "horoscope:remove",
+      "id": "horoscope:settings",
       "path": [
         "horoscope",
-        "remove"
+        "settings"
       ],
-      "invocation": "/horoscope remove",
-      "description": "Remove your saved zodiac sign",
+      "invocation": "/horoscope settings",
+      "description": "Choose or remove your saved zodiac sign",
       "groupPath": [
         {
           "name": "horoscope",
@@ -399,35 +443,6 @@
       "guildOnly": false,
       "requiredUserPermissions": [],
       "options": []
-    },
-    {
-      "id": "horoscope:save",
-      "path": [
-        "horoscope",
-        "save"
-      ],
-      "invocation": "/horoscope save",
-      "description": "Save your zodiac sign",
-      "groupPath": [
-        {
-          "name": "horoscope",
-          "description": "Read and save zodiac horoscopes"
-        }
-      ],
-      "guildOnly": false,
-      "requiredUserPermissions": [],
-      "options": [
-        {
-          "name": "sign",
-          "description": "The zodiac sign to save",
-          "type": "String",
-          "required": true,
-          "defaultValue": "",
-          "choices": [],
-          "autocomplete": false,
-          "channelTypes": []
-        }
-      ]
     },
     {
       "id": "horoscope:today",
@@ -451,7 +466,56 @@
           "description": "Use a zodiac sign without changing your saved sign",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -488,7 +552,56 @@
           "description": "Use a zodiac sign without changing your saved sign",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -525,7 +638,56 @@
           "description": "Use a zodiac sign without changing your saved sign",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -562,7 +724,56 @@
           "description": "Use a zodiac sign without changing your saved sign",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1232,7 +1443,24 @@
           "description": "RPS weapon type filter",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "All",
+              "value": "All"
+            },
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1241,7 +1469,20 @@
           "description": "Order by wins, ties, or losses",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "Wins",
+              "value": "Wins"
+            },
+            {
+              "name": "Ties",
+              "value": "Ties"
+            },
+            {
+              "name": "Losses",
+              "value": "Losses"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1283,7 +1524,24 @@
           "description": "RPS weapon type filter",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "All",
+              "value": "All"
+            },
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1292,7 +1550,20 @@
           "description": "Order by wins, ties, or losses",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "Wins",
+              "value": "Wins"
+            },
+            {
+              "name": "Ties",
+              "value": "Ties"
+            },
+            {
+              "name": "Losses",
+              "value": "Losses"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },

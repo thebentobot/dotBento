@@ -79,7 +79,7 @@ public sealed class CommandModuleMetadataTests
     }
 
     [Fact]
-    public void HoroscopeSlashCommand_ExposesAllPeriodsAndManagementCommands()
+    public void HoroscopeSlashCommand_ExposesAllPeriodsAndSettingsOnly()
     {
         var group = Attribute<InteractionGroupAttribute>(typeof(HoroscopeSlashCommand));
         Assert.Equal("horoscope", group.Name);
@@ -91,8 +91,9 @@ public sealed class CommandModuleMetadataTests
             .ToHashSet();
 
         Assert.Equal(
-            ["today", "yesterday", "tomorrow", "weekly", "monthly", "save", "remove", "list"],
+            ["today", "yesterday", "tomorrow", "weekly", "monthly", "settings"],
             names);
+        Assert.Empty(Method<HoroscopeSlashCommand>(nameof(HoroscopeSlashCommand.SettingsCommand)).GetParameters());
         var todayParameters = Method<HoroscopeSlashCommand>(nameof(HoroscopeSlashCommand.TodayCommand))
             .GetParameters();
         Assert.Equal("sign", Attribute<Discord.Interactions.SummaryAttribute>(todayParameters[0]).Name);
