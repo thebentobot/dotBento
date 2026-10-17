@@ -55,6 +55,26 @@ public class SimplePersistenceServicesTests
     }
 
     [Fact]
+    public async Task HoroscopeService_SavesNormalizesUpdatesGetsAndDeletesSign()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        var service = new HoroscopeService(factory);
+
+        var missing = await service.GetHoroscopeAsync(10);
+        await service.SaveHoroscopeAsync(10, "  ARIES ");
+        await service.SaveHoroscopeAsync(10, "Libra");
+        var found = await service.GetHoroscopeAsync(10);
+        await service.DeleteHoroscopeAsync(999);
+        await service.DeleteHoroscopeAsync(10);
+        var deleted = await service.GetHoroscopeAsync(10);
+
+        Assert.True(missing.HasNoValue);
+        Assert.True(found.HasValue);
+        Assert.Equal("libra", found.Value.Sign);
+        Assert.True(deleted.HasNoValue);
+    }
+
+    [Fact]
     public async Task LastFmService_SavesUpdatesGetsAndDeletesUsername()
     {
         var factory = new InfrastructureTestDbFactory();

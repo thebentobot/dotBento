@@ -10,7 +10,7 @@ public sealed class CommandManifestBuilderTests
         var manifest = await CommandManifestBuilder.BuildAsync();
 
         Assert.Equal(1, manifest.SchemaVersion);
-        Assert.Equal(69, manifest.Commands.Count);
+        Assert.Equal(75, manifest.Commands.Count);
         Assert.Equal(
             manifest.Commands.Select(command => command.Invocation).Order(StringComparer.Ordinal),
             manifest.Commands.Select(command => command.Invocation));
@@ -89,6 +89,10 @@ public sealed class CommandManifestBuilderTests
         Assert.DoesNotContain(
             manifest.Commands.SelectMany(command => command.Options),
             option => option.MinValue is -9007199254740991 || option.MaxValue is 9007199254740991);
+
+        var horoscopeToday = Assert.Single(manifest.Commands, command => command.Id == "horoscope:today");
+        Assert.Equal(["sign", "hide"], horoscopeToday.Options.Select(option => option.Name));
+        Assert.All(horoscopeToday.Options, option => Assert.False(option.Required));
     }
 
     [Fact]
@@ -100,5 +104,24 @@ public sealed class CommandManifestBuilderTests
         Assert.Equal(first, second);
         Assert.EndsWith("\n", first);
         Assert.DoesNotContain("\r\n", first, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildAsync_AllHoroscopeSignOptionsOfferTwelveZodiacChoices()
+    {
+        var manifest = await CommandManifestBuilder.BuildAsync();
+        var commands = manifest.Commands.Where(command => command.Id.StartsWith("horoscope:"))
+            .Where(command => command.Options.Any(option => option.Name == "sign")).ToArray();
+        Assert.Equal(5, commands.Length);
+        foreach (var command in commands)
+        {
+            var sign = Assert.Single(command.Options, option => option.Name == "sign");
+            Assert.False(sign.Required);
+            Assert.Equal(
+                new[] { "♈ Aries", "♉ Taurus", "♊ Gemini", "♋ Cancer", "♌ Leo", "♍ Virgo",
+                    "♎ Libra", "♏ Scorpio", "♐ Sagittarius", "♑ Capricorn", "♒ Aquarius", "♓ Pisces" },
+                sign.Choices.Select(choice => choice.Name));
+            Assert.Equal(12, sign.Choices.Select(choice => choice.Value).Distinct().Count());
+        }
     }
 }

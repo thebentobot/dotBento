@@ -79,6 +79,30 @@ public sealed class CommandModuleMetadataTests
     }
 
     [Fact]
+    public void HoroscopeSlashCommand_ExposesAllPeriodsAndSettingsOnly()
+    {
+        var group = Attribute<InteractionGroupAttribute>(typeof(HoroscopeSlashCommand));
+        Assert.Equal("horoscope", group.Name);
+
+        var names = typeof(HoroscopeSlashCommand)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(method => method.GetCustomAttribute<SlashCommandAttribute>()?.Name)
+            .Where(name => name is not null)
+            .ToHashSet();
+
+        Assert.Equal(
+            ["today", "yesterday", "tomorrow", "weekly", "monthly", "settings"],
+            names);
+        Assert.Empty(Method<HoroscopeSlashCommand>(nameof(HoroscopeSlashCommand.SettingsCommand)).GetParameters());
+        var todayParameters = Method<HoroscopeSlashCommand>(nameof(HoroscopeSlashCommand.TodayCommand))
+            .GetParameters();
+        Assert.Equal("sign", Attribute<Discord.Interactions.SummaryAttribute>(todayParameters[0]).Name);
+        Assert.Equal("hide", Attribute<Discord.Interactions.SummaryAttribute>(todayParameters[1]).Name);
+        Assert.True(todayParameters[0].HasDefaultValue);
+        Assert.True(todayParameters[1].HasDefaultValue);
+    }
+
+    [Fact]
     public void ServerSlashCommand_ExposesSettingsWithoutCommandsSubgroup()
     {
         var group = Attribute<InteractionGroupAttribute>(typeof(ServerSlashCommand));

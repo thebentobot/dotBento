@@ -116,7 +116,7 @@ public sealed class UserService(IMemoryCache cache,
         await CreateOrAddUserToCache((IUser)discordUser);
     }
 
-    internal async Task CreateOrAddUserToCache(IUser discordUser)
+    public async Task CreateOrAddUserToCache(IUser discordUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users

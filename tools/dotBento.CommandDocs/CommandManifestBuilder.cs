@@ -59,13 +59,29 @@ public static class CommandManifestBuilder
         option.DiscordOptionType?.ToString() ?? option.ParameterType.Name,
         option.IsRequired,
         NormalizeValue(option.DefaultValue),
-        option.Choices.Select(choice => new ChoiceEntry(choice.Name, NormalizeValue(choice.Value) ?? string.Empty)).ToArray(),
+        GetChoices(option),
         option.IsAutocomplete,
         NormalizeLimit(option.MinValue),
         NormalizeLimit(option.MaxValue),
         option.MinLength,
         option.MaxLength,
         option.ChannelTypes.Select(type => type.ToString()).ToArray());
+
+    private static IReadOnlyList<ChoiceEntry> GetChoices(SlashCommandParameterInfo option)
+    {
+        var properties = new ApplicationCommandOptionProperties
+        {
+            Choices = option.Choices.Select(choice => new ApplicationCommandOptionChoiceProperties
+            {
+                Name = choice.Name,
+                Value = choice.Value
+            }).ToList()
+        };
+        // Enum choices are populated during registration, rather than module discovery.
+        option.TypeConverter.Write(properties, option);
+        return properties.Choices?.Select(choice =>
+            new ChoiceEntry(choice.Name, NormalizeValue(choice.Value) ?? string.Empty)).ToArray() ?? [];
+    }
 
     private static IReadOnlyList<ModuleInfo> GetModules(ModuleInfo module)
     {

@@ -312,13 +312,474 @@
           "type": "String",
           "required": true,
           "defaultValue": "",
-          "choices": [],
+          "choices": [
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
         {
           "name": "hide",
           "description": "Only show the result for you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:monthly",
+      "path": [
+        "horoscope",
+        "monthly"
+      ],
+      "invocation": "/horoscope monthly",
+      "description": "Read this month\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:settings",
+      "path": [
+        "horoscope",
+        "settings"
+      ],
+      "invocation": "/horoscope settings",
+      "description": "Choose or remove your saved zodiac sign",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": []
+    },
+    {
+      "id": "horoscope:today",
+      "path": [
+        "horoscope",
+        "today"
+      ],
+      "invocation": "/horoscope today",
+      "description": "Read today\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:tomorrow",
+      "path": [
+        "horoscope",
+        "tomorrow"
+      ],
+      "invocation": "/horoscope tomorrow",
+      "description": "Read tomorrow\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:weekly",
+      "path": [
+        "horoscope",
+        "weekly"
+      ],
+      "invocation": "/horoscope weekly",
+      "description": "Read this week\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
+          "type": "Boolean",
+          "required": false,
+          "choices": [],
+          "autocomplete": false,
+          "channelTypes": []
+        }
+      ]
+    },
+    {
+      "id": "horoscope:yesterday",
+      "path": [
+        "horoscope",
+        "yesterday"
+      ],
+      "invocation": "/horoscope yesterday",
+      "description": "Read yesterday\u0027s horoscope",
+      "groupPath": [
+        {
+          "name": "horoscope",
+          "description": "Read and save zodiac horoscopes"
+        }
+      ],
+      "guildOnly": false,
+      "requiredUserPermissions": [],
+      "options": [
+        {
+          "name": "sign",
+          "description": "Use a zodiac sign without changing your saved sign",
+          "type": "String",
+          "required": false,
+          "choices": [
+            {
+              "name": "\u2648 Aries",
+              "value": "Aries"
+            },
+            {
+              "name": "\u2649 Taurus",
+              "value": "Taurus"
+            },
+            {
+              "name": "\u264A Gemini",
+              "value": "Gemini"
+            },
+            {
+              "name": "\u264B Cancer",
+              "value": "Cancer"
+            },
+            {
+              "name": "\u264C Leo",
+              "value": "Leo"
+            },
+            {
+              "name": "\u264D Virgo",
+              "value": "Virgo"
+            },
+            {
+              "name": "\u264E Libra",
+              "value": "Libra"
+            },
+            {
+              "name": "\u264F Scorpio",
+              "value": "Scorpio"
+            },
+            {
+              "name": "\u2650 Sagittarius",
+              "value": "Sagittarius"
+            },
+            {
+              "name": "\u2651 Capricorn",
+              "value": "Capricorn"
+            },
+            {
+              "name": "\u2652 Aquarius",
+              "value": "Aquarius"
+            },
+            {
+              "name": "\u2653 Pisces",
+              "value": "Pisces"
+            }
+          ],
+          "autocomplete": false,
+          "channelTypes": []
+        },
+        {
+          "name": "hide",
+          "description": "Only show the horoscope to you",
           "type": "Boolean",
           "required": false,
           "choices": [],
@@ -982,7 +1443,24 @@
           "description": "RPS weapon type filter",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "All",
+              "value": "All"
+            },
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -991,7 +1469,20 @@
           "description": "Order by wins, ties, or losses",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "Wins",
+              "value": "Wins"
+            },
+            {
+              "name": "Ties",
+              "value": "Ties"
+            },
+            {
+              "name": "Losses",
+              "value": "Losses"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1033,7 +1524,24 @@
           "description": "RPS weapon type filter",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "All",
+              "value": "All"
+            },
+            {
+              "name": "Rock",
+              "value": "Rock"
+            },
+            {
+              "name": "Paper",
+              "value": "Paper"
+            },
+            {
+              "name": "Scissors",
+              "value": "Scissors"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
@@ -1042,7 +1550,20 @@
           "description": "Order by wins, ties, or losses",
           "type": "String",
           "required": false,
-          "choices": [],
+          "choices": [
+            {
+              "name": "Wins",
+              "value": "Wins"
+            },
+            {
+              "name": "Ties",
+              "value": "Ties"
+            },
+            {
+              "name": "Losses",
+              "value": "Losses"
+            }
+          ],
           "autocomplete": false,
           "channelTypes": []
         },
