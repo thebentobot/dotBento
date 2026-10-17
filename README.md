@@ -92,7 +92,7 @@ Open `coverage-report/index.html` for the full report, read `coverage-report/Sum
 Pull requests are welcome! Please ensure your contributions include tests where appropriate and follow Conventional Commits for commit messages.
 
 ## Development
-The bot is mainly developed by [Christian](https://github.com/banner4422).
+The bot is mainly developed by [Christian](https://github.com/christianhook).
 
 Pull requests are very welcome if the features/changes make sense and are up to par in quality.
 
