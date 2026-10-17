@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/thebentobot/dotBento/compare/v2.0.0...v2.0.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **ci:** align Docker SDK and verify images in pull requests ([2ef37cb](https://github.com/thebentobot/dotBento/commit/2ef37cbb6ac028f14689e60dc7f47e57be380fc9))
+* **ci:** align Docker SDK and verify images in pull requests ([cc5c03b](https://github.com/thebentobot/dotBento/commit/cc5c03b3528c9f1be978a563be9819f85a0ac124))
+
 ## [2.0.0](https://github.com/thebentobot/dotBento/compare/v1.23.1...v2.0.0) (2026-10-17)
 
 
