@@ -1,4 +1,3 @@
-using System.Reflection;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -26,6 +25,9 @@ public sealed class BotService(DiscordSocketClient client,
 
     public async Task StartAsync()
     {
+        Log.Information("Loading interaction modules");
+        await CommandModules.LoadAsync(interactions, provider, config.Value);
+
         await using var context = await contextFactory.CreateDbContextAsync();
         try
         {
@@ -41,9 +43,6 @@ public sealed class BotService(DiscordSocketClient client,
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
                            throw new InvalidOperationException("Discord:Token environment variable not set.");
-
-        Log.Information("Loading interaction modules");
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
