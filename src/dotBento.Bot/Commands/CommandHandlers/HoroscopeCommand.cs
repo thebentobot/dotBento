@@ -175,7 +175,7 @@ public sealed class HoroscopeCommand(
             "monthly" => "This month",
             _ => horoscope.Window
         };
-        var title = $"{info.Emoji} {info.DisplayName} | {temporalLabel} · {horoscope.Label}";
+        var title = Truncate($"{info.Emoji} {info.DisplayName} | {temporalLabel} · {horoscope.Label}", 256);
         var fields = horoscope.Aspects
             .Where(aspect => includeRomance || !string.Equals(aspect.Name, "Romance", StringComparison.OrdinalIgnoreCase))
             .Select(aspect =>
@@ -183,28 +183,35 @@ public sealed class HoroscopeCommand(
                 var score = Math.Clamp(aspect.Score, 0, 5);
                 var stars = new string('★', score) + new string('☆', 5 - score);
                 return new EmbedFieldBuilder()
-                    .WithName($"{aspect.Name} {stars}")
+                    .WithName(Truncate($"{aspect.Name} {stars}", 256))
                     .WithValue(Truncate(aspect.Detail, 1024))
                     .WithIsInline(false);
             }).ToList();
 
-        var fieldCharacters = fields.Sum(field => field.Name.Length + field.Value.ToString()!.Length);
-        var descriptionLimit = Math.Min(4096, Math.Max(500, 6000 - title.Length - fieldCharacters - 64));
-        var readingPages = SplitReading(horoscope.Reading, descriptionLimit);
-
-        if (readingPages.Count == 1)
+        var embeds = SplitReading(horoscope.Reading, 4096)
+            .Select(reading => BuildEmbed(title, reading)).ToList();
+        // Leave room for the page footer, including on pages containing only aspect fields.
+        const int contentBudget = 6000 - 64;
+        foreach (var field in fields)
         {
-            var embed = BuildEmbed(title, readingPages[0]);
-            embed.WithFields(fields);
-            return new ResponseModel { ResponseType = ResponseType.Embed, Embed = embed };
+            var page = embeds[^1];
+            var pageLength = title.Length + (page.Description?.Length ?? 0) +
+                             page.Fields.Sum(existing => existing.Name.Length + existing.Value.ToString()!.Length);
+            var fieldLength = field.Name.Length + field.Value.ToString()!.Length;
+            if (page.Fields.Count == 25 || pageLength + fieldLength > contentBudget)
+            {
+                page = BuildEmbed(title, string.Empty);
+                embeds.Add(page);
+            }
+            page.AddField(field);
         }
 
-        var pages = readingPages.Select((reading, index) =>
+        if (embeds.Count == 1)
+            return new ResponseModel { ResponseType = ResponseType.Embed, Embed = embeds[0] };
+
+        var pages = embeds.Select((embed, index) =>
         {
-            var embed = BuildEmbed(title, reading)
-                .WithFooter($"{index + 1} / {readingPages.Count}");
-            if (index == readingPages.Count - 1)
-                embed.WithFields(fields);
+            embed.WithFooter($"{index + 1} / {embeds.Count}");
             return PageBuilder.FromEmbedBuilder(embed);
         }).ToList();
 

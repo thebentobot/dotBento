@@ -6,6 +6,7 @@ using dotBento.Bot.Models;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
 namespace dotBento.Bot.Tests.ComponentInteractions;
@@ -13,7 +14,7 @@ namespace dotBento.Bot.Tests.ComponentInteractions;
 public sealed class HoroscopeSettingsComponentInteractionTests
 {
     [Fact]
-    public async Task SettingsComponents_SaveAndRemoveUpdateOriginalPanel()
+    public async Task SettingsComponents_FirstTimeDmUserCanSaveAndRemoveSign()
     {
         var (module, interaction, factory) = CreateModule();
 
@@ -21,6 +22,13 @@ public sealed class HoroscopeSettingsComponentInteractionTests
 
         var service = new HoroscopeService(factory);
         Assert.Equal("sagittarius", (await service.GetHoroscopeAsync(10)).Value.Sign);
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            var user = Assert.Single(db.Users);
+            Assert.Equal(10, user.UserId);
+            Assert.Equal("dm-user", user.Username);
+            Assert.Equal("0", user.Discriminator);
+        }
         var saveUpdate = Assert.Single(interaction.Invocations, call => call.Method.Name == "ModifyOriginalResponseAsync");
         var properties = new MessageProperties();
         Assert.IsType<Action<MessageProperties>>(saveUpdate.Arguments[0])(properties);
@@ -30,6 +38,8 @@ public sealed class HoroscopeSettingsComponentInteractionTests
         await module.RemoveSign("10");
 
         Assert.True((await service.GetHoroscopeAsync(10)).HasNoValue);
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+            Assert.Equal("dm-user", Assert.Single(db.Users).Username);
         Assert.Equal(2, interaction.Invocations.Count(call => call.Method.Name == "DeferAsync"));
         Assert.Equal(2, interaction.Invocations.Count(call => call.Method.Name == "ModifyOriginalResponseAsync"));
     }
@@ -73,10 +83,12 @@ public sealed class HoroscopeSettingsComponentInteractionTests
         var factory = new TestDbFactory();
         var command = new HoroscopeCommand(new HoroscopeService(factory),
             new BentoMediaServerService(new HttpClient()), Options.Create(new BotEnvConfig()));
-        var module = new HoroscopeSettingsComponentInteraction(command);
+        var module = new HoroscopeSettingsComponentInteraction(command,
+            new UserService(new MemoryCache(new MemoryCacheOptions()), factory));
         var interaction = new Mock<IComponentInteraction>();
         var context = new Mock<IInteractionContext>();
-        context.SetupGet(value => value.User).Returns(Mock.Of<IUser>(user => user.Id == 10));
+        context.SetupGet(value => value.User).Returns(Mock.Of<IUser>(user =>
+            user.Id == 10 && user.Username == "dm-user" && user.Discriminator == "0"));
         context.SetupGet(value => value.Interaction).Returns(interaction.Object);
         ((IInteractionModuleBase)module).SetContext(context.Object);
         return (module, interaction, factory);

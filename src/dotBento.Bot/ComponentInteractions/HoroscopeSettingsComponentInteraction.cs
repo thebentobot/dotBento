@@ -4,10 +4,12 @@ using Discord.Interactions;
 using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
+using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.ComponentInteractions;
 
-public sealed class HoroscopeSettingsComponentInteraction(HoroscopeCommand horoscopeCommand)
+public sealed class HoroscopeSettingsComponentInteraction(
+    HoroscopeCommand horoscopeCommand, UserService userService)
     : InteractionModuleBase<IInteractionContext>
 {
     [ComponentInteraction("horoscope-settings:sign:*")]
@@ -24,6 +26,7 @@ public sealed class HoroscopeSettingsComponentInteraction(HoroscopeCommand horos
         }
 
         await DeferAsync();
+        await userService.CreateOrAddUserToCache(Context.User);
         var response = await horoscopeCommand.SaveHoroscopeAsync(
             (long)Context.User.Id, sign.ToString().ToLowerInvariant());
         await UpdatePanelAsync(response);

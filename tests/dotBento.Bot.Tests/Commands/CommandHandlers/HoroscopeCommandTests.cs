@@ -4,6 +4,7 @@ using Discord;
 using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models;
+using dotBento.Infrastructure.Models.Horoscope;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
 using Microsoft.Extensions.Options;
@@ -89,6 +90,44 @@ public sealed class HoroscopeCommandTests
         Assert.All(pages, page => Assert.Equal("♎ Libra | Today · Aug 8, 2026", page.GetEmbedArray()[0].Title));
         Assert.Empty(pages[0].GetEmbedArray()[0].Fields);
         Assert.Single(pages[^1].GetEmbedArray()[0].Fields);
+    }
+
+    [Theory]
+    [InlineData(6, 1024, 800)]
+    [InlineData(6, 1024, 5000)]
+    [InlineData(30, 1, 100)]
+    [InlineData(6, 1800, 5000)]
+    public async Task GetHoroscopeAsync_LargeAspectsRespectEveryEmbedBudget(
+        int aspectCount, int detailLength, int readingLength)
+    {
+        var reading = new string('r', readingLength);
+        var aspects = Enumerable.Range(0, aspectCount)
+            .Select(index => new HoroscopeAspect($"Aspect {index}", 3, new string((char)('a' + index % 26), detailLength)))
+            .ToArray();
+        var (command, _, _) = CreateCommand(reading: reading, customAspects: aspects);
+
+        var response = await command.GetHoroscopeAsync(10, "today", "libra", AdultChannel());
+
+        var embeds = Embeds(response);
+        Assert.Equal(ResponseType.Paginator, response.ResponseType);
+        Assert.Equal(reading, string.Concat(embeds.Select(embed => embed.Description)));
+        Assert.Equal(aspects.Select(aspect => $"{aspect.Name} ★★★☆☆"),
+            embeds.SelectMany(embed => embed.Fields).Select(field => field.Name));
+        Assert.All(embeds, embed =>
+        {
+            Assert.InRange(embed.Description?.Length ?? 0, 0, 4096);
+            Assert.InRange(embed.Fields.Length, 0, 25);
+            var length = embed.Title.Length + (embed.Description?.Length ?? 0) +
+                         (embed.Footer?.Text.Length ?? 0) +
+                         embed.Fields.Sum(field => field.Name.Length + field.Value.Length);
+            Assert.InRange(length, 1, 6000);
+            Assert.All(embed.Fields, field =>
+            {
+                Assert.InRange(field.Name.Length, 1, 256);
+                Assert.InRange(field.Value.Length, 1, 1024);
+                Assert.False(field.Inline);
+            });
+        });
     }
 
     [Theory]
@@ -204,7 +243,8 @@ public sealed class HoroscopeCommandTests
         HttpStatusCode statusCode = HttpStatusCode.OK,
         string responseWindow = "today",
         string dateLabel = "Aug 8, 2026",
-        bool includeCareer = false)
+        bool includeCareer = false,
+        IReadOnlyList<HoroscopeAspect>? customAspects = null)
     {
         var handler = new RecordingHandler(() => new HttpResponseMessage(statusCode)
         {
@@ -214,13 +254,13 @@ public sealed class HoroscopeCommandTests
                 window = responseWindow,
                 label = dateLabel,
                 reading,
-                aspects = aspects
+                aspects = customAspects ?? (aspects
                     ? new[]
                         {
-                            new { name = "Romance", score = 4, detail = "Be open." },
-                            new { name = "Career", score = 3, detail = "Keep focused." }
+                            new HoroscopeAspect("Romance", 4, "Be open."),
+                            new HoroscopeAspect("Career", 3, "Keep focused.")
                         }.Take(includeCareer ? 2 : 1).ToArray()
-                    : []
+                    : [])
             }))
         });
         var factory = new TestDbFactory();
