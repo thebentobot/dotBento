@@ -54,7 +54,6 @@ public class LeaderboardServiceTests
         {
             GuildId = guildId,
             GuildName = "TestGuild",
-            Prefix = "!",
             Leaderboard = true,
             Media = false,
             Tiktok = false
@@ -233,7 +232,7 @@ public class LeaderboardServiceTests
 
         await using (var db = await factory.CreateDbContextAsync())
         {
-            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "BentoGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "BentoGuild", Leaderboard = true, Media = false, Tiktok = false });
             for (var i = 0; i < 3; i++)
             {
                 db.Users.Add(new User { UserId = i + 500, Username = $"BG{i + 1}", Discriminator = "0", Level = 1, Xp = 0 });
@@ -342,7 +341,7 @@ public class LeaderboardServiceTests
 
         await using (var db = await factory.CreateDbContextAsync())
         {
-            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "RpsGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "RpsGuild", Leaderboard = true, Media = false, Tiktok = false });
             db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 301, Level = 1, Xp = 0 });
             db.GuildMembers.Add(new GuildMember { GuildId = guildId, UserId = 303, Level = 1, Xp = 0 });
             await db.SaveChangesAsync();
@@ -370,7 +369,7 @@ public class LeaderboardServiceTests
 
         await using (var db = await factory.CreateDbContextAsync())
         {
-            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "SummaryGuild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = guildId, GuildName = "SummaryGuild", Leaderboard = true, Media = false, Tiktok = false });
 
             // Create 3 users with different levels
             for (var i = 0; i < 3; i++)

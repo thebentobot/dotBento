@@ -5,7 +5,7 @@
   ],
   "schedule": ["after 6:00am and before 7:00am"],
   "timezone": "Europe/Copenhagen",
-  "assignees": ["banner4422"],
+  "assignees": ["christianhook"],
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "rangeStrategy": "bump",

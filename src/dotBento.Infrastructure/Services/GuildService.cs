@@ -74,7 +74,6 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             databaseGuild = new Guild
             {
                 GuildId = (long)guildId,
-                Prefix = Constants.StartPrefix,
                 GuildName = name,
                 MemberCount = memberCount,
             };
@@ -141,19 +140,6 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
             .SetSlidingExpiration(TimeSpan.FromMinutes(5));
         cache.Set(CacheKeyForGuild((ulong)guild.GuildId), guild, cacheEntryOptions);
         return Task.CompletedTask;
-    }
-
-    public async Task<Maybe<Guild>> UpdateGuildPrefixAsync(ulong discordGuildId, string prefix)
-    {
-        await using var db = await contextFactory.CreateDbContextAsync();
-        var guild = await db.Guilds.AsQueryable().FirstOrDefaultAsync(f => f.GuildId == (long)discordGuildId);
-
-        if (guild == null) return Maybe<Guild>.None;
-        guild.Prefix = prefix;
-        await db.SaveChangesAsync();
-        await AddGuildToCache(guild);
-
-        return guild.AsMaybe();
     }
 
     private Task RemoveGuildFromCache(ulong discordGuildId)

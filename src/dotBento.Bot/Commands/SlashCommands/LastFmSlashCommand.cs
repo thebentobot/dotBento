@@ -1,7 +1,7 @@
 using System.Runtime.Serialization;
 using Discord.Interactions;
 using Discord.WebSocket;
-using dotBento.Bot.Commands.SharedCommands;
+using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Extensions;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Utilities;

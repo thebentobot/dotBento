@@ -7,7 +7,6 @@ public static class Constants
 
     public const ulong BotDevelopmentId = 1193608563050958948;
 
-    public const string StartPrefix = "?";
 
     public static readonly IReadOnlyCollection<string> CommandNames = new List<string>
     {

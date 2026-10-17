@@ -1,5 +1,56 @@
 # Changelog
 
+## [2.0.1](https://github.com/thebentobot/dotBento/compare/v2.0.0...v2.0.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **ci:** align Docker SDK and verify images in pull requests ([2ef37cb](https://github.com/thebentobot/dotBento/commit/2ef37cbb6ac028f14689e60dc7f47e57be380fc9))
+* **ci:** align Docker SDK and verify images in pull requests ([cc5c03b](https://github.com/thebentobot/dotBento/commit/cc5c03b3528c9f1be978a563be9819f85a0ac124))
+
+## [2.0.0](https://github.com/thebentobot/dotBento/compare/v1.23.1...v2.0.0) (2026-10-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bot:** Text commands and guild command prefixes are removed. The migration drops stored guild prefixes; use slash commands instead.
+
+### Bug Fixes
+
+* **docker:** align bot SDK with global.json ([f95ee91](https://github.com/thebentobot/dotBento/commit/f95ee91215417dc4cc05c8da97a5e4b3f23e1075))
+* **docker:** align bot SDK with global.json ([6f22a1e](https://github.com/thebentobot/dotBento/commit/6f22a1e2faa796f0db52727bc6df4c3d84538cd6))
+
+
+### Code Refactoring
+
+* **bot:** remove text commands and rename command handlers ([0869504](https://github.com/thebentobot/dotBento/commit/08695046f689592909020e0b12623a5ac6380e23))
+
+## [1.23.1](https://github.com/thebentobot/dotBento/compare/v1.23.0...v1.23.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **docker:** bump bot image SDK pin to match global.json ([565a0b6](https://github.com/thebentobot/dotBento/commit/565a0b6580fe65b8cb761fa5e3609dfd0dbc1796))
+* **docker:** bump bot image SDK pin to match global.json ([382f282](https://github.com/thebentobot/dotBento/commit/382f282882aebccfa081f1135563ce743ed580ea))
+* migrate to Microsoft.Testing.Platform for xunit v4 ([b9fccd9](https://github.com/thebentobot/dotBento/commit/b9fccd97ae4bf4cf8e57586a55d5c0fe885bdf1f))
+
+## [1.23.0](https://github.com/thebentobot/dotBento/compare/v1.22.0...v1.23.0) (2026-08-04)
+
+
+### Features
+
+* document server settings in welcome message ([d29b520](https://github.com/thebentobot/dotBento/commit/d29b5209232840e7fa89798dd3f3c7512ffbf5b8))
+* document server settings in welcome message ([eccef7b](https://github.com/thebentobot/dotBento/commit/eccef7b30991d8ab974646926e90a957f66ab4e0))
+* link command errors to troubleshooting docs ([490a5b1](https://github.com/thebentobot/dotBento/commit/490a5b10f29381618d8f947eba7e1ce63640ac87))
+* link command errors to troubleshooting docs ([2ab44e7](https://github.com/thebentobot/dotBento/commit/2ab44e7c9bdbb5f3d8d58460c994eb2a226adbf6))
+* refresh about command links and copy ([1703aa4](https://github.com/thebentobot/dotBento/commit/1703aa48f945a78ca1abe314ef5194fb53846634))
+* refresh about command links and copy ([acd8c39](https://github.com/thebentobot/dotBento/commit/acd8c3949d788324b850a6b5fd0558ec8b861619))
+
+
+### Bug Fixes
+
+* retain website link in welcome message ([f7a7c48](https://github.com/thebentobot/dotBento/commit/f7a7c4806e953e349626679f42bf4d37ed89a4ce))
+
 ## [1.22.0](https://github.com/thebentobot/dotBento/compare/v1.21.0...v1.22.0) (2026-08-03)
 
 

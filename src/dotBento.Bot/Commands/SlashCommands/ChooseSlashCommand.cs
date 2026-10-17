@@ -15,7 +15,7 @@ public sealed class ChooseSlashCommand(InteractiveService interactiveService, Us
         [Summary("hide", "Only show the result for you")] bool? hide = null
     )
     {
-        var embed = await SharedCommands.ChooseCommand.Command(options);
+        var embed = await CommandHandlers.ChooseCommand.Command(options);
         var ephemeral = embed.Embed.Color == Color.Red || (hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         await Context.SendResponse(interactiveService, embed, ephemeral);
     }

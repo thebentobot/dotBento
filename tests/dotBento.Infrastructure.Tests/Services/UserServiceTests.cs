@@ -75,8 +75,8 @@ public class UserServiceTests
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
             db.Guilds.AddRange(
-                new Guild { GuildId = 100, GuildName = "One", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 10 },
-                new Guild { GuildId = 200, GuildName = "Two", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 15 });
+                new Guild { GuildId = 100, GuildName = "One", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 10 },
+                new Guild { GuildId = 200, GuildName = "Two", Leaderboard = true, Media = false, Tiktok = false, MemberCount = 15 });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var service = CreateService(factory);
@@ -206,7 +206,7 @@ public class UserServiceTests
         var factory = new InfrastructureTestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Leaderboard = true, Media = false, Tiktok = false });
             db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 1, Xp = 50 });
             db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 1, Xp = 50 });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -236,7 +236,7 @@ public class UserServiceTests
         var factory = new InfrastructureTestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Leaderboard = true, Media = false, Tiktok = false });
             db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 2, Xp = 0 });
             db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 2, Xp = 0 });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -260,7 +260,7 @@ public class UserServiceTests
         var factory = new InfrastructureTestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Leaderboard = true, Media = false, Tiktok = false });
             db.Users.Add(User(10));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -280,7 +280,7 @@ public class UserServiceTests
         var factory = new InfrastructureTestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
         {
-            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Prefix = "!", Leaderboard = true, Media = false, Tiktok = false });
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Leaderboard = true, Media = false, Tiktok = false });
             db.Users.AddRange(User(1), User(2), User(3));
             db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 2, Level = 1, Xp = 0 });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);

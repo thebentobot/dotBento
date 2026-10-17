@@ -7,8 +7,8 @@
 A Discord bot written in .NET. This repository is the improved .NET rewrite of [Bento](https://github.com/thebentobot/Bento).
 
 ## Features (high level)
-- Slash and text commands
-- Modular command architecture with [Discord.NET](https://docs.discordnet.dev/) (Commands + Interactions)
+- Slash commands
+- Modular command architecture with [Discord.NET](https://docs.discordnet.dev/) (Interactions)
 - PostgreSQL database via Entity Framework Core
 - Optional Prometheus metrics and Loki/Serilog logging
 - Valkey caching between bot and web api instances
@@ -92,7 +92,7 @@ Open `coverage-report/index.html` for the full report, read `coverage-report/Sum
 Pull requests are welcome! Please ensure your contributions include tests where appropriate and follow Conventional Commits for commit messages.
 
 ## Development
-The bot is mainly developed by [Christian](https://github.com/banner4422).
+The bot is mainly developed by [Christian](https://github.com/christianhook).
 
 Pull requests are very welcome if the features/changes make sense and are up to par in quality.
 
