@@ -4,8 +4,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.401 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402 AS build
 WORKDIR /src
+COPY global.json .
 COPY ["src/dotBento.Bot", "dotBento.Bot/"]
 COPY ["src/dotBento.Domain", "dotBento.Domain/"]
 COPY ["src/dotBento.EntityFramework", "dotBento.EntityFramework/"]
