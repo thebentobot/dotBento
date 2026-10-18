@@ -2,6 +2,7 @@ using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace dotBento.Infrastructure.Services;
 
@@ -9,7 +10,8 @@ namespace dotBento.Infrastructure.Services;
 /// Owns the persistent data-deletion opt-out ("suppression list"). An opted-out user keeps a single
 /// row in <c>userOptOut</c> so Bento can honour the request; all other data is deleted.
 /// </summary>
-public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
+public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache,
+    IDistributedCache? distributedCache = null)
 {
     private static readonly TimeSpan OptOutCacheDuration = TimeSpan.FromMinutes(5);
 
@@ -34,6 +36,7 @@ public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactor
     public async Task OptOutAndDeleteAsync(long userId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
+        await using var userLock = await UserDataLock.AcquireAsync(db, userId);
 
         if (!await db.UserOptOuts.AsQueryable().AnyAsync(o => o.UserId == userId))
             db.UserOptOuts.Add(new UserOptOut { UserId = userId, OptedOutAt = DateTime.UtcNow });
@@ -46,6 +49,10 @@ public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactor
         if (guildMembers.Count > 0)
             db.GuildMembers.RemoveRange(guildMembers);
 
+        var reminderIds = await db.Reminders.Where(r => r.UserId == userId).Select(r => r.Id).ToListAsync();
+        var tags = await db.Tags.Where(t => t.UserId == userId)
+            .Select(t => new { t.GuildId, t.Command }).ToListAsync();
+
         var user = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(u => u.UserId == userId);
@@ -54,14 +61,29 @@ public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactor
 
         await db.SaveChangesAsync();
 
+        await userLock.CommitAsync();
+
         cache.Set(OptOutCacheKey(userId), true, OptOutCacheDuration);
         // Mirrors UserService's user cache key so a stale entry cannot outlive the deletion.
         cache.Remove($"user-{userId}");
+        cache.Remove(userId); // Bento and supporter caches use the user ID directly.
+        foreach (var member in guildMembers)
+            cache.Remove($"guild-member-{member.GuildId}-{userId}");
+        foreach (var reminderId in reminderIds)
+            cache.Remove($"reminder:{reminderId}");
+        foreach (var tag in tags)
+            cache.Remove($"Tag_{tag.GuildId}_{tag.Command}");
+        if (distributedCache is not null)
+        {
+            await distributedCache.RemoveAsync($"profile:{userId}");
+            await distributedCache.RemoveAsync($"user-hide-commands-{userId}");
+        }
     }
 
     public async Task RemoveOptOutAsync(long userId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
+        await using var userLock = await UserDataLock.AcquireAsync(db, userId);
         var optOut = await db.UserOptOuts
             .AsQueryable()
             .FirstOrDefaultAsync(o => o.UserId == userId);
@@ -72,6 +94,7 @@ public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactor
             await db.SaveChangesAsync();
         }
 
+        await userLock.CommitAsync();
         cache.Set(OptOutCacheKey(userId), false, OptOutCacheDuration);
     }
 

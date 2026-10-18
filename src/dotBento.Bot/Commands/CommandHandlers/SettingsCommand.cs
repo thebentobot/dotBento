@@ -150,7 +150,11 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         if (privacyService is not null)
             await privacyService.RemoveOptOutAsync(userId);
 
-        return await GetUserSettingsAsync(userId);
+        var response = new ResponseModel { ResponseType = ResponseType.Embed };
+        response.Embed.WithTitle("You are opted back in")
+            .WithDescription("You can use commands again. Run `/user settings` to view your settings.")
+            .WithColor(_presentation.Success);
+        return response;
     }
 
     private ResponseModel BuildOptedOutResponse(bool deleted = false)

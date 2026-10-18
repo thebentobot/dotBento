@@ -389,7 +389,7 @@ public sealed class SettingsCommandTests
     }
 
     [Fact]
-    public async Task OptBackInAsync_RemovesOptOut()
+    public async Task OptBackInAsync_RemovesOptOutWithoutCreatingSettingsForDeletedUser()
     {
         var factory = new TestDbFactory();
         await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
@@ -401,9 +401,12 @@ public sealed class SettingsCommandTests
 
         var response = await command.OptBackInAsync(10);
 
-        Assert.Equal("Your Settings", response.Embed.Build().Title);
+        Assert.Equal("You are opted back in", response.Embed.Build().Title);
+        Assert.Contains("/user settings", response.Embed.Build().Description);
         await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
         Assert.False(await assertDb.UserOptOuts.AnyAsync(o => o.UserId == 10, TestContext.Current.CancellationToken));
+        Assert.Empty(assertDb.UserSettings);
+        Assert.Empty(assertDb.Users);
     }
 
     private static PrivacyService CreatePrivacyService(TestDbFactory factory) =>
