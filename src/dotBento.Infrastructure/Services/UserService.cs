@@ -122,36 +122,36 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task<Result> CreateOrAddUserToCache(IUser discordUser)
     {
-        await using var db = await contextFactory.CreateDbContextAsync();
-        await using var userLock = await UserDataLock.AcquireAsync(db, (long)discordUser.Id);
-        // Read suppression inside the lock, never from a potentially stale cache.
-        if (await db.UserOptOuts.AnyAsync(o => o.UserId == (long)discordUser.Id))
-            return Result.Failure("This user has opted out of data storage.");
-        var databaseUser = await db.Users
-            .AsQueryable()
-            .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
-
-        if (databaseUser == null)
+        var result = await UserDataLock.ExecuteAsync(contextFactory, (long)discordUser.Id, async db =>
         {
-            databaseUser = new User
-            {
-                UserId = (long)discordUser.Id,
-                Username = discordUser.Username,
-                Discriminator = discordUser.Discriminator,
-                AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
-                Level = 1,
-                Xp = 0
-            };
+            // Read suppression inside the lock, never from a potentially stale cache.
+            if (await db.UserOptOuts.AnyAsync(o => o.UserId == (long)discordUser.Id))
+                return Result.Failure<User>("This user has opted out of data storage.");
+            var databaseUser = await db.Users
+                .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
 
-            db.Users.Add(databaseUser);
-            await db.SaveChangesAsync();
-        }
-        
-        await userLock.CommitAsync();
-        await AddUserToCache(databaseUser);
-        return Result.Success();
+            if (databaseUser == null)
+            {
+                databaseUser = new User
+                {
+                    UserId = (long)discordUser.Id,
+                    Username = discordUser.Username,
+                    Discriminator = discordUser.Discriminator,
+                    AvatarUrl = discordUser.GetAvatarUrl(ImageFormat.Auto, 512),
+                    Level = 1,
+                    Xp = 0
+                };
+
+                db.Users.Add(databaseUser);
+                await db.SaveChangesAsync();
+            }
+
+            return Result.Success(databaseUser);
+        }, result => result.IsSuccess ? AddUserToCache(result.Value) : Task.CompletedTask);
+
+        return result.IsSuccess ? Result.Success() : Result.Failure(result.Error);
     }
-    
+
     [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; IUser overload covers the behavior.")]
     public async Task<Result> CreateOrAddUserToCache(SocketGuildUser discordUser)
     {

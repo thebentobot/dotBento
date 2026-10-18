@@ -33,69 +33,61 @@ public sealed class PrivacyService(IDbContextFactory<BotDbContext> contextFactor
     /// Records the opt-out and deletes every piece of data Bento stores for the user. The opt-out row
     /// is written in the same transaction as the deletion so the data can never be re-created again.
     /// </summary>
-    public async Task OptOutAndDeleteAsync(long userId)
+    public Task OptOutAndDeleteAsync(long userId)
     {
-        await using var db = await contextFactory.CreateDbContextAsync();
-        await using var userLock = await UserDataLock.AcquireAsync(db, userId);
-
-        if (!await db.UserOptOuts.AsQueryable().AnyAsync(o => o.UserId == userId))
-            db.UserOptOuts.Add(new UserOptOut { UserId = userId, OptedOutAt = DateTime.UtcNow });
-
-        // Remove guild member rows explicitly in case the user row is already gone.
-        var guildMembers = await db.GuildMembers
-            .AsQueryable()
-            .Where(gm => gm.UserId == userId)
-            .ToListAsync();
-        if (guildMembers.Count > 0)
-            db.GuildMembers.RemoveRange(guildMembers);
-
-        var reminderIds = await db.Reminders.Where(r => r.UserId == userId).Select(r => r.Id).ToListAsync();
-        var tags = await db.Tags.Where(t => t.UserId == userId)
-            .Select(t => new { t.GuildId, t.Command }).ToListAsync();
-
-        var user = await db.Users
-            .AsQueryable()
-            .FirstOrDefaultAsync(u => u.UserId == userId);
-        if (user is not null)
-            db.Users.Remove(user);
-
-        await db.SaveChangesAsync();
-
-        await userLock.CommitAsync();
-
-        cache.Set(OptOutCacheKey(userId), true, OptOutCacheDuration);
-        // Mirrors UserService's user cache key so a stale entry cannot outlive the deletion.
-        cache.Remove($"user-{userId}");
-        cache.Remove(userId); // Bento and supporter caches use the user ID directly.
-        foreach (var member in guildMembers)
-            cache.Remove($"guild-member-{member.GuildId}-{userId}");
-        foreach (var reminderId in reminderIds)
-            cache.Remove($"reminder:{reminderId}");
-        foreach (var tag in tags)
-            cache.Remove($"Tag_{tag.GuildId}_{tag.Command}");
-        if (distributedCache is not null)
+        return UserDataLock.ExecuteAsync(contextFactory, userId, async db =>
         {
-            await distributedCache.RemoveAsync($"profile:{userId}");
-            await distributedCache.RemoveAsync($"user-hide-commands-{userId}");
-        }
+            if (!await db.UserOptOuts.AnyAsync(o => o.UserId == userId))
+                db.UserOptOuts.Add(new UserOptOut { UserId = userId, OptedOutAt = DateTime.UtcNow });
+
+            // Capture cache keys before the deletion cascades to related data.
+            var guildMembers = await db.GuildMembers.Where(gm => gm.UserId == userId).ToListAsync();
+            db.GuildMembers.RemoveRange(guildMembers);
+            var reminderIds = await db.Reminders.Where(r => r.UserId == userId).Select(r => r.Id).ToListAsync();
+            var tags = await db.Tags.Where(t => t.UserId == userId)
+                .Select(t => new { t.GuildId, t.Command }).ToListAsync();
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user is not null)
+                db.Users.Remove(user);
+
+            await db.SaveChangesAsync();
+            return (guildMembers, reminderIds, tags);
+        }, async deleted =>
+        {
+            cache.Set(OptOutCacheKey(userId), true, OptOutCacheDuration);
+            cache.Remove($"user-{userId}");
+            cache.Remove(userId); // Bento and supporter caches use the user ID directly.
+            foreach (var member in deleted.guildMembers)
+                cache.Remove($"guild-member-{member.GuildId}-{userId}");
+            foreach (var reminderId in deleted.reminderIds)
+                cache.Remove($"reminder:{reminderId}");
+            foreach (var tag in deleted.tags)
+                cache.Remove($"Tag_{tag.GuildId}_{tag.Command}");
+            if (distributedCache is not null)
+            {
+                await distributedCache.RemoveAsync($"profile:{userId}");
+                await distributedCache.RemoveAsync($"user-hide-commands-{userId}");
+            }
+        });
     }
 
-    public async Task RemoveOptOutAsync(long userId)
+    public Task RemoveOptOutAsync(long userId)
     {
-        await using var db = await contextFactory.CreateDbContextAsync();
-        await using var userLock = await UserDataLock.AcquireAsync(db, userId);
-        var optOut = await db.UserOptOuts
-            .AsQueryable()
-            .FirstOrDefaultAsync(o => o.UserId == userId);
-
-        if (optOut is not null)
+        return UserDataLock.ExecuteAsync(contextFactory, userId, async db =>
         {
-            db.UserOptOuts.Remove(optOut);
-            await db.SaveChangesAsync();
-        }
-
-        await userLock.CommitAsync();
-        cache.Set(OptOutCacheKey(userId), false, OptOutCacheDuration);
+            var optOut = await db.UserOptOuts.FirstOrDefaultAsync(o => o.UserId == userId);
+            if (optOut is not null)
+            {
+                db.UserOptOuts.Remove(optOut);
+                await db.SaveChangesAsync();
+            }
+            return true;
+        }, _ =>
+        {
+            cache.Set(OptOutCacheKey(userId), false, OptOutCacheDuration);
+            return Task.CompletedTask;
+        });
     }
 
     private static string OptOutCacheKey(long userId) => $"user-opt-out-{userId}";
