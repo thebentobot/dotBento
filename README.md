@@ -124,6 +124,19 @@ existing Patreon API endpoint. Stored supporter records and emote preferences
 are preserved for re-enabling. The media-server master switch does not affect
 Patreon. Ko-fi links remain independently configurable with `Branding__KoFiUrl`.
 
+Donation and voting reward promises can be disabled independently:
+
+```dotenv
+Features__DonationRewardsEnabled=false
+Features__VotingRewardsEnabled=false
+```
+
+Both default to `true`, preserving existing wording. When disabled, about and
+welcome messages keep generic support/vote links without promising gifts.
+Clear `Branding__KoFiUrl` or `Branding__VoteUrl` to hide the links entirely.
+Reward fulfilment is external to this repository; these switches control the
+bot's messages, and any external reward automation must be configured separately.
+
 For example, a fork can use the following identity while keeping existing
 commands and database contracts:
 
@@ -161,7 +174,25 @@ Omitted branding settings retain Bento defaults. Explicitly empty link settings
 hide their links; URLs must otherwise use HTTP or HTTPS. For example,
 `Branding__WebsiteUrl=` removes website links, website-only server settings and
 their controls, while keeping command permissions and command leaderboards.
-Removing the variable entirely restores the Bento default. Gift naming changes
+Removing the variable entirely restores the Bento default.
+
+Website and documentation pages can be configured independently:
+
+| Variable | When omitted |
+| --- | --- |
+| `Branding__FeaturesUrl` | Website URL + `/features` |
+| `Branding__LeaderboardUrl` | Website URL + `/leaderboard` |
+| `Branding__TroubleshootingUrl` | Documentation URL + `/troubleshooting/` |
+| `Branding__ServerSettingsGuideUrl` | Documentation URL + `/guides/server-settings/` |
+
+Set any page URL explicitly empty to hide that page. For a landing-page-only
+website, keep `Branding__WebsiteUrl` and set `Branding__FeaturesUrl=` and
+`Branding__LeaderboardUrl=`. This hides website leaderboard controls and links
+while retaining Discord leaderboards and command permissions. A custom leaderboard
+base URL gets `/<guildId>` appended for server leaderboards. Explicit page URLs
+also work when their root website/documentation URL is empty.
+
+Gift naming changes
 presentation only: amounts, cooldowns and stored data remain unchanged. Saved
 profile descriptions and user-selected colours are preserved. The semantic
 palette affects ordinary embeds; platform colours, extracted avatar/banner
@@ -175,7 +206,21 @@ omitting it uses Bento's support guild. `Bot__KeepGuildDataOnLeave` accepts an
 explicit boolean; when omitted, guild data is retained outside `production` and
 deleted in `production`. Temporary keep-data flags still take precedence.
 `Bot__Status` overrides the activity text; empty or omitted uses user/server counts.
-Bot-list submissions identify the logged-in bot automatically.
+Bot-list submissions identify the logged-in bot automatically. Each nonempty
+`BotLists__TopGgApiToken`, `BotLists__DiscordBotsGgToken` or
+`BotLists__DiscordBotListToken` enables only its corresponding provider; missing
+or whitespace-only tokens are omitted. No tokens means no submissions.
+
+`Logging__LokiEnabled=false` disables the built-in Loki sink. Set it separately
+for the bot and Web API if they run in different environments. It defaults to
+`true`, preserving existing behaviour; console logging remains active. An
+explicitly empty `LokiUrl` also skips the sink. Bot logging still requires a
+configured Loki URL and a staging/production environment; the Web API retains
+its existing `http://localhost:3100` fallback when the URL is omitted.
+
+`Cache__Prefix` defaults to `dotbento:`. Use the same value in the bot and its
+Web API, and different values for independent deployments sharing Redis. Changing
+the prefix starts a fresh cache namespace; it does not rename existing keys.
 
 The checked-in command manifest always uses Bento defaults with both private API
 features enabled, independently of the developer's environment. Forks can export
