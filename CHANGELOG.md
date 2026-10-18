@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.2.0](https://github.com/thebentobot/dotBento/compare/v2.1.0...v2.2.0) (2026-10-18)
+
+
+### Features
+
+* **bot:** apply branding and consistent response styling ([00ea239](https://github.com/thebentobot/dotBento/commit/00ea23910843fd543547633663445b07de564fc8))
+* **bot:** configure branding and optional API features ([a86a638](https://github.com/thebentobot/dotBento/commit/a86a638522510f1e16a91cf96aef446f4fee343e))
+* **bot:** configure deployment and lifecycle behaviour ([d8207e8](https://github.com/thebentobot/dotBento/commit/d8207e87ca9e683502c98b254658baab85bc2db4))
+* **bot:** configure reward messaging and website pages ([513d7be](https://github.com/thebentobot/dotBento/commit/513d7be843db7dbc47c54434b4e1d437915105a5))
+* **commands:** support branded names with stable permission ids ([17122ea](https://github.com/thebentobot/dotBento/commit/17122eae27ac2182305c2031b6c84beb3c1aff85))
+* **config:** add validated branding and presentation settings ([a8358df](https://github.com/thebentobot/dotBento/commit/a8358dffc1d6d5611d14714035543a6db01fcbe2))
+* **hosting:** configure Loki logging and cache prefixes ([1f29bd3](https://github.com/thebentobot/dotBento/commit/1f29bd3d80198e0272e44d69e945010a06050ac0))
+* **media:** make private api features optional ([29ec915](https://github.com/thebentobot/dotBento/commit/29ec915cef3a101e7a6c6ea224f0dc963dc6af3b))
+* **patreon:** allow disabling supporter features ([35b9ce2](https://github.com/thebentobot/dotBento/commit/35b9ce24a21334da0101f8144da00bfa3349b20b))
+
+
+### Bug Fixes
+
+* **botlists:** publish only to configured providers ([19ae810](https://github.com/thebentobot/dotBento/commit/19ae810fb6b673b81c52b1d79615ab587bab6acd))
+* **bot:** omit website controls when no URL is configured ([7897e2b](https://github.com/thebentobot/dotBento/commit/7897e2b397c9f23414abf7bdc63dc3c9228ab318))
+* **streams:** allow initial reset of HTTP attachments ([ae21a41](https://github.com/thebentobot/dotBento/commit/ae21a414c3c64b4505136a22552ac09fd4e7884d))
+
+
+### Reverts
+
+* **streams:** undo HTTP attachment reset handling ([9294f24](https://github.com/thebentobot/dotBento/commit/9294f24d2eb866f828aeede909b93e3bf894f649))
+
 ## [2.1.0](https://github.com/thebentobot/dotBento/compare/v2.0.1...v2.1.0) (2026-10-17)
 
 
