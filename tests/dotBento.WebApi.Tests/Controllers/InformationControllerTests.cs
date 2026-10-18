@@ -152,6 +152,16 @@ public class InformationControllerTests
     }
 
     [Fact]
+    public async Task DisabledPatreon_ReturnsEmptyListWithoutQueryingTheDatabase()
+    {
+        var controller = new InformationController(null!, null!, null!, null!, null!, null!,
+            new() { PatreonEnabled = false });
+        var result = await controller.GetPatreon();
+        var response = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<PatreonUserDto>>(response.Value));
+    }
+
+    [Fact]
     public async Task GetPatreon_ReturnsCorrectPatreonUsers()
     {
         await using var context = DbContextHelper.GetInMemoryDbContext();

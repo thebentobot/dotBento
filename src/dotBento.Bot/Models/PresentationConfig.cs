@@ -17,9 +17,3 @@ public sealed class PaginationConfig
     public string Last { get; set; } = "⏭️";
     public string Jump { get; set; } = "🔢";
 }
-
-public sealed class FeatureConfig
-{
-    public bool MediaEnabled { get; set; } = true;
-    public bool HoroscopeEnabled { get; set; } = true;
-}

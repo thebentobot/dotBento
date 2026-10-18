@@ -143,6 +143,18 @@ public sealed class DeploymentConfigurationTests
     }
 
     [Fact]
+    public void DisabledPatreon_OmitsPromotionEvenWhenUrlIsConfigured()
+    {
+        var disabled = new BotPresentation(new() { Features = new() { PatreonEnabled = false } });
+        var hidden = AboutCommand.BuildEmbed("https://example.com/avatar.png", disabled);
+        Assert.DoesNotContain(hidden.Embed.Fields, field => field.Value.ToString() == disabled.Brand.PatreonUrl);
+        var enabled = new BotPresentation();
+        var shown = AboutCommand.BuildEmbed("https://example.com/avatar.png", enabled);
+        Assert.Contains(shown.Embed.Fields, field => field.Value.ToString() == enabled.Brand.PatreonUrl);
+        Assert.True(new BotEnvConfig().Features.PatreonEnabled);
+    }
+
+    [Fact]
     public void EmptyLinks_AreOmittedAndBrandingIsApplied()
     {
         var presentation = new BotPresentation(new()

@@ -226,6 +226,26 @@ public class UserServiceTests
         Assert.Equal((expectedGuildLevel, expectedGuildXp), (guildMember.Level, guildMember.Xp));
     }
 
+    [Fact]
+    public async Task DisabledPatreon_UsesOrdinaryXpEvenWhenTierIsProvided()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Guilds.Add(new Guild { GuildId = 100, GuildName = "Guild", Leaderboard = true, Media = false, Tiktok = false });
+            db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 2, Xp = 0 });
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 2, Xp = 0 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new UserService(cache, factory, new() { PatreonEnabled = false });
+        var sponsor = new Patreon { UserId = 10, Sponsor = true }.AsMaybe();
+        await service.AddExperienceAsync(10, 100, sponsor);
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(23, (await assertDb.Users.SingleAsync(TestContext.Current.CancellationToken)).Xp);
+        Assert.Equal(23, (await assertDb.GuildMembers.SingleAsync(TestContext.Current.CancellationToken)).Xp);
+    }
+
     [Theory]
     [InlineData(nameof(Patreon.Follower), 46)]
     [InlineData(nameof(Patreon.Enthusiast), 69)]

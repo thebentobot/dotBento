@@ -8,6 +8,41 @@ namespace dotBento.Infrastructure.Tests.Services;
 public class SimplePersistenceServicesTests
 {
     [Fact]
+    public async Task DisabledPatreon_SkipsCachedSupportersAndDatabaseAccess()
+    {
+        var features = new dotBento.Domain.FeatureConfig { PatreonEnabled = false };
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        cache.Set(1L, new Patreon { UserId = 1, Sponsor = true });
+        var supporters = new SupporterService(null!, cache, features);
+        var users = new UserService(null!, null!, features);
+        Assert.True((await supporters.GetPatreonAsync(1)).HasNoValue);
+        Assert.Equal(0, await supporters.GetActiveSupporterCountAsync());
+        Assert.True((await users.GetPatreonUserAsync(1)).HasNoValue);
+        Assert.True(cache.TryGetValue<Patreon>(1L, out _));
+    }
+
+    [Fact]
+    public async Task DisablingAndReenablingPatreon_PreservesStoredSupporters()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(User(1));
+            db.Patreons.Add(new Patreon { UserId = 1, Name = "Patron", Avatar = "avatar.png", Sponsor = true });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var disabled = new SupporterService(factory, cache, new() { PatreonEnabled = false });
+        Assert.True((await disabled.GetPatreonAsync(1)).HasNoValue);
+        Assert.Equal(0, await disabled.GetActiveSupporterCountAsync());
+        var enabled = new SupporterService(factory, cache);
+        var supporter = await enabled.GetPatreonAsync(1);
+        Assert.True(supporter.HasValue);
+        Assert.True(supporter.Value.Sponsor);
+        Assert.Equal(1, await enabled.GetActiveSupporterCountAsync());
+    }
+
+    [Fact]
     public async Task SupporterService_CountsAndCachesPatreonUsers()
     {
         var factory = new InfrastructureTestDbFactory();

@@ -16,7 +16,8 @@ public class InformationController(
     LeaderboardService leaderboardService,
     DiscordApiService discordApiService,
     GuildSettingService guildSettingService,
-    UserSettingService userSettingService) : ControllerBase
+    UserSettingService userSettingService,
+    dotBento.Domain.FeatureConfig? features = null) : ControllerBase
 {
     [HttpGet("UsageStats")]
     public async Task<ActionResult<UsageStatsDto>> GetUsageStats()
@@ -32,8 +33,11 @@ public class InformationController(
     }
 
     [HttpGet("Patreon")]
-    public async Task<ActionResult<IEnumerable<PatreonUserDto>>> GetPatreon() =>
-        Ok(await dbContext.Patreons.Select(p => p.ToPatreonUserDto()).ToListAsync());
+    public async Task<ActionResult<IEnumerable<PatreonUserDto>>> GetPatreon()
+    {
+        if (features is { PatreonEnabled: false }) return Ok(Array.Empty<PatreonUserDto>());
+        return Ok(await dbContext.Patreons.Select(p => p.ToPatreonUserDto()).ToListAsync());
+    }
 
     [HttpGet("Leaderboard")]
     public async Task<ActionResult<LeaderboardResponseDto>> GetLeaderboard()

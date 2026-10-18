@@ -111,6 +111,19 @@ commands in the configured target on startup. If changing between guild and
 global registration, remove obsolete registrations from the previous target
 separately.
 
+Patreon features are independently optional and enabled by default:
+
+```dotenv
+Features__PatreonEnabled=false
+```
+
+Set this in both the bot and Web API environments when running them separately.
+It hides Patreon promotions, disables supporter gift/XP bonuses and profile
+emote slots, reports zero active supporters, and returns an empty list from the
+existing Patreon API endpoint. Stored supporter records and emote preferences
+are preserved for re-enabling. The media-server master switch does not affect
+Patreon. Ko-fi links remain independently configurable with `Branding__KoFiUrl`.
+
 For example, a fork can use the following identity while keeping existing
 commands and database contracts:
 

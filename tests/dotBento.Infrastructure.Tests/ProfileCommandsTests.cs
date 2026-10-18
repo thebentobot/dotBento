@@ -451,6 +451,18 @@ public class ProfileCommandsTests
     }
 
     [Fact]
+    public async Task DisabledPatreon_OmitsProfileEmotesWithoutLookingUpSupporters()
+    {
+        var config = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["Bot:BaseServerId"] = "0" }).Build();
+        var users = new UserService(null!, null!, new() { PatreonEnabled = false });
+        var command = new ProfileCommands(null!, null!, null!, null!, users, null!, null!, configuration: config);
+        var emotes = await InvokePrivateInstanceAsync<string[]>(command, "GetUserEmotes", 10L);
+        Assert.Single(emotes);
+        Assert.DoesNotContain(emotes, emote => emote.Contains("<img", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task DisabledSupportBadge_DoesNotLookUpGuildMembership()
     {
         var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().AddInMemoryCollection(

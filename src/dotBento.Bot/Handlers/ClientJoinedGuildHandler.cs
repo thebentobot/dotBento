@@ -82,7 +82,8 @@ public sealed class ClientJoinedGuildHandler : IDisposable
         BotPresentation.AddLink(embed, $"Visit the {brand.Name} website", brand.WebsiteUrl);
         BotPresentation.AddLink(embed, $"Need help or have feedback for {brand.DisplayName}? Join the support server!", brand.SupportUrl);
         BotPresentation.AddLink(embed, $"Want to check out the code for {brand.Name}?", brand.SourceUrl);
-        BotPresentation.AddLink(embed, $"Want additional benefits when using {brand.Name}?", brand.PatreonUrl);
+        if (_presentation.Config.Features.PatreonEnabled)
+            BotPresentation.AddLink(embed, $"Want additional benefits when using {brand.Name}?", brand.PatreonUrl);
         BotPresentation.AddLink(embed, $"Get a {brand.GiftName} {brand.GiftEmoji} for each tip", brand.KoFiUrl);
         BotPresentation.AddLink(embed, $"Vote on top.gg and receive 5 {brand.GiftPluralName} {brand.GiftEmoji}", brand.VoteUrl);
         return Task.FromResult(responseToGuildOwner);

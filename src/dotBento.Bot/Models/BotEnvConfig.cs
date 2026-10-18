@@ -7,7 +7,7 @@ public sealed class BotEnvConfig
     public dotBento.Domain.Branding Branding { get; set; } = new();
     public ThemeConfig Theme { get; set; } = new();
     public PaginationConfig Pagination { get; set; } = new();
-    public FeatureConfig Features { get; set; } = new();
+    public dotBento.Domain.FeatureConfig Features { get; set; } = new();
     public bool MediaEnabled => MediaServer.Enabled && Features.MediaEnabled;
     public bool HoroscopeEnabled => MediaServer.Enabled && Features.HoroscopeEnabled;
     public bool KeepGuildDataOnLeave => Bot.KeepGuildDataOnLeave ??

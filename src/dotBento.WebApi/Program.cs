@@ -21,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 var configuration = builder.Configuration;
+builder.Services.AddSingleton(configuration.GetSection("Features").Get<dotBento.Domain.FeatureConfig>() ?? new());
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
