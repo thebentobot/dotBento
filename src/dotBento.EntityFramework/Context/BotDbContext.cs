@@ -30,6 +30,8 @@ public partial class BotDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserOptOut> UserOptOuts { get; set; }
+
     public virtual DbSet<UserSetting> UserSettings { get; set; }
 
     public virtual DbSet<Weather> Weathers { get; set; }
@@ -469,6 +471,22 @@ public partial class BotDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("username");
             entity.Property(e => e.Xp).HasColumnName("xp");
+        });
+
+        modelBuilder.Entity<UserOptOut>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("useroptout_pk");
+
+            entity.ToTable("userOptOut");
+
+            entity.HasIndex(e => e.UserId, "useroptout_userid_uindex").IsUnique();
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("userID");
+            entity.Property(e => e.OptedOutAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("optedOutAt");
         });
 
         modelBuilder.Entity<UserSetting>(entity =>

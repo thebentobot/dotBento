@@ -200,6 +200,7 @@ public sealed class Startup
             .AddSingleton<UserService>()
             .AddSingleton<InteractiveService>()
             .AddSingleton<GuildService>()
+            .AddSingleton<PrivacyService>()
             .AddSingleton<SupporterService>()
             .AddSingleton<BackgroundService>()
             .AddSingleton<MessageHandler>()

@@ -42,7 +42,8 @@ public sealed class UserSlashCommand(InteractiveService interactiveService, User
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
-    [SlashCommand("settings", "View and manage your personal settings")]
+    [SlashCommand("settings", "View, manage, or delete your personal settings and data")]
+    [OptOutExempt]
     public async Task SettingsCommand() =>
         await Context.SendResponse(interactiveService,
             await settingsCommand.GetUserSettingsAsync((long)Context.User.Id),

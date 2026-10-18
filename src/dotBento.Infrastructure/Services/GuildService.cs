@@ -10,7 +10,8 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Services;
 
-public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache)
+public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory, IMemoryCache cache,
+    PrivacyService? privacyService = null)
 {
     public async Task<Maybe<Guild>> GetGuildAsync(ulong discordGuildId)
     {
@@ -93,6 +94,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
 
     internal async Task AddGuildMemberAsync(ulong guildId, ulong userId, string? avatarUrl)
     {
+        if (privacyService is not null && await privacyService.IsUserOptedOutAsync((long)userId))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var guildMember = await db.GuildMembers
             .AsQueryable()

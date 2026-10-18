@@ -9,7 +9,7 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class SettingsCommand(GuildSettingService guildSettingService, UserSettingService userSettingService, BotPresentation? presentation = null)
+public sealed class SettingsCommand(GuildSettingService guildSettingService, UserSettingService userSettingService, BotPresentation? presentation = null, PrivacyService? privacyService = null)
 {
     private readonly BotPresentation _presentation = presentation ?? new();
 
@@ -51,6 +51,9 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
     public async Task<ResponseModel> GetUserSettingsAsync(long userId)
     {
+        if (privacyService is not null && await privacyService.IsUserOptedOutAsync(userId))
+            return BuildOptedOutResponse();
+
         var setting = await userSettingService.GetOrCreateUserSettingAsync(userId);
         var website = _presentation.HasWebsiteLeaderboard ? $" and {WebsiteLink()}" : string.Empty;
 
@@ -78,9 +81,100 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithCustomId("user-settings:global-leaderboard")
             .WithStyle(setting.ShowOnGlobalLeaderboard ? ButtonStyle.Danger : ButtonStyle.Success);
 
+        var deleteDataButton = new ButtonBuilder()
+            .WithLabel("Delete My Data")
+            .WithCustomId("user-settings:delete-data")
+            .WithStyle(ButtonStyle.Danger);
+
         response.Components = new ComponentBuilder()
             .WithButton(hideCommandsButton)
-            .WithButton(globalLeaderboardButton);
+            .WithButton(globalLeaderboardButton)
+            .WithButton(deleteDataButton);
+
+        return response;
+    }
+
+    /// <summary>
+    /// Shows the confirmation step for deleting all of a user's data and opting them out.
+    /// </summary>
+    public ResponseModel GetDeleteDataConfirmationAsync()
+    {
+        var brand = _presentation.Brand;
+        var response = new ResponseModel { ResponseType = ResponseType.Embed };
+
+        response.Embed
+            .WithTitle("Delete your data")
+            .WithDescription(
+                $"Leaving **every** server that has {brand.DisplayName}, or kicking {brand.DisplayName} from a server, " +
+                "already deletes all of your data automatically once you share no server with the bot.\n\n" +
+                "You can also delete everything right now and opt out permanently. This removes everything " +
+                $"{brand.DisplayName} stores about you (profile, XP and levels, Last.fm, horoscope, weather, reminders, " +
+                "tags, RPS stats, Patreon link and settings) and stops anything being stored again.\n\n" +
+                "**To honour the opt-out, " + brand.DisplayName + " must keep one thing: your Discord user ID** " +
+                "on a small suppression list. Nothing else is stored. You can opt back in at any time with `/user settings`.")
+            .WithColor(_presentation.Warning);
+
+        var confirmButton = new ButtonBuilder()
+            .WithLabel("Delete & Opt Out")
+            .WithCustomId("user-settings:delete-data:confirm")
+            .WithStyle(ButtonStyle.Danger);
+
+        var cancelButton = new ButtonBuilder()
+            .WithLabel("Cancel")
+            .WithCustomId("user-settings:root")
+            .WithStyle(ButtonStyle.Secondary);
+
+        response.Components = new ComponentBuilder()
+            .WithButton(confirmButton)
+            .WithButton(cancelButton);
+
+        return response;
+    }
+
+    /// <summary>
+    /// Deletes all of the user's data and records a persistent opt-out.
+    /// </summary>
+    public async Task<ResponseModel> DeleteUserDataAsync(long userId)
+    {
+        if (privacyService is not null)
+            await privacyService.OptOutAndDeleteAsync(userId);
+
+        return BuildOptedOutResponse(deleted: true);
+    }
+
+    /// <summary>
+    /// Removes the opt-out so the user can use Bento and have data stored again.
+    /// </summary>
+    public async Task<ResponseModel> OptBackInAsync(long userId)
+    {
+        if (privacyService is not null)
+            await privacyService.RemoveOptOutAsync(userId);
+
+        return await GetUserSettingsAsync(userId);
+    }
+
+    private ResponseModel BuildOptedOutResponse(bool deleted = false)
+    {
+        var brand = _presentation.Brand;
+        var response = new ResponseModel { ResponseType = ResponseType.Embed };
+
+        response.Embed
+            .WithTitle(deleted ? "Your data has been deleted" : "You are opted out")
+            .WithDescription(
+                deleted
+                    ? $"All of your data has been deleted and you are now opted out of {brand.DisplayName}. " +
+                      "Nothing will be stored about you, and commands are unavailable."
+                    : $"You are currently opted out of {brand.DisplayName}. Nothing is stored about you and commands are unavailable.")
+            .AddField("What is stored",
+                "Only your Discord user ID, kept so the opt-out can be honoured.")
+            .WithColor(_presentation.Success);
+
+        var optInButton = new ButtonBuilder()
+            .WithLabel("Opt Back In")
+            .WithCustomId("user-settings:opt-in")
+            .WithStyle(ButtonStyle.Success);
+
+        response.Components = new ComponentBuilder().WithButton(optInButton);
 
         return response;
     }

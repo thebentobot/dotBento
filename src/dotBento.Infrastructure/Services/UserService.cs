@@ -11,7 +11,8 @@ using Microsoft.Extensions.Caching.Memory;
 namespace dotBento.Infrastructure.Services;
 
 public sealed class UserService(IMemoryCache cache,
-    IDbContextFactory<BotDbContext> contextFactory, FeatureConfig? features = null)
+    IDbContextFactory<BotDbContext> contextFactory, FeatureConfig? features = null,
+    PrivacyService? privacyService = null)
 {
     private readonly bool _patreonEnabled = features?.PatreonEnabled ?? true;
 
@@ -121,6 +122,9 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task CreateOrAddUserToCache(IUser discordUser)
     {
+        if (privacyService is not null && await privacyService.IsUserOptedOutAsync((long)discordUser.Id))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var databaseUser = await db.Users
             .AsQueryable()
@@ -225,6 +229,9 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
     {
+        if (privacyService is not null && await privacyService.IsUserOptedOutAsync((long)userId))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()
