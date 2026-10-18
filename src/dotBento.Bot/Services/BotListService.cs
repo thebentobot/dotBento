@@ -11,11 +11,34 @@ public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> option
 {
     private readonly BotEnvConfig _config = options.Value;
 
+    internal static Dictionary<string, object> ConfiguredProviders(BotListConfig? config)
+    {
+        var providers = new Dictionary<string, object>();
+        if (config is null) return providers;
+        foreach (var (name, token) in new[]
+        {
+            ("top.gg", config.TopGgApiToken),
+            ("discord.bots.gg", config.DiscordBotsGgToken),
+            ("discordbotlist.com", config.DiscordBotListToken)
+        })
+            if (!string.IsNullOrWhiteSpace(token)) providers.Add(name, token);
+        return providers;
+    }
+
+    internal static Dictionary<string, object> BuildPayload(int guildCount, ulong botId, Dictionary<string, object> providers)
+    {
+        var payload = new Dictionary<string, object>(providers)
+        {
+            ["server_count"] = guildCount,
+            ["bot_id"] = botId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        };
+        return payload;
+    }
+
     public async Task UpdateBotLists(int guildCount)
     {
-        if (string.IsNullOrEmpty(_config.BotLists?.TopGgApiToken) ||
-            string.IsNullOrEmpty(_config.BotLists?.DiscordBotListToken) ||
-            string.IsNullOrEmpty(_config.BotLists?.DiscordBotsGgToken))
+        var providers = ConfiguredProviders(_config.BotLists);
+        if (providers.Count == 0)
         {
             return;
         }
@@ -23,7 +46,7 @@ public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> option
         var currentProcess = Process.GetCurrentProcess();
         var startTime = DateTime.Now - currentProcess.StartTime;
 
-        if (startTime.Minutes <= 30)
+        if (startTime.TotalMinutes <= 30)
         {
             Log.Information($"Skipping {nameof(UpdateBotLists)} because bot only just started");
             return;
@@ -32,14 +55,7 @@ public class BotListService(HttpClient httpClient, IOptions<BotEnvConfig> option
         Log.Information($"{nameof(UpdateBotLists)}: Starting");
         const string requestUri = "https://botblock.org/api/count";
 
-        var postData = new Dictionary<string, object>
-        {
-            { "server_count",  guildCount },
-            { "bot_id", client.CurrentUser.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) },
-            { "top.gg", _config.BotLists.TopGgApiToken },
-            { "discord.bots.gg", _config.BotLists.DiscordBotsGgToken },
-            { "discordbotlist.com", _config.BotLists.DiscordBotListToken },
-        };
+        var postData = BuildPayload(guildCount, client.CurrentUser.Id, providers);
 
         var json = JsonSerializer.Serialize(postData);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
