@@ -32,6 +32,9 @@ public sealed class BotEnvConfig
 
     public MediaServerConfig MediaServer { get; set; } = new MediaServerConfig();
 
+    public dotBento.Domain.CacheConfig Cache { get; set; } = new();
+    public dotBento.Domain.RemoteLoggingConfig Logging { get; set; } = new();
+
     public string LokiUrl { get; set; } = string.Empty;
 }
 

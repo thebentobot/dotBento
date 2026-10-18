@@ -23,21 +23,24 @@ builder.Configuration.AddEnvironmentVariables();
 var configuration = builder.Configuration;
 builder.Services.AddSingleton(configuration.GetSection("Features").Get<dotBento.Domain.FeatureConfig>() ?? new());
 
-Log.Logger = new LoggerConfiguration()
+var loggerConfig = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
     .ReadFrom.Configuration(configuration)
     .WriteTo.Console(new RenderedCompactJsonFormatter())
-    .WriteTo.GrafanaLoki(
-        configuration["LokiUrl"] ?? "http://localhost:3100",
-        labels: new[]
-        {
-            new LokiLabel { Key = "app", Value = "dotbento-webapi" },
-            new LokiLabel { Key = "environment", Value = configuration["Environment"] ?? "development" }
-        })
     .Enrich.WithExceptionDetails()
-    .Enrich.WithProperty("Environment", configuration["Environment"] ?? "unknown")
-    .CreateLogger();
+    .Enrich.WithProperty("Environment", configuration["Environment"] ?? "unknown");
+var remoteLogging = configuration.GetSection("Logging").Get<dotBento.Domain.RemoteLoggingConfig>() ?? new();
+var lokiUrl = configuration["LokiUrl"] ?? "http://localhost:3100";
+if (remoteLogging.LokiEnabled && !string.IsNullOrWhiteSpace(lokiUrl))
+{
+    loggerConfig.WriteTo.GrafanaLoki(lokiUrl, labels:
+    [
+        new LokiLabel { Key = "app", Value = "dotbento-webapi" },
+        new LokiLabel { Key = "environment", Value = configuration["Environment"] ?? "development" }
+    ]);
+}
+Log.Logger = loggerConfig.CreateLogger();
 
 builder.Host.UseSerilog();
 
@@ -54,7 +57,7 @@ if (!string.IsNullOrWhiteSpace(distributedCacheConnection))
     builder.Services.AddStackExchangeRedisCache(opts =>
     {
         opts.Configuration = distributedCacheConnection;
-        opts.InstanceName = "dotbento:";
+        opts.InstanceName = configuration.GetSection("Cache").Get<dotBento.Domain.CacheConfig>()?.Prefix ?? "dotbento:";
     });
 }
 else
