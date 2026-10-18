@@ -103,6 +103,14 @@ public sealed class CommandModuleMetadataTests
     }
 
     [Fact]
+    public void UserSlashCommand_SettingsIsExemptFromOptOutGate()
+    {
+        var settings = Method<UserSlashCommand>(nameof(UserSlashCommand.SettingsCommand));
+
+        Assert.NotNull(settings.GetCustomAttribute<OptOutExempt>());
+    }
+
+    [Fact]
     public void ServerSlashCommand_ExposesSettingsWithoutCommandsSubgroup()
     {
         var group = Attribute<InteractionGroupAttribute>(typeof(ServerSlashCommand));

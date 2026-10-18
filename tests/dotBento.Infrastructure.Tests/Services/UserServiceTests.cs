@@ -150,6 +150,48 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task CreateOrAddUserToCache_SkipsOptedOutUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var privacy = new PrivacyService(factory, cache);
+        await privacy.OptOutAndDeleteAsync(10);
+        var service = new UserService(cache, factory, null, privacy);
+        var discordUser = new Mock<IUser>();
+        discordUser.SetupGet(x => x.Id).Returns(10);
+        discordUser.SetupGet(x => x.Username).Returns("DiscordUser");
+        discordUser.SetupGet(x => x.Discriminator).Returns("1234");
+        discordUser.Setup(x => x.GetAvatarUrl(ImageFormat.Auto, 512)).Returns("avatar.png");
+
+        await service.CreateOrAddUserToCache(discordUser.Object);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.False(await assertDb.Users.AnyAsync(u => u.UserId == 10, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AddExperienceAsync_SkipsOptedOutUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(User(10));
+            db.GuildMembers.Add(new GuildMember { GuildId = 100, UserId = 10, Level = 1, Xp = 0 });
+            db.UserOptOuts.Add(new UserOptOut { UserId = 10, OptedOutAt = DateTime.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var privacy = new PrivacyService(factory, cache);
+        var service = new UserService(cache, factory, null, privacy);
+
+        await service.AddExperienceAsync(10, 100, Maybe<Patreon>.None);
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var user = await assertDb.Users.SingleAsync(u => u.UserId == 10, TestContext.Current.CancellationToken);
+        Assert.Equal(0, user.Xp);
+    }
+
+    [Fact]
     public async Task UpdateUserAvatarAndUsername_UpdateExistingUserAndIgnoreMissingUser()
     {
         var factory = new InfrastructureTestDbFactory();

@@ -3074,7 +3074,7 @@
         "settings"
       ],
       "invocation": "/user settings",
-      "description": "View and manage your personal settings",
+      "description": "View, manage, or delete your personal settings and data",
       "groupPath": [
         {
           "name": "user",

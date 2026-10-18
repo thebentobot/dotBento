@@ -17,7 +17,7 @@ public sealed class BentoCommand(
 {
     private readonly BotPresentation _presentation = presentation ?? new();
 
-    public async Task<ResponseModel> GiveBentoCommand(SocketUser sender, SocketUser receiver)
+    public async Task<ResponseModel> GiveBentoCommand(IUser sender, IUser receiver)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         if (sender.Id == receiver.Id)
@@ -30,7 +30,12 @@ public sealed class BentoCommand(
             return embed;
         }
 
-        await userService.CreateOrAddUserToCache(sender);
+        var senderResult = await userService.CreateOrAddUserToCache(sender);
+        if (senderResult.IsFailure)
+            return GiftUnavailable(senderResult.Error);
+        var receiverResult = await userService.CreateOrAddUserToCache(receiver);
+        if (receiverResult.IsFailure)
+            return GiftUnavailable("This recipient is unavailable to receive gifts.");
         var bentoDataSender = await bentoService.FindBentoAsync((long)sender.Id);
         DateTime then;
         if (bentoDataSender.HasNoValue)
@@ -57,7 +62,6 @@ public sealed class BentoCommand(
             return embed;
         }
         
-        await userService.CreateOrAddUserToCache(receiver);
         var (hasValue, patreon) = await supporterService.GetPatreonAsync((long)receiver.Id);
         var amount = 1;
         var bentoReceiverText = $"{receiver.Mention}";
@@ -93,6 +97,17 @@ public sealed class BentoCommand(
                 $"{sender.Mention} just gave **{amount} {_presentation.Brand.Gift(amount)} to {bentoReceiverText}**\n{receiver.Mention} has received **{bentoDataReceiver.Bento1} {_presentation.Brand.Gift(bentoDataReceiver.Bento1)}** over time 😋\n{sender.Mention} can serve a {_presentation.Brand.GiftName} again <t:{new DateTimeOffset(now.AddHours(12)).ToUnixTimeSeconds()}:R>");
         
         return embed;
+    }
+
+    private ResponseModel GiftUnavailable(string message)
+    {
+        var response = new ResponseModel
+        {
+            ResponseType = ResponseType.Embed,
+            CommandResponse = dotBento.Domain.Enums.CommandResponse.WrongInput
+        };
+        response.Embed.WithColor(_presentation.Error).WithDescription(message);
+        return response;
     }
 
     public async Task<ResponseModel> CheckBentoCommand(SocketUser user)

@@ -11,7 +11,8 @@ using Microsoft.Extensions.Caching.Memory;
 namespace dotBento.Infrastructure.Services;
 
 public sealed class UserService(IMemoryCache cache,
-    IDbContextFactory<BotDbContext> contextFactory, FeatureConfig? features = null)
+    IDbContextFactory<BotDbContext> contextFactory, FeatureConfig? features = null,
+    PrivacyService? privacyService = null)
 {
     private readonly bool _patreonEnabled = features?.PatreonEnabled ?? true;
 
@@ -114,14 +115,18 @@ public sealed class UserService(IMemoryCache cache,
     }
 
     [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; IUser overload covers the behavior.")]
-    public async Task CreateOrAddUserToCache(SocketUser discordUser)
+    public async Task<Result> CreateOrAddUserToCache(SocketUser discordUser)
     {
-        await CreateOrAddUserToCache((IUser)discordUser);
+        return await CreateOrAddUserToCache((IUser)discordUser);
     }
 
-    public async Task CreateOrAddUserToCache(IUser discordUser)
+    public async Task<Result> CreateOrAddUserToCache(IUser discordUser)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
+        await using var userLock = await UserDataLock.AcquireAsync(db, (long)discordUser.Id);
+        // Read suppression inside the lock, never from a potentially stale cache.
+        if (await db.UserOptOuts.AnyAsync(o => o.UserId == (long)discordUser.Id))
+            return Result.Failure("This user has opted out of data storage.");
         var databaseUser = await db.Users
             .AsQueryable()
             .FirstOrDefaultAsync(f => f.UserId == (long)discordUser.Id);
@@ -142,13 +147,15 @@ public sealed class UserService(IMemoryCache cache,
             await db.SaveChangesAsync();
         }
         
+        await userLock.CommitAsync();
         await AddUserToCache(databaseUser);
+        return Result.Success();
     }
     
     [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; IUser overload covers the behavior.")]
-    public async Task CreateOrAddUserToCache(SocketGuildUser discordUser)
+    public async Task<Result> CreateOrAddUserToCache(SocketGuildUser discordUser)
     {
-        await CreateOrAddUserToCache((IUser)discordUser);
+        return await CreateOrAddUserToCache((IUser)discordUser);
     }
 
     [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
@@ -225,6 +232,9 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task AddExperienceAsync(ulong userId, ulong guildId, Maybe<Patreon> patreonUser)
     {
+        if (privacyService is not null && await privacyService.IsUserOptedOutAsync((long)userId))
+            return;
+
         await using var db = await contextFactory.CreateDbContextAsync();
         var user = await db.Users
             .AsQueryable()

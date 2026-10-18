@@ -27,6 +27,7 @@ public sealed class InteractionHandler : IDisposable
     private readonly UserService _userService;
     private readonly GuildService _guildService;
     private readonly GuildSettingService _guildSettingService;
+    private readonly PrivacyService? _privacyService;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
@@ -35,7 +36,8 @@ public sealed class InteractionHandler : IDisposable
         UserService userService,
         GuildService guildService,
         GuildSettingService guildSettingService,
-        BotPresentation? presentation = null)
+        BotPresentation? presentation = null,
+        PrivacyService? privacyService = null)
     {
         _client = client;
         _presentation = presentation ?? new();
@@ -45,6 +47,7 @@ public sealed class InteractionHandler : IDisposable
         _userService = userService;
         _guildService = guildService;
         _guildSettingService = guildSettingService;
+        _privacyService = privacyService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
         _client.SelectMenuExecuted += SelectMenuExecuted;
@@ -329,8 +332,20 @@ public sealed class InteractionHandler : IDisposable
         Statistics.ButtonExecuted.Inc();
     }
     
+    private async Task<bool> IsOptedOutAsync(ulong userId) =>
+        _privacyService is not null && await _privacyService.IsUserOptedOutAsync((long)userId);
+
     private async Task<bool> CheckAttributes(SocketInteractionContext context, ICommandInfo command)
     {
+        if (!command.Attributes.OfType<OptOutExempt>().Any() && await IsOptedOutAsync(context.User.Id))
+        {
+            await context.Interaction.RespondAsync(
+                "You have opted out of Bento, so your data is not stored and commands are unavailable. " +
+                "Use `/user settings` to opt back in.",
+                ephemeral: true);
+            return false;
+        }
+
         if (command.Attributes.OfType<GuildOnly>().Any() && context.Guild == null)
         {
             await context.Interaction.RespondAsync("This command is not supported in DMs.");

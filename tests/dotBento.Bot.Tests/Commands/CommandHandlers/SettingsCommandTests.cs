@@ -3,6 +3,7 @@ using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Enums;
 using dotBento.EntityFramework.Entities;
 using dotBento.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -318,6 +319,107 @@ public sealed class SettingsCommandTests
         Assert.All(embed.Fields, field => Assert.True(field.Value.Length <= 1024));
         Assert.True(textLength <= 6000);
         Assert.All(embed.Fields, field => Assert.Contains("more", field.Value));
+    }
+
+    [Fact]
+    public async Task GetUserSettingsAsync_IncludesDeleteDataButton()
+    {
+        var factory = new TestDbFactory();
+        var command = CreateCommandWithPrivacy(factory, CreatePrivacyService(factory));
+
+        var response = await command.GetUserSettingsAsync(10);
+
+        Assert.Contains(Buttons(response.Components),
+            button => button.CustomId == "user-settings:delete-data");
+    }
+
+    [Fact]
+    public void GetDeleteDataConfirmationAsync_ExplainsOptOutAndKeepsOnlyUserId()
+    {
+        var factory = new TestDbFactory();
+        var command = CreateCommandWithPrivacy(factory, CreatePrivacyService(factory));
+
+        var response = command.GetDeleteDataConfirmationAsync();
+        var embed = response.Embed.Build();
+
+        Assert.Equal("Delete your data", embed.Title);
+        Assert.Contains("Discord user ID", embed.Description);
+        Assert.Contains("kick", embed.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Collection(
+            Buttons(response.Components),
+            button => Assert.Equal("user-settings:delete-data:confirm", button.CustomId),
+            button => Assert.Equal("user-settings:root", button.CustomId));
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_OptsOutAndDeletesUserData()
+    {
+        var factory = new TestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.Users.Add(new User { UserId = 10, Username = "User", Discriminator = "0001", Level = 1, Xp = 0 });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommandWithPrivacy(factory, CreatePrivacyService(factory));
+
+        var response = await command.DeleteUserDataAsync(10);
+
+        Assert.Equal("Your data has been deleted", response.Embed.Build().Title);
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.True(await assertDb.UserOptOuts.AnyAsync(o => o.UserId == 10, TestContext.Current.CancellationToken));
+        Assert.False(await assertDb.Users.AnyAsync(u => u.UserId == 10, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task GetUserSettingsAsync_WhenOptedOut_ShowsOptInView()
+    {
+        var factory = new TestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.UserOptOuts.Add(new UserOptOut { UserId = 10, OptedOutAt = DateTime.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommandWithPrivacy(factory, CreatePrivacyService(factory));
+
+        var response = await command.GetUserSettingsAsync(10);
+
+        Assert.Equal("You are opted out", response.Embed.Build().Title);
+        var button = Assert.Single(Buttons(response.Components));
+        Assert.Equal("user-settings:opt-in", button.CustomId);
+    }
+
+    [Fact]
+    public async Task OptBackInAsync_RemovesOptOutWithoutCreatingSettingsForDeletedUser()
+    {
+        var factory = new TestDbFactory();
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.UserOptOuts.Add(new UserOptOut { UserId = 10, OptedOutAt = DateTime.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var command = CreateCommandWithPrivacy(factory, CreatePrivacyService(factory));
+
+        var response = await command.OptBackInAsync(10);
+
+        Assert.Equal("You are opted back in", response.Embed.Build().Title);
+        Assert.Contains("/user settings", response.Embed.Build().Description);
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.False(await assertDb.UserOptOuts.AnyAsync(o => o.UserId == 10, TestContext.Current.CancellationToken));
+        Assert.Empty(assertDb.UserSettings);
+        Assert.Empty(assertDb.Users);
+    }
+
+    private static PrivacyService CreatePrivacyService(TestDbFactory factory) =>
+        new(factory, new MemoryCache(new MemoryCacheOptions()));
+
+    private static SettingsCommand CreateCommandWithPrivacy(TestDbFactory factory, PrivacyService privacy)
+    {
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        return new SettingsCommand(
+            new GuildSettingService(factory, memoryCache),
+            new UserSettingService(factory, distributedCache),
+            null, privacy);
     }
 
     private static IReadOnlyList<ButtonBuilder> Buttons(ComponentBuilder? components)

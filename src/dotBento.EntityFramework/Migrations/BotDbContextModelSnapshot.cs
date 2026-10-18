@@ -17,7 +17,7 @@ namespace dotBento.EntityFramework.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -161,6 +161,27 @@ namespace dotBento.EntityFramework.Migrations
                         .IsUnique();
 
                     b.ToTable("guildSetting", (string)null);
+                });
+
+            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("userID");
+
+                    b.Property<string>("Sign")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("sign");
+
+                    b.HasKey("UserId")
+                        .HasName("horoscope_pk");
+
+                    b.HasIndex(new[] { "UserId" }, "horoscope_userid_uindex")
+                        .IsUnique();
+
+                    b.ToTable("horoscope", (string)null);
                 });
 
             modelBuilder.Entity("dotBento.EntityFramework.Entities.Lastfm", b =>
@@ -622,27 +643,6 @@ namespace dotBento.EntityFramework.Migrations
                     b.ToTable("tag", (string)null);
                 });
 
-            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
-                {
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("userID");
-
-                    b.Property<string>("Sign")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("character varying(11)")
-                        .HasColumnName("sign");
-
-                    b.HasKey("UserId")
-                        .HasName("horoscope_pk");
-
-                    b.HasIndex(new[] { "UserId" }, "horoscope_userid_uindex")
-                        .IsUnique();
-
-                    b.ToTable("horoscope", (string)null);
-                });
-
             modelBuilder.Entity("dotBento.EntityFramework.Entities.User", b =>
                 {
                     b.Property<long>("UserId")
@@ -679,16 +679,25 @@ namespace dotBento.EntityFramework.Migrations
                     b.ToTable("user", (string)null);
                 });
 
-            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
+            modelBuilder.Entity("dotBento.EntityFramework.Entities.UserOptOut", b =>
                 {
-                    b.HasOne("dotBento.EntityFramework.Entities.User", "User")
-                        .WithOne("Horoscope")
-                        .HasForeignKey("dotBento.EntityFramework.Entities.Horoscope", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("horoscope_user_userid_fk");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("userID");
 
-                    b.Navigation("User");
+                    b.Property<DateTime>("OptedOutAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("optedOutAt")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("UserId")
+                        .HasName("useroptout_pk");
+
+                    b.HasIndex(new[] { "UserId" }, "useroptout_userid_uindex")
+                        .IsUnique();
+
+                    b.ToTable("userOptOut", (string)null);
                 });
 
             modelBuilder.Entity("dotBento.EntityFramework.Entities.UserSetting", b =>
@@ -782,6 +791,18 @@ namespace dotBento.EntityFramework.Migrations
                         .HasConstraintName("guildsetting_guild_guildid_fk");
 
                     b.Navigation("Guild");
+                });
+
+            modelBuilder.Entity("dotBento.EntityFramework.Entities.Horoscope", b =>
+                {
+                    b.HasOne("dotBento.EntityFramework.Entities.User", "User")
+                        .WithOne("Horoscope")
+                        .HasForeignKey("dotBento.EntityFramework.Entities.Horoscope", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("horoscope_user_userid_fk");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("dotBento.EntityFramework.Entities.Lastfm", b =>

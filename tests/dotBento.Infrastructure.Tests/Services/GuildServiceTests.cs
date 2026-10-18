@@ -117,6 +117,25 @@ public class GuildServiceTests
     }
 
     [Fact]
+    public async Task AddGuildMemberAsync_SkipsOptedOutUser()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.UserOptOuts.Add(new UserOptOut { UserId = 10, OptedOutAt = DateTime.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        var privacy = new PrivacyService(factory, cache);
+        var service = new GuildService(factory, cache, privacy);
+
+        await service.AddGuildMemberAsync(100, 10, "avatar.png");
+
+        await using var assertDb = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.False(await assertDb.GuildMembers.AnyAsync(gm => gm.UserId == 10, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task DeleteGuildMember_RemovesExistingMember()
     {
         var factory = new InfrastructureTestDbFactory();
