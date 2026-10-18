@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.3.0](https://github.com/thebentobot/dotBento/compare/v2.2.0...v2.3.0) (2026-10-18)
+
+
+### Features
+
+* **privacy:** add user data deletion and opt-out ([3e62ae8](https://github.com/thebentobot/dotBento/commit/3e62ae83a04b3e900d8e369cd0afb2ee4b9c7e93))
+* **privacy:** user data deletion and opt-out ([35039cb](https://github.com/thebentobot/dotBento/commit/35039cb1ba236c88303282d6932dda8b2f7711a1))
+
+
+### Bug Fixes
+
+* **privacy:** address opt-in, cache, and suppression races ([51e32ad](https://github.com/thebentobot/dotBento/commit/51e32ad3bcd72ff4ee786fcfe1dd32179aa76953))
+* **privacy:** execute transactions within Npgsql retry strategy ([296514e](https://github.com/thebentobot/dotBento/commit/296514ee9ad7ba68ac7acb57ec5ee2298fff5dd9))
+* **privacy:** execute transactions within Npgsql retry strategy ([f399992](https://github.com/thebentobot/dotBento/commit/f399992dcf12fa5bca6f8bc8e279104b35267694))
+
 ## [2.2.0](https://github.com/thebentobot/dotBento/compare/v2.1.0...v2.2.0) (2026-10-18)
 
 
