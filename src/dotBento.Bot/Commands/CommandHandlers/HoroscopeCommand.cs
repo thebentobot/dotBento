@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
@@ -17,8 +18,10 @@ namespace dotBento.Bot.Commands.CommandHandlers;
 public sealed class HoroscopeCommand(
     HoroscopeService horoscopeService,
     BentoMediaServerService mediaServerService,
-    IOptions<BotEnvConfig> config)
+    IOptions<BotEnvConfig> config, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     private static readonly Color HoroscopePurple = new(0x9266CC);
 
     private static readonly IReadOnlyDictionary<string, ZodiacInfo> ZodiacSigns =
@@ -41,6 +44,8 @@ public sealed class HoroscopeCommand(
     public async Task<ResponseModel> GetHoroscopeAsync(
         long userId, string window, string? sign = null, IChannel? channel = null)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var normalizedWindow = NormalizeWindow(window);
         if (normalizedWindow is null)
             return Error("Invalid horoscope period", "Use yesterday, today, tomorrow, weekly, or monthly.");
@@ -68,8 +73,8 @@ public sealed class HoroscopeCommand(
         {
             return Error(
                 "Horoscope commands are not enabled",
-                "This bot instance has not been configured with bento-media-server. Contact the bot operator.",
-                Color.Orange);
+                "This feature is unavailable on this bot. Contact the bot operator.",
+                _presentation.Warning);
         }
 
         var apiKey = string.IsNullOrWhiteSpace(mediaConfig.ApiKey) ? null : mediaConfig.ApiKey;
@@ -85,6 +90,8 @@ public sealed class HoroscopeCommand(
 
     public async Task<ResponseModel> SaveHoroscopeAsync(long userId, string? sign)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var normalizedSign = NormalizeSign(sign);
         if (normalizedSign is null)
             return InvalidSign(sign ?? string.Empty);
@@ -96,12 +103,16 @@ public sealed class HoroscopeCommand(
 
     public async Task<ResponseModel> RemoveHoroscopeAsync(long userId)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         await horoscopeService.DeleteHoroscopeAsync(userId);
         return await GetSettingsAsync(userId, "Your saved zodiac sign was removed.");
     }
 
     public async Task<ResponseModel> GetSettingsAsync(long userId, string? notice = null)
     {
+        if (!config.Value.HoroscopeEnabled)
+            return _presentation.ErrorEmbed("Horoscope commands are disabled", "This feature has been disabled by the bot operator.");
         var saved = await horoscopeService.GetHoroscopeAsync(userId);
         var sign = saved.HasValue ? NormalizeSign(saved.Value.Sign) : null;
         var current = sign is null ? "No zodiac sign saved." :
@@ -163,7 +174,7 @@ public sealed class HoroscopeCommand(
         _ => false
     };
 
-    private static ResponseModel BuildReading(HoroscopeResponse horoscope, bool includeRomance)
+    private ResponseModel BuildReading(HoroscopeResponse horoscope, bool includeRomance)
     {
         var info = ZodiacSigns[horoscope.Zodiac];
         var temporalLabel = horoscope.Window switch
@@ -218,7 +229,7 @@ public sealed class HoroscopeCommand(
         return new ResponseModel
         {
             ResponseType = ResponseType.Paginator,
-            StaticPaginator = pages.BuildSimpleStaticPaginator(),
+            StaticPaginator = pages.BuildSimpleStaticPaginator(_presentation),
             PaginatorTimeout = TimeSpan.FromMinutes(5)
         };
     }
@@ -247,15 +258,16 @@ public sealed class HoroscopeCommand(
     private static string Truncate(string value, int maxLength) =>
         value.Length <= maxLength ? value : value[..(maxLength - 1)] + "…";
 
-    private static ResponseModel InvalidSign(string sign) => Error(
+    private ResponseModel InvalidSign(string sign) => Error(
         "Invalid zodiac sign",
         $"`{sign}` is not a valid zodiac sign. Choose one in `/horoscope settings` or the reading command's sign dropdown.");
 
-    private static ResponseModel Error(string title, string description, Color? color = null) => new()
+    private ResponseModel Error(string title, string description, Color? color = null) => new()
     {
         ResponseType = ResponseType.Embed,
+        CommandResponse = dotBento.Domain.Enums.CommandResponse.Error,
         Embed = new EmbedBuilder()
-            .WithColor(color ?? DiscordConstants.ErrorRed)
+            .WithColor(color ?? _presentation.Error)
             .WithTitle(title)
             .WithDescription(description)
     };

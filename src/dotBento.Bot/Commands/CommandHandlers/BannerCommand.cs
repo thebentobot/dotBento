@@ -9,18 +9,20 @@ using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class BannerCommand(StylingUtilities stylingUtilities)
+public sealed class BannerCommand(StylingUtilities stylingUtilities, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> Command(Maybe<RestUser> user)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
         if (user.HasNoValue)
         {
-            return GenericEmbedService.ErrorEmbed("Error", "That user does not exist.");
+            return _presentation.ErrorEmbed("Error", "That user does not exist.");
         }
         if (user.Value.GetBannerUrl(ImageFormat.Auto, 2048) == null)
         {
-            return GenericEmbedService.ErrorEmbed("Error", "That user does not have a banner.");
+            return _presentation.ErrorEmbed("Error", "That user does not have a banner.");
         }
         var bannerColour = await stylingUtilities.GetDominantColorAsync(user.Value.GetBannerUrl(ImageFormat.WebP, 128));
         embed.Embed.WithTitle($"{StringUtilities.AddPossessiveS(user.Value.GlobalName)} User Profile Banner")

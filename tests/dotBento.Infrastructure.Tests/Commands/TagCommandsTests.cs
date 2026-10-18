@@ -9,6 +9,25 @@ namespace dotBento.Infrastructure.Tests.Commands;
 public sealed class TagCommandsTests
 {
     [Fact]
+    public async Task ConfiguredBrandCommandNames_AreReservedForTagCreationAndRename()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        var command = new TagCommands(new TagService(new MemoryCache(new MemoryCacheOptions()), factory),
+            new dotBento.Domain.Branding { Name = "Mochi", GiftCommandName = "cookie", AboutCommandName = "mochi", GiftLeaderboardName = "cookies" });
+        var created = await command.CreateTagAsync(100, 1, "hello", "content");
+        Assert.True(created.IsSuccess);
+        foreach (var name in new[] { "cookie", "mochi", "cookies" })
+        {
+            var reserved = await command.CreateTagAsync(100, 1, name, "content");
+            Assert.True(reserved.IsFailure);
+            Assert.Contains("Mochi", reserved.Error);
+            Assert.True((await command.RenameTagAsync(100, 1, "hello", name, true)).IsFailure);
+        }
+        await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("hello", Assert.Single(db.Tags).Command);
+    }
+
+    [Fact]
     public async Task CreateTagAsync_ValidatesAndCreatesTags()
     {
         var command = CreateCommand(out var factory);

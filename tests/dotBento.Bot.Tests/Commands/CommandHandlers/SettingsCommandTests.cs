@@ -11,15 +11,74 @@ namespace dotBento.Bot.Tests.Commands.CommandHandlers;
 
 public sealed class SettingsCommandTests
 {
-    private static (SettingsCommand Command, TestDbFactory Factory) CreateCommand()
+    private static (SettingsCommand Command, TestDbFactory Factory) CreateCommand(dotBento.Bot.Services.BotPresentation? presentation = null)
     {
         var factory = new TestDbFactory();
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         var command = new SettingsCommand(
             new GuildSettingService(factory, memoryCache),
-            new UserSettingService(factory, distributedCache));
+            new UserSettingService(factory, distributedCache), presentation);
         return (command, factory);
+    }
+
+    [Fact]
+    public async Task LandingPageWithoutLeaderboard_OmitsWebsiteControls()
+    {
+        var presentation = new dotBento.Bot.Services.BotPresentation(new()
+        {
+            Branding = new() { WebsiteUrl = "https://example.com", LeaderboardUrl = "" }
+        });
+        var (command, _) = CreateCommand(presentation);
+        var server = await command.GetServerSettingsAsync(100, "Guild", null);
+        Assert.DoesNotContain(server.Embed.Fields, f => f.Name == "Website Leaderboard");
+        Assert.Equal("server-settings:commands:overview", Assert.Single(Buttons(server.Components)).CustomId);
+        var user = await command.GetUserSettingsAsync(10);
+        Assert.DoesNotContain("website", Assert.Single(user.Embed.Fields, f => f.Name == "Global Leaderboard").Value.ToString());
+    }
+
+    [Fact]
+    public async Task EmptyWebsite_OmitsWebsiteControlsAndKeepsCommandSettings()
+    {
+        var presentation = new dotBento.Bot.Services.BotPresentation(new() { Branding = new() { WebsiteUrl = "" } });
+        var (command, _) = CreateCommand(presentation);
+        var server = await command.GetServerSettingsAsync(100, "Guild", null);
+        Assert.DoesNotContain(server.Embed.Fields, field => field.Name.Contains("Website", StringComparison.Ordinal));
+        var button = Assert.Single(Buttons(server.Components));
+        Assert.Equal("server-settings:commands:overview", button.CustomId);
+        var user = await command.GetUserSettingsAsync(10);
+        var leaderboard = Assert.Single(user.Embed.Fields, field => field.Name == "Global Leaderboard");
+        Assert.DoesNotContain("website", leaderboard.Value.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("command", leaderboard.Value.ToString());
+    }
+
+    [Fact]
+    public async Task RebrandedPermissionMenu_UsesCanonicalValuesAndHidesDisabledFeatures()
+    {
+        var factory = new TestDbFactory();
+        var memory = new MemoryCache(new MemoryCacheOptions());
+        var guilds = new GuildSettingService(factory, memory);
+        await guilds.SetCommandDisabledAsync(100, "bento", true);
+        await guilds.SetCommandDisabledAsync(100, "media:tiktok", true);
+        var presentation = new dotBento.Bot.Services.BotPresentation(new()
+        {
+            Branding = new() { GiftCommandName = "cookie" },
+            MediaServer = new() { Enabled = false }
+        });
+        var command = new SettingsCommand(guilds,
+            new UserSettingService(factory, new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()))),
+            presentation);
+        var response = await command.GetCommandActionViewAsync(100, "Guild", null,
+            CommandPermissionAction.Enable, 0, ["bento", "ping"]);
+        var option = Assert.Single(SelectMenu(response.Components).Options);
+        Assert.Equal("cookie", option.Label);
+        Assert.Equal("bento", option.Value);
+        var permissions = await guilds.GetCommandPermissionsAsync(100);
+        Assert.Contains("media:tiktok", permissions.Disabled);
+        await command.ApplyCommandPermissionActionAsync(100, option.Value, CommandPermissionAction.Enable);
+        permissions = await guilds.GetCommandPermissionsAsync(100);
+        Assert.DoesNotContain("bento", permissions.Disabled);
+        Assert.Contains("media:tiktok", permissions.Disabled);
     }
 
     [Fact]

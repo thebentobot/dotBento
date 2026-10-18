@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Enums;
@@ -25,7 +26,7 @@ public static class InteractionContextExtensions
             context.User?.Username, context.User?.Id, context.Guild?.Name, context.Guild?.Id, commandResponse, commandName);
     }
 
-    public static async Task HandleCommandException(this IInteractionContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false)
+    public static async Task HandleCommandException(this IInteractionContext context, Exception exception, string? message = null, bool sendReply = true, bool deferFirst = false, BotPresentation? presentation = null)
     {
         var referenceId = StringUtilities.GenerateRandomCode();
 
@@ -49,7 +50,7 @@ public static class InteractionContextExtensions
             }
 
             await context.Interaction.FollowupAsync($"Sorry, something went wrong while trying to process `{commandName}`. Please try again later.\n" +
-                                                    $"*Reference id: `{referenceId}`*\n\n{DiscordConstants.TroubleshootingHelp}", ephemeral: true);
+                                                    $"*Reference id: `{referenceId}`*\n\n{(presentation ?? new()).TroubleshootingHelp}", ephemeral: true);
         }
 
     }

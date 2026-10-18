@@ -1,12 +1,8 @@
 namespace dotBento.Domain;
 
-// TODO Standardise colours here
 public static class Constants
 {
-    public const ulong BotProductionId = 787041583580184609;
-
-    public const ulong BotDevelopmentId = 1193608563050958948;
-
+    public const ulong DefaultSupportGuildId = 714496317522444352;
 
     public static readonly IReadOnlyCollection<string> CommandNames = new List<string>
     {

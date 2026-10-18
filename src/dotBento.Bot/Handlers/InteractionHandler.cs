@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -19,6 +20,7 @@ namespace dotBento.Bot.Handlers;
 public sealed class InteractionHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
+    private readonly BotPresentation _presentation;
     private readonly InteractionService _interactionService;
     private readonly InteractiveService _fergunInteractiveService;
     private readonly IServiceProvider _provider;
@@ -32,9 +34,11 @@ public sealed class InteractionHandler : IDisposable
         InteractiveService fergunInteractiveService,
         UserService userService,
         GuildService guildService,
-        GuildSettingService guildSettingService)
+        GuildSettingService guildSettingService,
+        BotPresentation? presentation = null)
     {
         _client = client;
+        _presentation = presentation ?? new();
         _interactionService = interactionService;
         _provider = provider;
         _fergunInteractiveService = fergunInteractiveService;
@@ -61,6 +65,8 @@ public sealed class InteractionHandler : IDisposable
         using (Statistics.SlashCommandHandlerDuration.NewTimer())
         {
             var context = new SocketInteractionContext(_client, socketInteraction);
+
+            if (await RejectDisabledAsync(socketInteraction)) return;
 
             var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
 
@@ -93,20 +99,20 @@ public sealed class InteractionHandler : IDisposable
                 case InteractionCommandError.ParseFailed:
                 {
                     Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                     embed.Embed.WithTitle("Error: Invalid input")
                         .WithDescription($"{result.ErrorReason}")
-                        .WithColor(Color.Red);
+                        .WithColor(_presentation.Error);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
                 }
                 case InteractionCommandError.BadArgs:
                 {
                     Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                     embed.Embed.WithTitle("Error: Bad argument count")
                         .WithDescription($"You have provided too many or too few arguments for the command `{command.Name}`")
-                        .WithColor(Color.Red);
+                        .WithColor(_presentation.Error);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
                 }
@@ -116,20 +122,20 @@ public sealed class InteractionHandler : IDisposable
                     Log.Error(result is ExecuteResult executeResult ? executeResult.Exception : null,
                         "Slash command {CommandName} failed for user {UserId} in guild {GuildId}: {ErrorReason}",
                         command.Name, context.User.Id, context.Guild?.Id, result.ErrorReason);
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                     embed.Embed.WithTitle("Error: Exception")
-                        .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
-                        .WithColor(Color.Red);
+                        .WithDescription($"An exception occurred while executing the command `{command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{_presentation.TroubleshootingHelp}")
+                        .WithColor(_presentation.Error);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
                 }
                 case InteractionCommandError.Unsuccessful:
                 {
                     Statistics.SlashCommandsFailed.WithLabels(command.Name).Inc();
-                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                    var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                     embed.Embed.WithTitle("Error: Unsuccessful")
-                        .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
-                        .WithColor(Color.Red);
+                        .WithDescription($"The command `{command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{_presentation.TroubleshootingHelp}")
+                        .WithColor(_presentation.Error);
                     await context.SendResponse(_fergunInteractiveService, embed);
                     break;
                 }
@@ -186,40 +192,40 @@ public sealed class InteractionHandler : IDisposable
             case InteractionCommandError.ParseFailed:
             {
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                 embed.Embed.WithTitle("Error: Invalid input")
                     .WithDescription($"{result.ErrorReason}")
-                    .WithColor(Color.Red);
+                    .WithColor(_presentation.Error);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                 embed.Embed.WithTitle("Error: Bad argument count")
                     .WithDescription($"You have provided too many or too few arguments for the command `{commandSearch.Command.Name}`")
-                    .WithColor(Color.Red);
+                    .WithColor(_presentation.Error);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;
             }
             case InteractionCommandError.Exception:
             {
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                 embed.Embed.WithTitle("Error: Exception")
-                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
-                    .WithColor(Color.Red);
+                    .WithDescription($"An exception occurred while executing the command `{commandSearch.Command.Name}`\nDon't worry, the developers have been notified and will fix it as soon as possible.\n\n{_presentation.TroubleshootingHelp}")
+                    .WithColor(_presentation.Error);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
-                var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
+                var embed = new ResponseModel{ ResponseType = ResponseType.Embed, CommandResponse = CommandResponse.Error };
                 embed.Embed.WithTitle("Error: Unsuccessful")
-                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{DiscordConstants.TroubleshootingHelp}")
-                    .WithColor(Color.Red);
+                    .WithDescription($"The command `{commandSearch.Command.Name}` was unsuccessful. Don't worry, the developers have been notified and will fix it as soon as possible.\n\n{_presentation.TroubleshootingHelp}")
+                    .WithColor(_presentation.Error);
                 await context.SendResponse(_fergunInteractiveService, embed);
                 break;
             }
@@ -237,6 +243,19 @@ public sealed class InteractionHandler : IDisposable
                 Statistics.SlashCommandsFailed.WithLabels(commandSearch.Command.Name).Inc();
                 break;
         }
+    }
+
+    private async Task<bool> RejectDisabledAsync(SocketInteraction interaction)
+    {
+        var id = interaction switch
+        {
+            SocketSlashCommand slash => slash.CommandName,
+            SocketMessageComponent component => component.Data.CustomId,
+            _ => string.Empty
+        };
+        if (!CommandModules.IsDisabled(id, _presentation.Config)) return false;
+        await interaction.RespondAsync("This feature has been disabled by the bot operator.", ephemeral: true);
+        return true;
     }
 
     private async Task EnsureGuildAndUserExists(SocketInteractionContext context)
@@ -265,6 +284,7 @@ public sealed class InteractionHandler : IDisposable
 
     private async Task SelectMenuExecuted(SocketInteraction socketInteraction)
     {
+        if (await RejectDisabledAsync(socketInteraction)) return;
         Statistics.DiscordEvents.WithLabels(nameof(SelectMenuExecuted)).Inc();
 
         var context = new SocketInteractionContext(_client, socketInteraction);
@@ -285,6 +305,7 @@ public sealed class InteractionHandler : IDisposable
 
     private async Task ButtonExecuted(SocketMessageComponent socketMessageComponent)
     {
+        if (await RejectDisabledAsync(socketMessageComponent)) return;
         Statistics.DiscordEvents.WithLabels(nameof(ButtonExecuted)).Inc();
 
         var context = new SocketInteractionContext(_client, socketMessageComponent);
@@ -328,7 +349,7 @@ public sealed class InteractionHandler : IDisposable
         if (permissions.Disabled.Contains(commandId, StringComparer.OrdinalIgnoreCase))
         {
             await context.Interaction.RespondAsync(
-                $"The command `{commandId}` has been disabled in this server.", ephemeral: true);
+                $"The command `{_presentation.Brand.CommandPath(commandId).Replace(':', ' ')}` has been disabled in this server.", ephemeral: true);
             return false;
         }
 
@@ -338,7 +359,7 @@ public sealed class InteractionHandler : IDisposable
             if (!HasManageGuildPermission(user?.GuildPermissions))
             {
                 await context.Interaction.RespondAsync(
-                    $"The command `{commandId}` can only be used by members with the **Manage Server** permission.", ephemeral: true);
+                    $"The command `{_presentation.Brand.CommandPath(commandId).Replace(':', ' ')}` can only be used by members with the **Manage Server** permission.", ephemeral: true);
                 return false;
             }
         }

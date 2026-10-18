@@ -4,16 +4,20 @@ using Discord.WebSocket;
 using dotBento.Bot.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
+using dotBento.Bot.Models;
+using dotBento.Bot.Services;
+using dotBento.Bot.Utilities;
 
 namespace dotBento.CommandDocs;
 
 public static class CommandManifestBuilder
 {
-    public static async Task<CommandManifest> BuildAsync()
+    public static async Task<CommandManifest> BuildAsync(BotEnvConfig? config = null)
     {
+        config ??= new();
         using var client = new DiscordSocketClient();
         using var interactions = new InteractionService(client);
-        await interactions.AddModulesAsync(typeof(dotBento.Bot.Program).Assembly, MetadataServiceProvider.Instance);
+        await CommandModules.LoadAsync(interactions, new MetadataServiceProvider(new BotPresentation(config)), config);
 
         var commands = interactions.SlashCommands
             .Select(BuildCommand)
@@ -43,7 +47,7 @@ public static class CommandManifestBuilder
             .ToArray();
 
         return new CommandEntry(
-            string.Join(':', path),
+            SlashCommandIdUtilities.ResolveCommandId(command),
             path,
             "/" + string.Join(' ', path),
             command.Description,
@@ -105,15 +109,15 @@ public static class CommandManifestBuilder
     // Discord.Net constructs modules while reflecting them. The exporter never executes
     // a command, so inert uninitialised dependencies are sufficient and keep this tool
     // independent from databases, API keys, and the bot host.
-    private sealed class MetadataServiceProvider : IServiceProvider, IServiceScopeFactory, IServiceScope
+    private sealed class MetadataServiceProvider(BotPresentation presentation) : IServiceProvider, IServiceScopeFactory, IServiceScope
     {
-        public static readonly MetadataServiceProvider Instance = new();
         public IServiceProvider ServiceProvider => this;
         public IServiceScope CreateScope() => this;
         public void Dispose() { }
 
         public object? GetService(Type serviceType)
         {
+            if (serviceType == typeof(BotPresentation)) return presentation;
             if (serviceType == typeof(IServiceProvider) || serviceType == typeof(IServiceScopeFactory))
                 return this;
             return serviceType.IsValueType || serviceType.IsInterface || serviceType.IsAbstract

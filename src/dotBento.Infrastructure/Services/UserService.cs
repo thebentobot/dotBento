@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.WebSocket;
+using dotBento.Domain;
 using dotBento.EntityFramework.Context;
 using dotBento.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +11,10 @@ using Microsoft.Extensions.Caching.Memory;
 namespace dotBento.Infrastructure.Services;
 
 public sealed class UserService(IMemoryCache cache,
-    IDbContextFactory<BotDbContext> contextFactory)
+    IDbContextFactory<BotDbContext> contextFactory, FeatureConfig? features = null)
 {
+    private readonly bool _patreonEnabled = features?.PatreonEnabled ?? true;
+
     public async Task<Maybe<User>> GetUserFromDatabaseAsync(ulong discordUserId)
     {
         await using var db = await contextFactory.CreateDbContextAsync();
@@ -194,6 +197,7 @@ public sealed class UserService(IMemoryCache cache,
 
     public async Task<Maybe<Patreon>> GetPatreonUserAsync(ulong userId)
     {
+        if (!_patreonEnabled) return Maybe<Patreon>.None;
         await using var db = await contextFactory.CreateDbContextAsync();
         var patreon = await db.Patreons
             .AsNoTracking()
@@ -233,7 +237,7 @@ public sealed class UserService(IMemoryCache cache,
 
         var experiencePoints = 23;
         
-        if (patreonUser.HasValue)
+        if (_patreonEnabled && patreonUser.HasValue)
         {
             experiencePoints = GetExperiencePointsForPatreonUser(patreonUser.Value);
         }

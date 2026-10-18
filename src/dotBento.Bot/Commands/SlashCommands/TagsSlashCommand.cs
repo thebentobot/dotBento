@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
@@ -13,8 +14,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("tag", "Tags for the server")]
-public sealed class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("get", "Get a tag")]
     [GuildOnly]

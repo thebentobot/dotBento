@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.Interactions;
 using dotBento.Bot.Commands.CommandHandlers;
@@ -12,7 +13,7 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class GameSlashCommand(
     InteractiveService interactiveService,
     GameCommand gameCommand,
-    UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null) : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("rps", "Play Rock Paper Scissors")]
     public async Task RpsCommand(
@@ -35,8 +36,8 @@ public sealed class GameSlashCommand(
         [Summary("hide", "Only show the result for you")] bool? hide = null
     )
     {
-        var embed = await GameCommand.RollCommand(min, max);
-        var ephemeral = embed.Embed.Color == Color.Red || (hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        var embed = await GameCommand.RollCommand(min, max, Presentation);
+        var ephemeral = embed.CommandResponse != dotBento.Domain.Enums.CommandResponse.Ok || (hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         await Context.SendResponse(interactiveService, embed, ephemeral);
     }
 }

@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
@@ -8,8 +9,10 @@ using Serilog;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class AvatarCommand(StylingUtilities stylingUtilities, Serilog.ILogger? logger = null)
+public sealed class AvatarCommand(StylingUtilities stylingUtilities, Serilog.ILogger? logger = null, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     private readonly Serilog.ILogger _logger = logger ?? Log.Logger;
 
     public async Task<ResponseModel> UserAvatarCommand(IUser user)
@@ -47,6 +50,6 @@ public sealed class AvatarCommand(StylingUtilities stylingUtilities, Serilog.ILo
         }
 
         _logger.Warning("Could not calculate avatar colour; using fallback colour. {Error}", result.Error);
-        return DiscordConstants.BentoYellow;
+        return _presentation.Primary;
     }
 }

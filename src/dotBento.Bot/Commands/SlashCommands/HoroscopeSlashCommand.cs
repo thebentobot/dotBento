@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using dotBento.Bot.Commands.CommandHandlers;
 using dotBento.Bot.Enums;
@@ -11,7 +12,7 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class HoroscopeSlashCommand(
     InteractiveService interactiveService,
     HoroscopeCommand horoscopeCommand,
-    UserSettingService userSettingService) : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null) : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("today", "Read today's horoscope")]
     public Task TodayCommand(

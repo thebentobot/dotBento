@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using dotBento.Domain;
+using Microsoft.Extensions.Configuration;
 using CSharpFunctionalExtensions;
 using Discord.WebSocket;
 using dotBento.Domain.Entities;
@@ -16,11 +18,13 @@ public sealed class ProfileCommands(
     LastFmService lastFmService,
     UserService userService,
     GuildService guildService,
-    BentoService bentoService
+    BentoService bentoService,
+    Branding? branding = null,
+    IConfiguration? configuration = null
 )
 {
-    // TODO: Make this an environment variable
-    private const ulong BentoSupportServerId = 714496317522444352;
+    private readonly Branding _branding = branding ?? new();
+    private readonly ulong _supportServerId = ulong.TryParse(configuration?["Bot:BaseServerId"], out var supportServerId) ? supportServerId : Constants.DefaultSupportGuildId;
 
     [ExcludeFromCodeCoverage(Justification = "Discord.NET SocketGuildUser image entry point; GenerateProfileHtml covers the render workflow.")]
     public async Task<Result<Stream>> GetProfileAsync(string imageServerHost, string lastFmApiKey, long userId,
@@ -146,7 +150,7 @@ public sealed class ProfileCommands(
             { "AVATAR_URL", avatarUrl },
             { "USERNAME", usernameSlot },
             { "DISCRIMINATOR", discriminatorSlot },
-            { "DESCRIPTION", profile.Description ?? "I am a happy user of Bento 🍱😄" },
+            { "DESCRIPTION", System.Security.SecurityElement.Escape(profile.Description ?? _branding.DefaultProfileDescription) },
             { "SERVER_LEVEL", userServerRank.ToString() ?? "0" },
             { "GLOBAL_LEVEL", userGlobalRank.ToString() ?? "0" },
             { "USERNAME_SIZE", usernameSize }
@@ -598,7 +602,7 @@ public sealed class ProfileCommands(
                                 Of {Math.Floor(bentoUserCount.Value / 100.0) / 10.0:F1}k Users
                             </li>
                             {(bentoGameData.HasValue
-                                ? $"<li class='sidebar-itemBento'><span class='sidebar-valueBento'>{bentoGameData.Value.Bento1} 🍱</span><br>Rank {bentoRank.Value}/{bentoTotalUserCount} 🍱 Users</li>"
+                                ? $"<li class='sidebar-itemBento'><span class='sidebar-valueBento'>{bentoGameData.Value.Bento1} {System.Security.SecurityElement.Escape(_branding.GiftEmoji)}</span><br>Rank {bentoRank.Value}/{bentoTotalUserCount} {System.Security.SecurityElement.Escape(_branding.GiftName)} Users</li>"
                                 : string.Empty)}
                             <li class='sidebar-itemTimezone'>
                                 <span class='sidebar-valueEmote'>{string.Join("", emoteArray)}</span><br>
@@ -729,7 +733,7 @@ public sealed class ProfileCommands(
 
     private static string GetEmote(string emote) => $"<img src=\"{emote}\" width=\"24\" height=\"24\">";
 
-    private static Profile DefaultProfile(long userId) => new(
+    private Profile DefaultProfile(long userId) => new(
         UserId: userId,
         LastfmBoard: false,
         XpBoard: true,
@@ -776,7 +780,7 @@ public sealed class ProfileCommands(
         XpDoneGlobalColour2: "#F59E0B",
         XpDoneGlobalColour3Opacity: 100,
         XpDoneGlobalColour3: "#EF4444",
-        Description: "I am a happy user of Bento 🍱😄",
+        Description: _branding.DefaultProfileDescription,
         Timezone: null,
         Birthday: null,
         XpBarOpacity: 100,
@@ -785,7 +789,7 @@ public sealed class ProfileCommands(
         XpBar2Colour: "#374151"
     );
 
-    private static Profile MergeWithDefaults(Profile dbProfile)
+    private Profile MergeWithDefaults(Profile dbProfile)
     {
         var defaultProfile = DefaultProfile(dbProfile.UserId);
         return dbProfile with
@@ -863,10 +867,11 @@ public sealed class ProfileCommands(
 
     private async Task AddBentoSupportServerEmote(long userId, List<string> emotes)
     {
-        var guildMember = await guildService.GetGuildMemberAsync(BentoSupportServerId, (ulong)userId);
+        if (_supportServerId == 0) return;
+        var guildMember = await guildService.GetGuildMemberAsync(_supportServerId, (ulong)userId);
         if (guildMember.HasValue)
         {
-            emotes.Add("🍱");
+            emotes.Add(System.Security.SecurityElement.Escape(_branding.Emoji));
         }
     }
 

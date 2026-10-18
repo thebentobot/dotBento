@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -14,8 +15,8 @@ public sealed class ProfileSlashCommand(
     InteractiveService interactiveService,
     ProfileEditCommand profileEditCommand,
     UserCommand userCommand,
-    UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+    UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("user", "Show a user's Bento profile")]
     public async Task ShowProfile([Summary("user", "Pick a User")] SocketUser? user = null,
@@ -37,8 +38,8 @@ public sealed class ProfileSlashCommand(
     }
 
     [Group("background", "Background settings for your profile")]
-    public sealed class BackgroundGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand)
-        : InteractionModuleBase<SocketInteractionContext>
+    public sealed class BackgroundGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand, BotPresentation? presentation = null)
+        : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
     {
         [SlashCommand("url", "Set the background image URL for your profile")]
         public async Task SetBackgroundUrl([Summary("url", "Direct image URL (http/https)")] string url)
@@ -77,8 +78,8 @@ public sealed class ProfileSlashCommand(
     }
 
     [Group("board", "Enable or disable boards on your profile")]
-    public sealed class BoardsGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand)
-        : InteractionModuleBase<SocketInteractionContext>
+    public sealed class BoardsGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand, BotPresentation? presentation = null)
+        : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
     {
         [SlashCommand("lastfm", "Enable or disable your Last.fm board on your profile")]
         public async Task SetLastFmBoard([Summary("enabled", "Enable (true) or disable (false)")] bool enabled)
@@ -124,8 +125,8 @@ public sealed class ProfileSlashCommand(
     }
 
     [Group("reset", "Reset profile settings to default")]
-    public sealed class ResetGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand)
-        : InteractionModuleBase<SocketInteractionContext>
+    public sealed class ResetGroup(InteractiveService interactiveService, ProfileEditCommand profileEditCommand, BotPresentation? presentation = null)
+        : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
     {
         [SlashCommand("background", "Reset your background image and colour settings to default")]
         public async Task ResetBackground()

@@ -15,8 +15,10 @@ namespace dotBento.Bot.Commands.CommandHandlers;
 public sealed class WeatherCommand(
     WeatherService weatherService,
     WeatherApiService weatherApiService,
-    IOptions<BotEnvConfig> config)
+    IOptions<BotEnvConfig> config, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> GetWeatherAsync(long userId, string username, string userAvatar, string? userCity)
     {
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -26,7 +28,7 @@ public sealed class WeatherCommand(
             var weather = await weatherService.GetWeatherAsync(userId);
             if (weather.HasNoValue)
             {
-                return GenericEmbedService.ErrorEmbed("Error: No city saved or provided",
+                return _presentation.ErrorEmbed("Error: No city saved or provided",
                     "You need to provide a city or save one with the weather save command\nFind the weather save command as a slash command or by trying help after calling the weather command.");
             }
             city = weather.Value.City;
@@ -38,7 +40,7 @@ public sealed class WeatherCommand(
         var weatherDataResult = await weatherApiService.GetWeatherForCity(city, config.Value.OpenWeatherApiKey);
         if (weatherDataResult.IsFailure)
         {
-            return GenericEmbedService.ErrorEmbed("Error", weatherDataResult.Error);
+            return _presentation.ErrorEmbed("Error", weatherDataResult.Error);
         }
         var weatherData = weatherDataResult.Value;
         var currentWeather = weatherData.Weather.First();

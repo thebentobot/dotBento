@@ -102,7 +102,8 @@ public sealed class Startup
 
         // Add Loki sink in production or staging when URL is configured
         var lokiUrl = Configuration["LokiUrl"];
-        if ((isProduction || isStaging) && !string.IsNullOrEmpty(lokiUrl))
+        if (Configuration.GetValue("Logging:LokiEnabled", true) &&
+            (isProduction || isStaging) && !string.IsNullOrWhiteSpace(lokiUrl))
         {
             loggerConfig.WriteTo.GrafanaLoki(
                 lokiUrl,
@@ -170,6 +171,9 @@ public sealed class Startup
     private void ConfigureServices(IServiceCollection services)
     {
         services.Configure<BotEnvConfig>(Configuration);
+        var config = Configuration.Get<BotEnvConfig>() ?? new();
+        var presentation = new BotPresentation(config);
+        services.AddSingleton(presentation).AddSingleton(config.Branding).AddSingleton(config.Features);
 
         var discordClient = new DiscordSocketClient(new DiscordSocketConfig
         {
@@ -281,7 +285,7 @@ public sealed class Startup
             services.AddStackExchangeRedisCache(opts =>
             {
                 opts.Configuration = distributedCacheConnection;
-                opts.InstanceName = "dotbento:";
+                opts.InstanceName = Configuration.GetSection("Cache").Get<dotBento.Domain.CacheConfig>()?.Prefix ?? "dotbento:";
             });
         }
         else

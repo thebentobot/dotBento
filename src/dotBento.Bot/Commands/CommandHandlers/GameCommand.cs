@@ -9,8 +9,10 @@ using dotBento.Infrastructure.Commands;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class GameCommand(GameCommands gameCommands)
+public sealed class GameCommand(GameCommands gameCommands, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> RpsCommand(RpsGameChoice choice, long userId)
     {
         var (aiChoice, result) = await gameCommands.RockPaperScissorsAsync(choice, userId);
@@ -19,9 +21,9 @@ public sealed class GameCommand(GameCommands gameCommands)
             .WithDescription($"You chose **{choice.AddEmoji()}** and I chose **{aiChoice.AddEmoji()}** {result.FormatResult()}")
             .WithColor(result switch
             {
-                RpsGameResult.Win => Color.Green,
-                RpsGameResult.Loss => Color.Red,
-                _ => Color.Blue
+                RpsGameResult.Win => _presentation.Success,
+                RpsGameResult.Loss => _presentation.Error,
+                _ => _presentation.Information
             });
         return embed;
     }
@@ -39,9 +41,10 @@ public sealed class GameCommand(GameCommands gameCommands)
         return Task.FromResult(embed);
     }
     
-    public static Task<ResponseModel> RollCommand(int? userMin, int? userMax)
+    public static Task<ResponseModel> RollCommand(int? userMin, int? userMax, BotPresentation? presentation = null)
     {
-        var (min, max, failedValidation, error) = ValidateUserInput(userMin, userMax).Result;
+        presentation ??= new();
+        var (min, max, failedValidation, error) = ValidateUserInput(userMin, userMax, presentation).Result;
         if (failedValidation) return Task.FromResult(error);
         var result = GameCommands.Roll(min, max);
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
@@ -52,27 +55,27 @@ public sealed class GameCommand(GameCommands gameCommands)
             .WithText($"The chance of rolling {result} is {(1.0 / (max - min + 1)) * 100}%");
         embed.Embed.WithTitle($"And the number is... {result}")
             .WithAuthor(embedAuthor)
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(presentation.Primary)
             .WithFooter(embedFooter);
         return Task.FromResult(embed);
     }
     
-    private static Task<(int min, int max, bool failedValidation, ResponseModel error)> ValidateUserInput(int? userMin, int? userMax)
+    private static Task<(int min, int max, bool failedValidation, ResponseModel error)> ValidateUserInput(int? userMin, int? userMax, BotPresentation presentation)
     {
         if (int.TryParse(userMin.ToString(), out var min).Equals(false))
         {
-            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
+            return Task.FromResult((0, 0, true, presentation.ErrorEmbed("The minimum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
         }
         if (int.TryParse(userMax.ToString(), out var max).Equals(false))
         {
-            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The maximum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
+            return Task.FromResult((0, 0, true, presentation.ErrorEmbed("The maximum number is not a valid number\nThe highest number I can roll is 1000 and the lowest is 1")));
         }
         if (min > max)
         {
-            return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum number cannot be greater than the maximum number")));
+            return Task.FromResult((0, 0, true, presentation.ErrorEmbed("The minimum number cannot be greater than the maximum number")));
         }
 
         if (min <= 1000 && max <= 1000) return Task.FromResult<(int min, int max, bool failedValidation, ResponseModel error)>((min, max, false, new ResponseModel()));
-        return Task.FromResult((0, 0, true, GenericEmbedService.ErrorEmbed("The minimum or maximum number cannot be greater than 1000")));
+        return Task.FromResult((0, 0, true, presentation.ErrorEmbed("The minimum or maximum number cannot be greater than 1000")));
     }
 }

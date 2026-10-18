@@ -8,14 +8,19 @@ using dotBento.Infrastructure.Extensions;
 
 namespace dotBento.Infrastructure.Commands;
 
-public sealed class TagCommands(TagService tagService)
+public sealed class TagCommands(TagService tagService, Branding? branding = null)
 {
+    private readonly Branding _branding = branding ?? new();
+    private bool IsReserved(string name) => Constants.CommandNames.Contains(name) ||
+        Constants.AliasNames.Contains(name) ||
+        new[] { _branding.GiftCommandName, _branding.AboutCommandName, _branding.GiftLeaderboardName }
+            .Contains(name, StringComparer.OrdinalIgnoreCase);
     public async Task<Result> CreateTagAsync(long userId, long guildId, string name, string content)
     {
         // TODO we want a better sensitive character check before launching
-        if (Constants.CommandNames.Contains(name) || Constants.AliasNames.Contains(name) || name.ContainsSensitiveCharacters())
+        if (IsReserved(name) || name.ContainsSensitiveCharacters())
         {
-            return Result.Failure("Tag name cannot include any characters, Bento command name or Bento command alias.");
+            return Result.Failure($"Tag name cannot include any characters, {_branding.Name} command name or {_branding.Name} command alias.");
         }
         var tagExistsCheck = await tagService.FindTagAsync(guildId, name);
         if (tagExistsCheck.HasValue)
@@ -67,9 +72,9 @@ public sealed class TagCommands(TagService tagService)
     public async Task<Result> RenameTagAsync(long userId, long guildId, string oldName, string newName, bool hasMessageEditPerms)
     {
         var newTagExistsCheck = await tagService.FindTagAsync(guildId, newName);
-        if (Constants.CommandNames.Contains(newName) || Constants.AliasNames.Contains(newName) || newTagExistsCheck.HasValue)
+        if (IsReserved(newName) || newTagExistsCheck.HasValue)
         {
-            return Result.Failure("New tag name cannot be an existing tag, Bento command name or Bento command alias.");
+            return Result.Failure($"New tag name cannot be an existing tag, {_branding.Name} command name or {_branding.Name} command alias.");
         }
         if (string.IsNullOrWhiteSpace(newName))
         {

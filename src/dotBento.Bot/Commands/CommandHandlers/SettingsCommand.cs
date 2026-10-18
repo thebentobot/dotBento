@@ -1,3 +1,5 @@
+using dotBento.Bot.Services;
+using dotBento.Domain;
 using Discord;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
@@ -7,8 +9,10 @@ using dotBento.Infrastructure.Services;
 
 namespace dotBento.Bot.Commands.CommandHandlers;
 
-public sealed class SettingsCommand(GuildSettingService guildSettingService, UserSettingService userSettingService)
+public sealed class SettingsCommand(GuildSettingService guildSettingService, UserSettingService userSettingService, BotPresentation? presentation = null)
 {
+    private readonly BotPresentation _presentation = presentation ?? new();
+
     public async Task<ResponseModel> GetServerSettingsAsync(long guildId, string guildName, string? guildIconUrl)
     {
         var setting = await guildSettingService.GetOrCreateGuildSettingAsync(guildId);
@@ -17,11 +21,12 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
         response.Embed
             .WithTitle($"Server Settings for {guildName}")
-            .WithColor(DiscordConstants.BentoYellow)
-            .AddField("Website Leaderboard",
+            .WithColor(_presentation.Primary);
+        if (_presentation.HasWebsiteLeaderboard)
+            response.Embed.AddField("Website Leaderboard",
                 setting.LeaderboardPublic
-                    ? $"**Public** - Anyone can view the server leaderboard on the [website](https://bentobot.xyz/leaderboard/{guildId})."
-                    : $"**Private** - Only server members can view the leaderboard on the [website](https://bentobot.xyz/leaderboard/{guildId}).");
+                    ? $"**Public** - Anyone can view the server leaderboard on the {WebsiteLink(guildId)}."
+                    : $"**Private** - Only server members can view the leaderboard on the {WebsiteLink(guildId)}.");
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
@@ -36,9 +41,10 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithCustomId("server-settings:commands:overview")
             .WithStyle(ButtonStyle.Primary);
 
-        response.Components = new ComponentBuilder()
-            .WithButton(leaderboardButton)
-            .WithButton(commandPermissionsButton);
+        response.Components = new ComponentBuilder();
+        if (_presentation.HasWebsiteLeaderboard)
+            response.Components.WithButton(leaderboardButton);
+        response.Components.WithButton(commandPermissionsButton);
 
         return response;
     }
@@ -46,20 +52,21 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     public async Task<ResponseModel> GetUserSettingsAsync(long userId)
     {
         var setting = await userSettingService.GetOrCreateUserSettingAsync(userId);
+        var website = _presentation.HasWebsiteLeaderboard ? $" and {WebsiteLink()}" : string.Empty;
 
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
 
         response.Embed
             .WithTitle("Your Settings")
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(_presentation.Primary)
             .AddField("Hide Slash Command responses",
                 setting.HideSlashCommandCalls
                     ? "**Enabled ✔** - Your command responses are ephemeral (only visible to you) by default. When using a command, you can still choose the option to show the response to everyone."
                     : "**Disabled ⨯** - Your command responses are visible to everyone by default. When using a command, you can choose to hide the response.")
             .AddField("Global Leaderboard",
                 setting.ShowOnGlobalLeaderboard
-                    ? "**Enabled ✔** - You appear on the global leaderboard, which is the command and [website](https://bentobot.xyz/leaderboard)"
-                    : "**Disabled ⨯** - You are hidden from the global leaderboard, so your user is shown as private in the command and [website](https://bentobot.xyz/leaderboard)");
+                    ? $"**Enabled ✔** - You appear on the global leaderboard in the command{website}."
+                    : $"**Disabled ⨯** - You are hidden from the global leaderboard, so your user is shown as private in the command{website}.");
 
         var hideCommandsButton = new ButtonBuilder()
             .WithLabel(setting.HideSlashCommandCalls ? "Show Commands" : "Hide Commands")
@@ -92,13 +99,13 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithTitle($"Command Permissions for {guildName}")
             .WithDescription(
                 "Choose how slash commands behave in this server. Disabled and admin-only are mutually exclusive.")
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(_presentation.Primary)
             .AddField(
-                $"Disabled Commands ({permissions.Disabled.Length})",
-                BuildCommandListPreview(permissions.Disabled))
+                $"Disabled Commands ({permissions.Disabled.Count(IsFeatureAvailable)})",
+                BuildCommandListPreview(permissions.Disabled.Where(IsFeatureAvailable)))
             .AddField(
-                $"Admin-Only Commands ({permissions.AdminOnly.Length})",
-                BuildCommandListPreview(permissions.AdminOnly));
+                $"Admin-Only Commands ({permissions.AdminOnly.Count(IsFeatureAvailable)})",
+                BuildCommandListPreview(permissions.AdminOnly.Where(IsFeatureAvailable)));
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
@@ -107,7 +114,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
         foreach (var action in Enum.GetValues<CommandPermissionAction>())
         {
-            var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds);
+            var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds, _presentation.Config);
             components.WithButton(new ButtonBuilder()
                 .WithLabel(action.ToLabel())
                 .WithCustomId($"server-settings:commands:page:{action.ToToken()}:0")
@@ -137,7 +144,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         const int pageSize = 25;
 
         var permissions = await guildSettingService.GetCommandPermissionsAsync(guildId);
-        var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds);
+        var candidates = GetCommandActionCandidates(action, permissions, registeredCommandIds, _presentation.Config);
         var pageCount = Math.Max(1, (int)Math.Ceiling(candidates.Count / (double)pageSize));
         var page = Math.Clamp(requestedPage, 0, pageCount - 1);
         var pageCandidates = candidates.Skip(page * pageSize).Take(pageSize).ToArray();
@@ -150,7 +157,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         response.Embed
             .WithTitle($"{action.ToLabel()} Commands for {guildName}")
             .WithDescription(description)
-            .WithColor(DiscordConstants.BentoYellow)
+            .WithColor(_presentation.Primary)
             .WithFooter($"Page {page + 1} of {pageCount} • {candidates.Count} commands available");
 
         if (!string.IsNullOrEmpty(guildIconUrl))
@@ -167,7 +174,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
                 .WithMaxValues(1);
 
             foreach (var commandId in pageCandidates)
-                menu.AddOption(commandId, commandId);
+                menu.AddOption(_presentation.Brand.CommandPath(commandId), commandId);
 
             components.WithSelectMenu(menu, 0);
             components
@@ -200,27 +207,27 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         {
             case CommandPermissionAction.Disable:
                 if (permissions.Disabled.Contains(commandId, StringComparer.OrdinalIgnoreCase))
-                    return $"`{commandId}` is already disabled.";
+                    return $"`{_presentation.Brand.CommandPath(commandId)}` is already disabled.";
                 await guildSettingService.SetCommandDisabledAsync(guildId, commandId, true);
-                return $"`{commandId}` is now **disabled**.";
+                return $"`{_presentation.Brand.CommandPath(commandId)}` is now **disabled**.";
 
             case CommandPermissionAction.Enable:
                 if (!permissions.Disabled.Contains(commandId, StringComparer.OrdinalIgnoreCase))
-                    return $"`{commandId}` is not currently disabled.";
+                    return $"`{_presentation.Brand.CommandPath(commandId)}` is not currently disabled.";
                 await guildSettingService.SetCommandDisabledAsync(guildId, commandId, false);
-                return $"`{commandId}` is now **enabled**.";
+                return $"`{_presentation.Brand.CommandPath(commandId)}` is now **enabled**.";
 
             case CommandPermissionAction.AddAdminOnly:
                 if (permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
-                    return $"`{commandId}` is already admin-only.";
+                    return $"`{_presentation.Brand.CommandPath(commandId)}` is already admin-only.";
                 await guildSettingService.SetCommandAdminOnlyAsync(guildId, commandId, true);
-                return $"`{commandId}` is now **admin-only**.";
+                return $"`{_presentation.Brand.CommandPath(commandId)}` is now **admin-only**.";
 
             case CommandPermissionAction.RemoveAdminOnly:
                 if (!permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
-                    return $"`{commandId}` is not currently admin-only.";
+                    return $"`{_presentation.Brand.CommandPath(commandId)}` is not currently admin-only.";
                 await guildSettingService.SetCommandAdminOnlyAsync(guildId, commandId, false);
-                return $"`{commandId}` is no longer **admin-only**.";
+                return $"`{_presentation.Brand.CommandPath(commandId)}` is no longer **admin-only**.";
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(action), action, null);
@@ -251,7 +258,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     public static IReadOnlyList<string> GetCommandActionCandidates(
         CommandPermissionAction action,
         CommandPermissions permissions,
-        IReadOnlyCollection<string> registeredCommandIds)
+        IReadOnlyCollection<string> registeredCommandIds,
+        dotBento.Bot.Models.BotEnvConfig? config = null)
     {
         var disabled = new HashSet<string>(permissions.Disabled, StringComparer.OrdinalIgnoreCase);
         var adminOnly = new HashSet<string>(permissions.AdminOnly, StringComparer.OrdinalIgnoreCase);
@@ -269,11 +277,12 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         };
 
         return candidates
+            .Where(id => !CommandModules.IsDisabled(id.Split(':')[0], config ?? new()))
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    private static string BuildCommandListPreview(IEnumerable<string> commands)
+    private string BuildCommandListPreview(IEnumerable<string> commands)
     {
         const int previewCharacterLimit = 900;
         var sorted = commands
@@ -287,7 +296,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         var lines = new List<string>();
         foreach (var command in sorted)
         {
-            var line = $"• `{command}`";
+            var line = $"• `{_presentation.Brand.CommandPath(command)}`";
             var candidateLength = lines.Sum(existing => existing.Length + 1) + line.Length;
             if (candidateLength > previewCharacterLimit)
                 break;
@@ -299,6 +308,14 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             lines.Add($"…and {omitted} more. Use the controls below to review them.");
 
         return string.Join("\n", lines);
+    }
+
+    private bool IsFeatureAvailable(string id) => !CommandModules.IsDisabled(id.Split(':')[0], _presentation.Config);
+
+    private string WebsiteLink(long? guildId = null)
+    {
+        var url = _presentation.Brand.GetLeaderboardUrl(guildId);
+        return BotPresentation.Link(url, "website");
     }
 
     private static ButtonStyle ActionButtonStyle(CommandPermissionAction action) =>

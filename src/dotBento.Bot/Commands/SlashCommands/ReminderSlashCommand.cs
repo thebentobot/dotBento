@@ -10,8 +10,8 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("remind", "Manage reminders for yourself")]
-public sealed class ReminderSlashCommand(InteractiveService interactiveService, ReminderCommand reminderCommand)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class ReminderSlashCommand(InteractiveService interactiveService, ReminderCommand reminderCommand, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("create", "Create a reminder")]
     public async Task CreateCommand(
@@ -24,7 +24,7 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
         if (convertDate.HasNoValue)
         {
             await Context.SendResponse(interactiveService,
-                GenericEmbedService.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."));
+                Presentation.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."));
             return;
         }
         await Context.SendResponse(
@@ -61,7 +61,7 @@ public sealed class ReminderSlashCommand(InteractiveService interactiveService, 
             {
                 await Context.SendResponse(
                     interactiveService,
-                    GenericEmbedService.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."),
+                    Presentation.ErrorEmbed("Invalid date. Please provide a valid date in the format `YYYY-MM-DDThh:mm[{+|-}hh:mm]` (e.g. 2022-12-31T23:59+00:00)."),
                     true);
                 return;
             }

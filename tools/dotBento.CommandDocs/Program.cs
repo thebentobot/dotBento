@@ -1,13 +1,18 @@
 using dotBento.CommandDocs;
+using dotBento.Bot.Models;
+using Microsoft.Extensions.Configuration;
 
-if (args.Length != 3 ||
+if (args.Length is not (3 or 4) || (args.Length == 4 && args[3] != "--use-environment") ||
     (args[0], args[1]) is not (("export", "--output") or ("check", "--input")))
 {
-    Console.Error.WriteLine("Usage: dotnet run --project tools/dotBento.CommandDocs -- <export --output|check --input> <path>");
+    Console.Error.WriteLine("Usage: dotnet run --project tools/dotBento.CommandDocs -- <export --output|check --input> <path> [--use-environment]");
     return 2;
 }
 
-var manifest = ManifestJson.Serialize(await CommandManifestBuilder.BuildAsync());
+var config = args.Length == 4
+    ? new ConfigurationBuilder().AddEnvironmentVariables().Build().Get<BotEnvConfig>()
+    : new BotEnvConfig();
+var manifest = ManifestJson.Serialize(await CommandManifestBuilder.BuildAsync(config));
 var path = Path.GetFullPath(args[2]);
 
 if (args[0] == "export")

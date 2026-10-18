@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord.Interactions;
 using dotBento.Bot.Enums;
 using dotBento.Bot.Extensions;
@@ -12,8 +13,8 @@ using Serilog;
 
 namespace dotBento.Bot.Commands.SlashCommands;
 
-public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService, UserSettingService userSettingService)
-    : InteractionModuleBase<SocketInteractionContext>
+public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveService interactiveService, UserSettingService userSettingService, BotPresentation? presentation = null)
+    : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("ping", "Test Bento's latency")]
     public async Task PingCommand(
@@ -36,16 +37,16 @@ public sealed class PingSlashCommand(BotDbContext botDbContext, InteractiveServi
 
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
-                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
-                .WithColor(DiscordConstants.BentoYellow);
+                .WithDescription($"**{Presentation.Brand.Name} latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** {dbTime} ms")
+                .WithColor(Presentation.Primary);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
         }
         catch (Exception e)
         {
             var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
             embed.Embed.WithTitle("\ud83c\udfd3 Pong!")
-                .WithDescription($"**Bento latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
-                .WithColor(DiscordConstants.ErrorRed);
+                .WithDescription($"**{Presentation.Brand.Name} latency** {messageTime} ms\n**Discord latency** {Context.Client.Latency} ms\n**Database** Connection was not established.")
+                .WithColor(Presentation.Error);
             await Context.SendFollowUpResponse(interactiveService, embed, effectiveHide);
             Context.LogCommandUsed(CommandResponse.Error);
             Log.Error(e, "Ping Slash Command failed");

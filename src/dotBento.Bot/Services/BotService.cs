@@ -1,4 +1,3 @@
-using System.Reflection;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -26,6 +25,9 @@ public sealed class BotService(DiscordSocketClient client,
 
     public async Task StartAsync()
     {
+        Log.Information("Loading interaction modules");
+        await CommandModules.LoadAsync(interactions, provider, config.Value);
+
         await using var context = await contextFactory.CreateDbContextAsync();
         try
         {
@@ -41,9 +43,6 @@ public sealed class BotService(DiscordSocketClient client,
         Log.Information("Starting bot");
         var discordToken = config.Value.Discord.Token ??
                            throw new InvalidOperationException("Discord:Token environment variable not set.");
-
-        Log.Information("Loading interaction modules");
-        await interactions.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 
         Log.Information("Preparing cache folder");
         PrepareCacheFolder();
@@ -95,14 +94,10 @@ public sealed class BotService(DiscordSocketClient client,
     {
         Log.Information("Starting slash command registration");
 
-#if DEBUG
-        Log.Information("Registering slash commands to guild");
-        // TODO: Make this an env var for development discord server
-        await interactions.RegisterCommandsToGuildAsync(790353119795871744);
-#else
-        Log.Information("Registering slash commands globally");
-        await interactions.RegisterCommandsGloballyAsync();
-#endif
+        if (config.Value.Bot.CommandGuildId is > 0 and var guildId)
+            await interactions.RegisterCommandsToGuildAsync(guildId, deleteMissing: true);
+        else
+            await interactions.RegisterCommandsGloballyAsync(deleteMissing: true);
     }
 
     private void StartMetricsPusher()

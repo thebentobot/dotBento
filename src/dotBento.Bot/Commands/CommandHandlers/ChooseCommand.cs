@@ -7,11 +7,12 @@ namespace dotBento.Bot.Commands.CommandHandlers;
 
 public static class ChooseCommand
 {
-    public static Task<ResponseModel> Command(string options)
+    public static Task<ResponseModel> Command(string options, BotPresentation? presentation = null)
     {
+        presentation ??= new();
         if (!options.Contains(','))
         {
-            return Task.FromResult(GenericEmbedService.ErrorEmbed("You need to separate options with commas"));
+            return Task.FromResult(presentation.ErrorEmbed("You need to separate options with commas"));
         }
         var listOfOptions = options.Trim().Split(",").ToList();
 
@@ -19,15 +20,15 @@ public static class ChooseCommand
         switch (listOfOptions.Count)
         {
             case < 2:
-                return Task.FromResult(GenericEmbedService.ErrorEmbed("You need to provide at least 2 options",
+                return Task.FromResult(presentation.ErrorEmbed("You need to provide at least 2 options",
                     $"Well obviously the choice is **{listOfOptions[0]}**, but perhaps you wanted me to choose between a few more options other than one? 🙄"));
             case > 20:
-                return Task.FromResult(GenericEmbedService.ErrorEmbed("You need to provide less than 20 options",
+                return Task.FromResult(presentation.ErrorEmbed("You need to provide less than 20 options",
                     $"I can't choose between {listOfOptions.Count} options, that's too many! 😱"));
             default:
                 embed.Embed.WithTitle("I choose...")
                     .WithDescription($"**{ChooseOption(listOfOptions)}**")
-                    .WithColor(DiscordConstants.BentoYellow);
+                    .WithColor(presentation.Primary);
                 break;
         }
         return Task.FromResult(embed);

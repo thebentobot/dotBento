@@ -7,6 +7,10 @@ public static class SlashCommandIdUtilities
     public const string ServerSettingsCommandId = "server:settings";
 
     public static string ResolveCommandId(ICommandInfo command)
+        => command.Attributes.OfType<dotBento.Bot.Attributes.CanonicalCommandIdAttribute>().FirstOrDefault()?.Id
+           ?? ResolveInvocationId(command);
+
+    public static string ResolveInvocationId(ICommandInfo command)
     {
         var parts = new List<string>();
         var module = command.Module;
