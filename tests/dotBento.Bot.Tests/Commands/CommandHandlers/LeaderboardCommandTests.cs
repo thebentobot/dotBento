@@ -161,11 +161,13 @@ public class LeaderboardCommandTests
         Assert.Equal("https://bot.avatar", embed.Thumbnail!.Value.Url);
     }
 
-    [Fact]
-    public async Task EmptyWebsite_RendersLeaderboardWithoutTitleLink()
+    [Theory]
+    [InlineData("")]
+    [InlineData("https://example.com")]
+    public async Task DisabledWebsiteLeaderboard_RendersWithoutTitleLink(string websiteUrl)
     {
         var (_, factory) = await CreateCommandWithUsersAsync(1);
-        var presentation = new dotBento.Bot.Services.BotPresentation(new() { Branding = new() { WebsiteUrl = "" } });
+        var presentation = new dotBento.Bot.Services.BotPresentation(new() { Branding = new() { WebsiteUrl = websiteUrl, LeaderboardUrl = "" } });
         var command = new LeaderboardCommand(new LeaderboardService(factory),
             new UserSettingService(factory, Mock.Of<IDistributedCache>()), presentation);
         var response = await command.GetGlobalXpLeaderboardAsync("https://example.com/avatar.png");

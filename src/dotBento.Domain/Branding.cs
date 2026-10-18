@@ -10,6 +10,11 @@ public sealed class Branding
     public string GiftPluralName { get; set; } = "Bento Boxes";
     public string GiftEmoji { get; set; } = "🍱";
     public string WebsiteUrl { get; set; } = "https://bentobot.xyz";
+    // Null inherits the existing root/path; an explicit empty string disables the page.
+    public string? FeaturesUrl { get; set; }
+    public string? LeaderboardUrl { get; set; }
+    public string? TroubleshootingUrl { get; set; }
+    public string? ServerSettingsGuideUrl { get; set; }
     public string DocumentationUrl { get; set; } = "https://docs.bentobot.xyz";
     public string SupportUrl { get; set; } = "https://discord.gg/dd68WwP";
     public string SourceUrl { get; set; } = "https://github.com/thebentobot/bento";
@@ -22,6 +27,15 @@ public sealed class Branding
     public string DisplayName => $"{Name} {Emoji}".Trim();
     public string Gift(int count) => count == 1 ? GiftName : GiftPluralName;
     public string DefaultProfileDescription => $"I am a happy user of {DisplayName}😄";
+
+    public string GetFeaturesUrl() => FeaturesUrl ?? JoinUrl(WebsiteUrl, "features");
+    public string GetLeaderboardUrl(long? guildId = null)
+    {
+        var root = LeaderboardUrl ?? JoinUrl(WebsiteUrl, "leaderboard");
+        return guildId.HasValue ? JoinUrl(root, guildId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)) : root;
+    }
+    public string GetTroubleshootingUrl() => TroubleshootingUrl ?? JoinUrl(DocumentationUrl, "troubleshooting/");
+    public string GetServerSettingsGuideUrl() => ServerSettingsGuideUrl ?? JoinUrl(DocumentationUrl, "guides/server-settings/");
 
     public static string JoinUrl(string root, string path) =>
         string.IsNullOrWhiteSpace(root) ? string.Empty : $"{root.TrimEnd('/')}/{path.TrimStart('/')}";

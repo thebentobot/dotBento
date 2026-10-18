@@ -23,6 +23,21 @@ public sealed class SettingsCommandTests
     }
 
     [Fact]
+    public async Task LandingPageWithoutLeaderboard_OmitsWebsiteControls()
+    {
+        var presentation = new dotBento.Bot.Services.BotPresentation(new()
+        {
+            Branding = new() { WebsiteUrl = "https://example.com", LeaderboardUrl = "" }
+        });
+        var (command, _) = CreateCommand(presentation);
+        var server = await command.GetServerSettingsAsync(100, "Guild", null);
+        Assert.DoesNotContain(server.Embed.Fields, f => f.Name == "Website Leaderboard");
+        Assert.Equal("server-settings:commands:overview", Assert.Single(Buttons(server.Components)).CustomId);
+        var user = await command.GetUserSettingsAsync(10);
+        Assert.DoesNotContain("website", Assert.Single(user.Embed.Fields, f => f.Name == "Global Leaderboard").Value.ToString());
+    }
+
+    [Fact]
     public async Task EmptyWebsite_OmitsWebsiteControlsAndKeepsCommandSettings()
     {
         var presentation = new dotBento.Bot.Services.BotPresentation(new() { Branding = new() { WebsiteUrl = "" } });

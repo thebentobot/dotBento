@@ -26,7 +26,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
         if (result.Value.Count == 0)
             return _presentation.ErrorEmbed("No users found on the server leaderboard.");
 
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, $"leaderboard/{guildId}");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl(guildId);
         return BuildXpPaginator(result.Value, $"Leaderboard for {guildName}", guildIconUrl, leaderboardUrl);
     }
 
@@ -44,7 +44,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             ? e with { Username = "Private" }
             : e).ToList();
 
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, "leaderboard");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl();
         return BuildXpPaginator(anonymized, "Global Leaderboard", botAvatarUrl, leaderboardUrl);
     }
 
@@ -57,7 +57,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
         if (result.Value.Count == 0)
             return _presentation.ErrorEmbed($"No users found on the server {_presentation.Brand.GiftName} leaderboard.");
 
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, $"leaderboard/{guildId}");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl(guildId);
         return BuildBentoPaginator(result.Value, $"{_presentation.Brand.GiftName} Leaderboard for {guildName}", guildIconUrl, leaderboardUrl);
     }
 
@@ -75,7 +75,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             ? e with { Username = "Private" }
             : e).ToList();
 
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, "leaderboard");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl();
         return BuildBentoPaginator(anonymized, $"Global {_presentation.Brand.GiftName} Leaderboard", botAvatarUrl, leaderboardUrl);
     }
 
@@ -91,7 +91,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             return _presentation.ErrorEmbed("No users found on the server RPS leaderboard.");
 
         var typeLabel = type == RpsLeaderboardType.All ? "" : $" ({type})";
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, $"leaderboard/{guildId}");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl(guildId);
         return BuildRpsPaginator(result.Value, $"RPS Leaderboard for {guildName}{typeLabel}", guildIconUrl, order, leaderboardUrl);
     }
 
@@ -111,7 +111,7 @@ public sealed class LeaderboardCommand(LeaderboardService leaderboardService, Us
             : e).ToList();
 
         var typeLabel = type == RpsLeaderboardType.All ? "" : $" ({type})";
-        var leaderboardUrl = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, "leaderboard");
+        var leaderboardUrl = _presentation.Brand.GetLeaderboardUrl();
         return BuildRpsPaginator(anonymized, $"Global RPS Leaderboard{typeLabel}", botAvatarUrl, order, leaderboardUrl);
     }
 

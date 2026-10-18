@@ -16,6 +16,11 @@ public sealed class BotPresentation
     public BotEnvConfig Config { get; }
     public Branding Brand => Config.Branding;
     public bool HasWebsite => !string.IsNullOrWhiteSpace(Brand.WebsiteUrl);
+    public bool HasWebsiteLeaderboard => !string.IsNullOrWhiteSpace(Brand.GetLeaderboardUrl());
+    public string DonationLinkTitle => Config.Features.DonationRewardsEnabled
+        ? $"Get a {Brand.GiftName} {Brand.GiftEmoji} for each tip" : $"Support {Brand.Name} on Ko-fi";
+    public string VotingLinkTitle => Config.Features.VotingRewardsEnabled
+        ? $"Vote on top.gg and receive 5 {Brand.GiftPluralName} {Brand.GiftEmoji}" : "Vote on top.gg";
     public Color Primary { get; }
     public Color Success { get; }
     public Color Warning { get; }
@@ -23,8 +28,8 @@ public sealed class BotPresentation
     public Color Information { get; }
     public IEmote Jump { get; }
     public IDictionary<IEmote, PaginatorAction> PaginationEmotes { get; }
-    public string TroubleshootingHelp => string.IsNullOrWhiteSpace(Brand.DocumentationUrl) ? string.Empty :
-        $"If the issue persists, see the [troubleshooting guide]({Branding.JoinUrl(Brand.DocumentationUrl, "troubleshooting/")}).";
+    public string TroubleshootingHelp => string.IsNullOrWhiteSpace(Brand.GetTroubleshootingUrl()) ? string.Empty :
+        $"If the issue persists, see the [troubleshooting guide]({Brand.GetTroubleshootingUrl()}).";
 
     public BotPresentation(BotEnvConfig? config = null)
     {

@@ -13,6 +13,83 @@ namespace dotBento.Bot.Tests.Services;
 
 public sealed class DeploymentConfigurationTests
 {
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public void RewardSwitches_ChangePromisesIndependentlyAndKeepLinks(bool donation, bool voting)
+    {
+        var presentation = new BotPresentation(new()
+        {
+            Features = new() { DonationRewardsEnabled = donation, VotingRewardsEnabled = voting }
+        });
+        foreach (var response in new[]
+        {
+            AboutCommand.BuildEmbed("https://example.com/avatar.png", presentation),
+            dotBento.Bot.Handlers.ClientJoinedGuildHandler.BuildWelcomeEmbed("https://example.com/avatar.png", presentation)
+        })
+        {
+            var tip = Assert.Single(response.Embed.Fields, f => f.Value.ToString() == presentation.Brand.KoFiUrl);
+            var vote = Assert.Single(response.Embed.Fields, f => f.Value.ToString() == presentation.Brand.VoteUrl);
+            Assert.Equal(donation, tip.Name.Contains("for each tip", StringComparison.Ordinal));
+            Assert.Equal(voting, vote.Name.Contains("receive 5", StringComparison.Ordinal));
+            Assert.Equal(donation ? "Get a Bento Box 🍱 for each tip" : "Support Bento on Ko-fi", tip.Name);
+            Assert.Equal(voting ? "Vote on top.gg and receive 5 Bento Boxes 🍱" : "Vote on top.gg", vote.Name);
+        }
+        Assert.True(new FeatureConfig().DonationRewardsEnabled);
+        Assert.True(new FeatureConfig().VotingRewardsEnabled);
+    }
+
+    [Fact]
+    public void WebsitePages_CanBeDisabledIndependentlyOfLandingPage()
+    {
+        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Branding:WebsiteUrl"] = "https://example.com",
+            ["Branding:FeaturesUrl"] = "",
+            ["Branding:LeaderboardUrl"] = "",
+            ["Branding:TroubleshootingUrl"] = "",
+            ["Branding:ServerSettingsGuideUrl"] = ""
+        }).Build().Get<BotEnvConfig>()!;
+        var presentation = new BotPresentation(config);
+        Assert.True(presentation.HasWebsite);
+        Assert.False(presentation.HasWebsiteLeaderboard);
+        Assert.Empty(presentation.TroubleshootingHelp);
+        Assert.Empty(config.Branding.GetLeaderboardUrl(123));
+        var about = AboutCommand.BuildEmbed("https://example.com/avatar.png", presentation);
+        Assert.DoesNotContain(about.Embed.Fields, f => f.Name.Contains("features", StringComparison.Ordinal));
+        var welcome = dotBento.Bot.Handlers.ClientJoinedGuildHandler.BuildWelcomeEmbed("https://example.com/avatar.png", presentation);
+        Assert.Contains(welcome.Embed.Fields, f => f.Value.ToString() == "https://example.com");
+        var settings = Assert.Single(welcome.Embed.Fields, f => f.Name.StartsWith("Configure", StringComparison.Ordinal));
+        Assert.DoesNotContain("website", settings.Value.ToString());
+        Assert.DoesNotContain("server settings guide", settings.Value.ToString());
+    }
+
+    [Fact]
+    public void WebsitePages_InheritExistingRoutesOrUseIndependentOverrides()
+    {
+        var defaults = new Branding();
+        Assert.Equal("https://bentobot.xyz/features", defaults.GetFeaturesUrl());
+        Assert.Equal("https://bentobot.xyz/leaderboard/123", defaults.GetLeaderboardUrl(123));
+        Assert.Equal("https://docs.bentobot.xyz/troubleshooting/", defaults.GetTroubleshootingUrl());
+        Assert.Equal("https://docs.bentobot.xyz/guides/server-settings/", defaults.GetServerSettingsGuideUrl());
+        var brand = new Branding
+        {
+            WebsiteUrl = "", DocumentationUrl = "", FeaturesUrl = "https://pages.example/about",
+            LeaderboardUrl = "https://stats.example/rankings/", TroubleshootingUrl = "https://help.example/issues",
+            ServerSettingsGuideUrl = "https://help.example/setup"
+        };
+        var presentation = new BotPresentation(new() { Branding = brand });
+        Assert.True(presentation.HasWebsiteLeaderboard);
+        Assert.Equal("https://stats.example/rankings/123", brand.GetLeaderboardUrl(123));
+        Assert.Contains("https://help.example/issues", presentation.TroubleshootingHelp);
+        Assert.Equal("https://help.example/setup", brand.GetServerSettingsGuideUrl());
+        Assert.Contains(AboutCommand.BuildEmbed("https://example.com/avatar.png", presentation).Embed.Fields,
+            f => f.Value.ToString() == "https://pages.example/about");
+        Assert.Throws<ArgumentException>(() => new BotPresentation(new() { Branding = new() { FeaturesUrl = "relative" } }));
+    }
+
     [Fact]
     public void EnvironmentOverrides_BindWithoutChangingOtherHosts()
     {

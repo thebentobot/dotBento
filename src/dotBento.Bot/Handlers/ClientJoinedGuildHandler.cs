@@ -77,9 +77,9 @@ public sealed class ClientJoinedGuildHandler : IDisposable
                 string.IsNullOrWhiteSpace(brand.WebsiteUrl) ? null : brand.WebsiteUrl)
             .WithTitle($"Hello! My name is {brand.DisplayName}")
             .WithDescription("Thank you for choosing me to service your server!");
-        var guide = BotPresentation.Link(Branding.JoinUrl(brand.DocumentationUrl, "guides/server-settings/"),
+        var guide = BotPresentation.Link(brand.GetServerSettingsGuideUrl(),
             "Open the server settings guide");
-        var settingsActions = presentation.HasWebsite
+        var settingsActions = presentation.HasWebsiteLeaderboard
             ? "control website leaderboard visibility and make commands disabled or admin-only"
             : "make commands disabled or admin-only";
         embed.AddField($"Configure {brand.Name} for your server",
@@ -90,8 +90,8 @@ public sealed class ClientJoinedGuildHandler : IDisposable
         BotPresentation.AddLink(embed, $"Want to check out the code for {brand.Name}?", brand.SourceUrl);
         if (presentation.Config.Features.PatreonEnabled)
             BotPresentation.AddLink(embed, $"Want additional benefits when using {brand.Name}?", brand.PatreonUrl);
-        BotPresentation.AddLink(embed, $"Get a {brand.GiftName} {brand.GiftEmoji} for each tip", brand.KoFiUrl);
-        BotPresentation.AddLink(embed, $"Vote on top.gg and receive 5 {brand.GiftPluralName} {brand.GiftEmoji}", brand.VoteUrl);
+        BotPresentation.AddLink(embed, presentation.DonationLinkTitle, brand.KoFiUrl);
+        BotPresentation.AddLink(embed, presentation.VotingLinkTitle, brand.VoteUrl);
         return responseToGuildOwner;
     }
 

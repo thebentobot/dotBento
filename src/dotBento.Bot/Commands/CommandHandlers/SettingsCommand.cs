@@ -22,11 +22,11 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
         response.Embed
             .WithTitle($"Server Settings for {guildName}")
             .WithColor(_presentation.Primary);
-        if (_presentation.HasWebsite)
+        if (_presentation.HasWebsiteLeaderboard)
             response.Embed.AddField("Website Leaderboard",
                 setting.LeaderboardPublic
-                    ? $"**Public** - Anyone can view the server leaderboard on the {WebsiteLink($"leaderboard/{guildId}")}."
-                    : $"**Private** - Only server members can view the leaderboard on the {WebsiteLink($"leaderboard/{guildId}")}.");
+                    ? $"**Public** - Anyone can view the server leaderboard on the {WebsiteLink(guildId)}."
+                    : $"**Private** - Only server members can view the leaderboard on the {WebsiteLink(guildId)}.");
 
         if (!string.IsNullOrEmpty(guildIconUrl))
             response.Embed.WithThumbnailUrl(guildIconUrl);
@@ -42,7 +42,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithStyle(ButtonStyle.Primary);
 
         response.Components = new ComponentBuilder();
-        if (_presentation.HasWebsite)
+        if (_presentation.HasWebsiteLeaderboard)
             response.Components.WithButton(leaderboardButton);
         response.Components.WithButton(commandPermissionsButton);
 
@@ -52,7 +52,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     public async Task<ResponseModel> GetUserSettingsAsync(long userId)
     {
         var setting = await userSettingService.GetOrCreateUserSettingAsync(userId);
-        var website = _presentation.HasWebsite ? $" and {WebsiteLink("leaderboard")}" : string.Empty;
+        var website = _presentation.HasWebsiteLeaderboard ? $" and {WebsiteLink()}" : string.Empty;
 
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
 
@@ -312,9 +312,9 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
     private bool IsFeatureAvailable(string id) => !CommandModules.IsDisabled(id.Split(':')[0], _presentation.Config);
 
-    private string WebsiteLink(string path)
+    private string WebsiteLink(long? guildId = null)
     {
-        var url = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, path);
+        var url = _presentation.Brand.GetLeaderboardUrl(guildId);
         return BotPresentation.Link(url, "website");
     }
 

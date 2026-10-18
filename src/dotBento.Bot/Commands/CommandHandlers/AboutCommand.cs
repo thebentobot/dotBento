@@ -20,12 +20,12 @@ public static class AboutCommand
             .WithThumbnailUrl(botPfp)
             .WithTitle($"About {brand.Name} Bot {brand.Emoji}".Trim())
             .WithDescription(brand.Description);
-        BotPresentation.AddLink(response.Embed, $"Explore {brand.Name}'s features", Branding.JoinUrl(brand.WebsiteUrl, "features"));
+        BotPresentation.AddLink(response.Embed, $"Explore {brand.Name}'s features", brand.GetFeaturesUrl());
         BotPresentation.AddLink(response.Embed, "Browse all commands and guides", brand.DocumentationUrl);
         if (presentation.Config.Features.PatreonEnabled)
             BotPresentation.AddLink(response.Embed, $"Want additional benefits when using {brand.DisplayName}?", brand.PatreonUrl);
-        BotPresentation.AddLink(response.Embed, $"Get a {brand.GiftName} {brand.GiftEmoji} for each tip", brand.KoFiUrl);
-        BotPresentation.AddLink(response.Embed, $"Vote on top.gg and receive 5 {brand.GiftPluralName} {brand.GiftEmoji}", brand.VoteUrl);
+        BotPresentation.AddLink(response.Embed, presentation.DonationLinkTitle, brand.KoFiUrl);
+        BotPresentation.AddLink(response.Embed, presentation.VotingLinkTitle, brand.VoteUrl);
         BotPresentation.AddLink(response.Embed, $"Need help or have feedback for {brand.DisplayName}? Join the support server", brand.SupportUrl);
         return response;
     }
