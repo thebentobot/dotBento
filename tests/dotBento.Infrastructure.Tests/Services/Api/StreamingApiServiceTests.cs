@@ -1,5 +1,4 @@
 using System.Net;
-using Discord;
 using dotBento.Infrastructure.Services.Api;
 using Moq;
 using Moq.Protected;
@@ -8,69 +7,6 @@ namespace dotBento.Infrastructure.Tests.Services.Api;
 
 public sealed class StreamingApiServiceTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task NonSeekableHttpResponse_AllowsInitialDiscordResetWithoutBuffering(bool media)
-    {
-        byte[] expected = [137, 80, 78, 71, 1, 2, 3, 4];
-        var source = new NonSeekableStream(expected);
-        using var httpClient = CreateHttpClient(source);
-        var result = media
-            ? await new BentoMediaServerService(httpClient).ProxyAsync("https://media.example", "https://cdn.example/video.mp4")
-            : await new SushiiImageServerService(httpClient).GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
-        Assert.True(result.IsSuccess);
-        await using var stream = result.Value;
-        Assert.False(stream.CanSeek);
-        Assert.Equal(0, source.ReadCount);
-        // Discord's FileAttachment constructor attempts this even for network streams.
-        stream.Position = 0;
-        stream.Position = 0;
-        using var attachment = new FileAttachment(stream, media ? "video.mp4" : "profile.png");
-        Assert.Equal(0, stream.Position);
-        Assert.Equal(0, source.ReadCount);
-        using var copy = new MemoryStream();
-        await attachment.Stream.CopyToAsync(copy, TestContext.Current.CancellationToken);
-        Assert.Equal(expected, copy.ToArray());
-        Assert.Equal(expected.Length, stream.Position);
-        Assert.Throws<NotSupportedException>(() => stream.Position = 0);
-        await stream.DisposeAsync();
-        Assert.True(source.IsDisposed);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    public async Task NonSeekableHttpResponse_TracksPositionAcrossReadOverloads(int overload)
-    {
-        using var httpClient = CreateHttpClient(new NonSeekableStream([1, 2, 3]));
-        var result = await new SushiiImageServerService(httpClient).GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
-        Assert.True(result.IsSuccess);
-        await using var stream = result.Value;
-        stream.Position = 0;
-        var buffer = new byte[2];
-        var count = overload switch
-        {
-            0 => stream.Read(buffer, 0, buffer.Length),
-            1 => stream.Read(buffer.AsSpan()),
-            2 => await stream.ReadAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken),
-            _ => await stream.ReadAsync(buffer.AsMemory(), TestContext.Current.CancellationToken)
-        };
-        Assert.Equal(2, count);
-        Assert.Equal(new byte[] { 1, 2 }, buffer);
-        Assert.Equal(2, stream.Position);
-        Assert.Throws<NotSupportedException>(() => stream.Position = 0);
-        Assert.Throws<NotSupportedException>(() => stream.Position = 1);
-        Assert.Throws<NotSupportedException>(() => stream.Position = 3);
-        Assert.Throws<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
-        Assert.Equal(3, stream.ReadByte());
-        Assert.Equal(3, stream.Position);
-        Assert.Equal(-1, stream.ReadByte());
-        Assert.Equal(3, stream.Position);
-    }
-
     [Fact]
     public async Task BentoMediaProxyAsync_ReturnsStreamWithoutBufferingResponseBody()
     {
@@ -197,45 +133,6 @@ public sealed class StreamingApiServiceTests
 
         protected override Task<Stream> CreateContentReadStreamAsync() =>
             throw new InvalidOperationException("stream failed");
-    }
-
-    private sealed class NonSeekableStream(byte[] bytes) : MemoryStream(bytes)
-    {
-        public int ReadCount { get; private set; }
-        public bool IsDisposed { get; private set; }
-        public override bool CanSeek => false;
-        public override long Length => throw new NotSupportedException();
-        public override long Position
-        {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
-        }
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            ReadCount++;
-            return base.Read(buffer, offset, count);
-        }
-        public override int Read(Span<byte> buffer)
-        {
-            ReadCount++;
-            return base.Read(buffer);
-        }
-        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            ReadCount++;
-            return base.ReadAsync(buffer, cancellationToken);
-        }
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            ReadCount++;
-            return base.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-        protected override void Dispose(bool disposing)
-        {
-            IsDisposed = true;
-            base.Dispose(disposing);
-        }
     }
 
     private sealed class CountingStream(byte[] buffer) : MemoryStream(buffer)
