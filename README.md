@@ -158,7 +158,10 @@ Names that collide with existing commands/groups are rejected. Discord account
 names and avatars are configured through Discord itself.
 
 Omitted branding settings retain Bento defaults. Explicitly empty link settings
-hide their links; URLs must otherwise use HTTP or HTTPS. Gift naming changes
+hide their links; URLs must otherwise use HTTP or HTTPS. For example,
+`Branding__WebsiteUrl=` removes website links, website-only server settings and
+their controls, while keeping command permissions and command leaderboards.
+Removing the variable entirely restores the Bento default. Gift naming changes
 presentation only: amounts, cooldowns and stored data remain unchanged. Saved
 profile descriptions and user-selected colours are preserved. The semantic
 palette affects ordinary embeds; platform colours, extracted avatar/banner

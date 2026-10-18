@@ -161,6 +161,20 @@ public class LeaderboardCommandTests
         Assert.Equal("https://bot.avatar", embed.Thumbnail!.Value.Url);
     }
 
+    [Fact]
+    public async Task EmptyWebsite_RendersLeaderboardWithoutTitleLink()
+    {
+        var (_, factory) = await CreateCommandWithUsersAsync(1);
+        var presentation = new dotBento.Bot.Services.BotPresentation(new() { Branding = new() { WebsiteUrl = "" } });
+        var command = new LeaderboardCommand(new LeaderboardService(factory),
+            new UserSettingService(factory, Mock.Of<IDistributedCache>()), presentation);
+        var response = await command.GetGlobalXpLeaderboardAsync("https://example.com/avatar.png");
+        var page = Assert.Single(response.StaticPaginator!.Pages);
+        var embed = Assert.Single(page.GetEmbedArray());
+        Assert.Null(embed.Url);
+        Assert.Contains("User1", embed.Description);
+    }
+
     // --- Server Bento Leaderboard ---
 
     [Fact]

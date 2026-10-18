@@ -155,6 +155,29 @@ public sealed class DeploymentConfigurationTests
     }
 
     [Fact]
+    public void WebsiteConfiguration_DistinguishesOmittedAndExplicitlyEmptyValues()
+    {
+        var omitted = new ConfigurationBuilder().Build().Get<BotEnvConfig>() ?? new();
+        Assert.Equal("https://bentobot.xyz", omitted.Branding.WebsiteUrl);
+        var empty = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["Branding:WebsiteUrl"] = "" }).Build().Get<BotEnvConfig>()!;
+        Assert.Equal("", empty.Branding.WebsiteUrl);
+        var presentation = new BotPresentation(empty);
+        var welcome = dotBento.Bot.Handlers.ClientJoinedGuildHandler.BuildWelcomeEmbed("https://example.com/avatar.png", presentation);
+        Assert.Null(welcome.Embed.Author.Url);
+        Assert.DoesNotContain(welcome.Embed.Fields, field => field.Name.Contains("website", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(welcome.Embed.Fields, field => field.Value.ToString()!.Contains("website", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void DisabledPatreon_OmitsWelcomePromotion()
+    {
+        var disabled = new BotPresentation(new() { Features = new() { PatreonEnabled = false } });
+        var welcome = dotBento.Bot.Handlers.ClientJoinedGuildHandler.BuildWelcomeEmbed("https://example.com/avatar.png", disabled);
+        Assert.DoesNotContain(welcome.Embed.Fields, field => field.Value.ToString() == disabled.Brand.PatreonUrl);
+    }
+
+    [Fact]
     public void EmptyLinks_AreOmittedAndBrandingIsApplied()
     {
         var presentation = new BotPresentation(new()

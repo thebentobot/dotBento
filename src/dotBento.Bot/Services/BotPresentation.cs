@@ -15,6 +15,7 @@ public sealed class BotPresentation
 {
     public BotEnvConfig Config { get; }
     public Branding Brand => Config.Branding;
+    public bool HasWebsite => !string.IsNullOrWhiteSpace(Brand.WebsiteUrl);
     public Color Primary { get; }
     public Color Success { get; }
     public Color Warning { get; }

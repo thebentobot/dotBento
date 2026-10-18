@@ -64,29 +64,35 @@ public sealed class ClientJoinedGuildHandler : IDisposable
         }
     }
 
-    private Task<ResponseModel> ResponseToNewGuild()
+    private Task<ResponseModel> ResponseToNewGuild() =>
+        Task.FromResult(BuildWelcomeEmbed(_client.CurrentUser.GetAvatarUrl(), _presentation));
+
+    internal static ResponseModel BuildWelcomeEmbed(string botAvatarUrl, BotPresentation presentation)
     {
-        var brand = _presentation.Brand;
+        var brand = presentation.Brand;
         var responseToGuildOwner = new ResponseModel { ResponseType = ResponseType.Embed };
         var embed = responseToGuildOwner.Embed;
-        embed.WithColor(_presentation.Primary)
-            .WithAuthor(brand.Name, _client.CurrentUser.GetAvatarUrl(),
+        embed.WithColor(presentation.Primary)
+            .WithAuthor(brand.Name, botAvatarUrl,
                 string.IsNullOrWhiteSpace(brand.WebsiteUrl) ? null : brand.WebsiteUrl)
             .WithTitle($"Hello! My name is {brand.DisplayName}")
             .WithDescription("Thank you for choosing me to service your server!");
         var guide = BotPresentation.Link(Branding.JoinUrl(brand.DocumentationUrl, "guides/server-settings/"),
             "Open the server settings guide");
+        var settingsActions = presentation.HasWebsite
+            ? "control website leaderboard visibility and make commands disabled or admin-only"
+            : "make commands disabled or admin-only";
         embed.AddField($"Configure {brand.Name} for your server",
-            "Run `/server settings` with the **Manage Server** permission to control website leaderboard visibility and make commands disabled or admin-only.\n" + guide);
+            $"Run `/server settings` with the **Manage Server** permission to {settingsActions}.\n" + guide);
         BotPresentation.AddLink(embed, "Browse all commands and guides", brand.DocumentationUrl);
         BotPresentation.AddLink(embed, $"Visit the {brand.Name} website", brand.WebsiteUrl);
         BotPresentation.AddLink(embed, $"Need help or have feedback for {brand.DisplayName}? Join the support server!", brand.SupportUrl);
         BotPresentation.AddLink(embed, $"Want to check out the code for {brand.Name}?", brand.SourceUrl);
-        if (_presentation.Config.Features.PatreonEnabled)
+        if (presentation.Config.Features.PatreonEnabled)
             BotPresentation.AddLink(embed, $"Want additional benefits when using {brand.Name}?", brand.PatreonUrl);
         BotPresentation.AddLink(embed, $"Get a {brand.GiftName} {brand.GiftEmoji} for each tip", brand.KoFiUrl);
         BotPresentation.AddLink(embed, $"Vote on top.gg and receive 5 {brand.GiftPluralName} {brand.GiftEmoji}", brand.VoteUrl);
-        return Task.FromResult(responseToGuildOwner);
+        return responseToGuildOwner;
     }
 
     public void Dispose()

@@ -21,8 +21,9 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
 
         response.Embed
             .WithTitle($"Server Settings for {guildName}")
-            .WithColor(_presentation.Primary)
-            .AddField("Website Leaderboard",
+            .WithColor(_presentation.Primary);
+        if (_presentation.HasWebsite)
+            response.Embed.AddField("Website Leaderboard",
                 setting.LeaderboardPublic
                     ? $"**Public** - Anyone can view the server leaderboard on the {WebsiteLink($"leaderboard/{guildId}")}."
                     : $"**Private** - Only server members can view the leaderboard on the {WebsiteLink($"leaderboard/{guildId}")}.");
@@ -40,9 +41,10 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
             .WithCustomId("server-settings:commands:overview")
             .WithStyle(ButtonStyle.Primary);
 
-        response.Components = new ComponentBuilder()
-            .WithButton(leaderboardButton)
-            .WithButton(commandPermissionsButton);
+        response.Components = new ComponentBuilder();
+        if (_presentation.HasWebsite)
+            response.Components.WithButton(leaderboardButton);
+        response.Components.WithButton(commandPermissionsButton);
 
         return response;
     }
@@ -50,6 +52,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     public async Task<ResponseModel> GetUserSettingsAsync(long userId)
     {
         var setting = await userSettingService.GetOrCreateUserSettingAsync(userId);
+        var website = _presentation.HasWebsite ? $" and {WebsiteLink("leaderboard")}" : string.Empty;
 
         var response = new ResponseModel { ResponseType = ResponseType.Embed };
 
@@ -62,8 +65,8 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
                     : "**Disabled ⨯** - Your command responses are visible to everyone by default. When using a command, you can choose to hide the response.")
             .AddField("Global Leaderboard",
                 setting.ShowOnGlobalLeaderboard
-                    ? $"**Enabled ✔** - You appear on the global leaderboard, which is the command and {WebsiteLink("leaderboard")}"
-                    : $"**Disabled ⨯** - You are hidden from the global leaderboard, so your user is shown as private in the command and {WebsiteLink("leaderboard")}");
+                    ? $"**Enabled ✔** - You appear on the global leaderboard in the command{website}."
+                    : $"**Disabled ⨯** - You are hidden from the global leaderboard, so your user is shown as private in the command{website}.");
 
         var hideCommandsButton = new ButtonBuilder()
             .WithLabel(setting.HideSlashCommandCalls ? "Show Commands" : "Hide Commands")
@@ -312,7 +315,7 @@ public sealed class SettingsCommand(GuildSettingService guildSettingService, Use
     private string WebsiteLink(string path)
     {
         var url = Branding.JoinUrl(_presentation.Brand.WebsiteUrl, path);
-        return string.IsNullOrWhiteSpace(url) ? "website" : BotPresentation.Link(url, "website");
+        return BotPresentation.Link(url, "website");
     }
 
     private static ButtonStyle ActionButtonStyle(CommandPermissionAction action) =>
