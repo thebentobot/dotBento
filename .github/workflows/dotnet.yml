@@ -11,44 +11,6 @@ on:
     branches: ["master"]
 
 jobs:
-  proxy-config:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Prepare temporary proxy fixtures
-        run: |
-          mkdir -p src/letsencrypt/live/api.bentobot.xyz
-          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=localhost \
-            -keyout src/letsencrypt/live/api.bentobot.xyz/privkey.pem \
-            -out src/letsencrypt/live/api.bentobot.xyz/fullchain.pem 2>/dev/null
-          for domain in sta-api.bentobot.xyz grafana.bentobot.xyz prometheus.bentobot.xyz; do
-            mkdir -p "src/letsencrypt/live/$domain"
-            cp src/letsencrypt/live/api.bentobot.xyz/*.pem "src/letsencrypt/live/$domain/"
-          done
-          printf 'smoke:' > src/nginx/.htpasswd
-          openssl rand -hex 16 | openssl passwd -6 -stdin >> src/nginx/.htpasswd
-          touch src/.env-prod src/.env-webapi src/.env-sta src/.env-webapi-sta \
-            src/.env-postgres-prod src/.env-postgres-sta
-      - name: Validate proxy configuration with applications stopped
-        run: |
-          sh -n src/nginx/40-watch-certificates.sh src/certbot/renew.sh
-          docker compose -f src/docker-compose.prod.yml config --quiet
-          docker compose -f src/docker-compose.prod.yml up -d --no-deps --wait --wait-timeout 60 nginx
-          docker compose -f src/docker-compose.prod.yml exec -T nginx nginx -t
-          for domain in api.bentobot.xyz sta-api.bentobot.xyz; do
-            status=$(curl --insecure --silent --show-error --resolve "$domain:443:127.0.0.1" \
-              -o /dev/null -w '%{http_code}' "https://$domain/metrics")
-            test "$status" = 404
-          done
-          for domain in grafana.bentobot.xyz prometheus.bentobot.xyz; do
-            status=$(curl --insecure --silent --show-error --resolve "$domain:443:127.0.0.1" \
-              -o /dev/null -w '%{http_code}' "https://$domain/")
-            test "$status" = 401
-          done
-      - name: Stop proxy smoke test
-        if: always()
-        run: docker compose -f src/docker-compose.prod.yml down --volumes
-
   build:
     runs-on: ubuntu-latest
     steps:

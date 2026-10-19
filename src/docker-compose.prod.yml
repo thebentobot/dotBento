@@ -2,8 +2,8 @@
 # Production DB host: postgres-prod; staging DB host: postgres-sta; both use port 5432.
 # Database env files supply POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB.
 # The health probes below expect POSTGRES_USER=pg18_admin; adjust if provisioning differently.
-# Copy existing certificates to ./letsencrypt and the dashboard password file to
-# ./nginx/.htpasswd on the VPS. Both are private and excluded from Git/build contexts.
+# Proxy config, renewal/reload scripts, certificates and dashboard passwords are
+# provisioned separately on the VPS; these bind-mounted files are not in this repo.
 # Service order: HTTPS entry point, production, shared services, staging, observability.
 # Staging and observability are optional; core production services are listed first.
 x-logging: &default-logging
@@ -14,7 +14,7 @@ x-logging: &default-logging
 
 services:
   # Required public HTTPS entry point for API and monitoring domains.
-  # Uses Docker DNS so deployments and stopped staging do not prevent startup.
+  # Uses the existing VPS-managed configuration and certificate reload script.
   nginx:
     image: nginx:1.30.6-alpine
     container_name: nginx
@@ -49,9 +49,7 @@ services:
     networks:
       - bento_net
 
-  # Required for automatic HTTPS renewal. Existing renewals must use the webroot
-  # authenticator, /var/www/certbot, and no host Nginx installer plugin.
-  # Certbot writes certificates; Nginx watches their symlinks and reloads itself.
+  # Automatic HTTPS renewal using the existing VPS-managed webroot renewal script.
   certbot:
     image: certbot/certbot:v5.8.0
     container_name: certbot
