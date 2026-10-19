@@ -5,32 +5,44 @@ env:
 
 on:
   release:
-    types: [published]  # This will trigger on both releases and pre-releases
+    types: [published]
+
+concurrency:
+  group: bento-vps-deployment
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   docker-release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.release.prerelease == false }}  # Run only if it's an actual release, not a pre-release
+    if: ${{ github.event.release.prerelease == false }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Set Release Tag
+      - name: Prepare deployment helpers
+        id: source
         run: |
-          NEW_TAG="${{ github.event.release.tag_name }}"  # Use the tag name from the release
-          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          python3 .github/scripts/deployment.py render inspect /tmp/bento-inspect.sh
+          python3 .github/scripts/deployment.py render deploy-production /tmp/bento-deploy.sh
+          python3 .github/scripts/deployment.py render stop-staging /tmp/bento-stop.sh
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ghcr.io/thebentobot/dotbento
-          tags: |
-            type=raw,value=${{ env.NEW_TAG }}
+          images: ghcr.io/thebentobot/dotbento
+          tags: type=raw,value=${{ github.event.release.tag_name }}
+          labels: org.opencontainers.image.revision=${{ steps.source.outputs.revision }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -45,51 +57,72 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT }}
 
-      - name: Build and Push Bot to Production
+      - name: Build and push bot image
         uses: docker/build-push-action@v7
         with:
           file: src/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/thebentobot/dotbento:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Build and Push webapi to Production
+      - name: Build and push Web API image
         uses: docker/build-push-action@v7
         with:
           file: src/dotBento.WebApi/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/thebentobot/dotbento-webapi:${{ steps.meta.outputs.version }}
+          tags: ghcr.io/thebentobot/dotbento-webapi:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Deploy to Production Server
+      - name: Deploy production and wait for healthy containers
+        uses: appleboy/ssh-action@master
+        env:
+          DEPLOY_TAG: ${{ github.event.release.tag_name }}
+          DEPLOY_REVISION: ${{ steps.source.outputs.revision }}
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USERNAME }}
+          password: ${{ secrets.PROD_SERVER_PASSWORD }}
+          envs: DEPLOY_TAG,DEPLOY_REVISION
+          command_timeout: 15m
+          script_path: /tmp/bento-deploy.sh
+
+      - name: Read healthy production and current staging
+        id: deployed
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
           password: ${{ secrets.PROD_SERVER_PASSWORD }}
-          script: |
-            USER_DIR="/${{ secrets.PROD_SERVER_USERNAME }}"
-            
-            # Update the docker-compose.yml file to use the stable version tag (e.g., v1.0.0)
-            sed -i 's|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+          script_path: /tmp/bento-inspect.sh
+          capture_stdout: true
 
-            # Update the WebAPI image tag
-            sed -i 's|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
+      - name: Check for newer unreleased application changes
+        id: plan
+        env:
+          DEPLOYMENT_STATE: ${{ steps.deployed.outputs.stdout }}
+        run: |
+          git fetch origin master
+          python3 .github/scripts/deployment.py plan-release
 
-            # Stop and remove any existing instance of the production bot
-            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-prod webapi || true
-            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-prod webapi || true
-
-            # Pull the new image and redeploy the production bot
-            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-prod webapi
-            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-prod webapi
+      - name: Stop the complete staging stack when production has caught up
+        if: steps.plan.outputs.action == 'stop'
+        uses: appleboy/ssh-action@master
+        env:
+          DEPLOYMENT_STATE: ${{ steps.deployed.outputs.stdout }}
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USERNAME }}
+          password: ${{ secrets.PROD_SERVER_PASSWORD }}
+          envs: DEPLOYMENT_STATE
+          script_path: /tmp/bento-stop.sh
 
       - name: Publish documentation for this release
         env:
           GH_TOKEN: ${{ secrets.BENTO_DOCS_DISPATCH_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           gh api --method POST repos/thebentobot/bento-docs/dispatches \
             -f event_type=dotbento_release \
-            -f client_payload[ref]="${{ env.NEW_TAG }}"
+            -f "client_payload[ref]=$RELEASE_TAG"
