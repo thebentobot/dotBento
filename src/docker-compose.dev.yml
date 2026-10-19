@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres18_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U username -d bento"]
       interval: 5s
@@ -47,8 +47,8 @@ services:
       - bento_net
 
 volumes:
-  # A separate volume preserves any existing PostgreSQL 16 development data.
-  postgres18_data:
+  # PostgreSQL 18 requires a fresh or migrated volume; PostgreSQL 16 files are incompatible.
+  postgres_data:
 
 networks:
   bento_net:
