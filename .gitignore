@@ -110,3 +110,7 @@ coverage-report/
 coverage-report-webapi/
 coverage-report-badges/
 coverage-report-infrastructure/
+
+# Python deployment helper tests
+__pycache__/
+*.py[cod]

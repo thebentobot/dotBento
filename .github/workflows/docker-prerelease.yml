@@ -5,13 +5,22 @@ env:
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+  workflow_dispatch:
+
+# Share the queue with production; keep pending releases instead of replacing them.
+concurrency:
+  group: bento-vps-deployment
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   github-docker-pre-release:
     runs-on: ubuntu-latest
-    permissions: write-all
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -19,51 +28,71 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Check Commit Message
+      - name: Prepare deployment helpers
         run: |
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$LAST_COMMIT_MSG" == *"chore(master): release"* ]]; then
-            echo "SKIP_PRERELEASE=true" >> $GITHUB_ENV
-          else
-            echo "SKIP_PRERELEASE=false" >> $GITHUB_ENV
-          fi
+          git fetch origin master
+          python3 .github/scripts/deployment.py render inspect /tmp/bento-inspect.sh
+          python3 .github/scripts/deployment.py render deploy-staging /tmp/bento-deploy.sh
+          python3 .github/scripts/deployment.py render stop-staging /tmp/bento-stop.sh
 
-      - name: Generate Tag
-        if: env.SKIP_PRERELEASE == 'false'
-        run: |
-          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/-pre-.*//')
-          NEW_TAG="${LAST_TAG}-pre-${GITHUB_SHA::8}"
-          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+      - name: Read deployed source revisions
+        id: deployed
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script_path: /tmp/bento-inspect.sh
+          capture_stdout: true
 
-      - name: Create GitHub Pre-release
-        if: env.SKIP_PRERELEASE == 'false'
+      - name: Compare master with running production
+        id: plan
+        env:
+          DEPLOYMENT_STATE: ${{ steps.deployed.outputs.stdout }}
+        run: python3 .github/scripts/deployment.py plan-staging
+
+      - name: Stop staging when production already contains the application changes
+        if: steps.plan.outputs.action == 'stop'
+        uses: appleboy/ssh-action@master
+        env:
+          DEPLOYMENT_STATE: ${{ steps.deployed.outputs.stdout }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          envs: DEPLOYMENT_STATE
+          script_path: /tmp/bento-stop.sh
+
+      - name: Create GitHub pre-release
+        if: steps.plan.outputs.action == 'deploy'
         uses: ncipollo/release-action@v1.21.0
         with:
-          name: Pre-release ${{ env.NEW_TAG }}
-          tag: ${{ env.NEW_TAG }}
+          name: Pre-release ${{ steps.plan.outputs.tag }}
+          tag: ${{ steps.plan.outputs.tag }}
+          commit: ${{ steps.plan.outputs.revision }}
           prerelease: true
+          allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker meta
         id: meta
-        if: env.SKIP_PRERELEASE == 'false'
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ghcr.io/thebentobot/dotBento
-          tags: |
-            type=raw,value=${{ env.NEW_TAG }}
+          images: ghcr.io/thebentobot/dotbento
+          tags: type=raw,value=${{ steps.plan.outputs.tag }}
+          labels: org.opencontainers.image.revision=${{ steps.plan.outputs.revision }}
 
       - name: Set up QEMU
-        if: env.SKIP_PRERELEASE == 'false'
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        if: env.SKIP_PRERELEASE == 'false'
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/setup-buildx-action@v4
 
       - name: Login to GitHub Container Registry
-        if: env.SKIP_PRERELEASE == 'false'
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -71,46 +100,46 @@ jobs:
           password: ${{ secrets.PAT }}
 
       - name: Build and push bot image
-        if: env.SKIP_PRERELEASE == 'false'
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/build-push-action@v7
         with:
           file: src/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/thebentobot/dotbento:${{ steps.plan.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
-      
-      - name: Build and push Web API Image
-        if: env.SKIP_PRERELEASE == 'false'
+
+      - name: Build and push Web API image
+        if: steps.plan.outputs.action == 'deploy'
         uses: docker/build-push-action@v7
         with:
-          file: src/dotBento.WebApi/Dockerfile  # <-- new path!
+          file: src/dotBento.WebApi/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/thebentobot/dotbento-webapi:${{ steps.meta.outputs.version }}
+          tags: ghcr.io/thebentobot/dotbento-webapi:${{ steps.plan.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
-      
-      - name: Deploy to Server
-        if: env.SKIP_PRERELEASE == 'false'
+
+      - name: Recheck master after building
+        id: fresh
+        if: steps.plan.outputs.action == 'deploy'
+        run: |
+          git fetch origin master
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy staging and start its database and cache
+        if: steps.plan.outputs.action == 'deploy' && steps.fresh.outputs.current == 'true'
         uses: appleboy/ssh-action@master
+        env:
+          DEPLOY_TAG: ${{ steps.plan.outputs.tag }}
+          DEPLOY_REVISION: ${{ steps.plan.outputs.revision }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          script: |
-            # Set the user directory using the secret
-            USER_DIR="/${{ secrets.SERVER_USERNAME }}"
-            
-            # Only update the bot-sta service, NOT bot-prod
-            sed -i '/bot-sta:/,/image:/s|ghcr.io/thebentobot/dotbento:[^ ]*|ghcr.io/thebentobot/dotbento:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
-
-            # Only update the staging WebAPI service
-            sed -i '/webapi-sta:/,/image:/s|ghcr.io/thebentobot/dotbento-webapi:[^ ]*|ghcr.io/thebentobot/dotbento-webapi:${{ env.NEW_TAG }}|' $USER_DIR/bento/docker-compose.yml
-
-            # Stop and remove any existing instance of bot-sta and webapi-sta to prevent name conflicts
-            docker compose -f $USER_DIR/bento/docker-compose.yml down bot-sta webapi-sta || true
-            docker compose -f $USER_DIR/bento/docker-compose.yml rm -f bot-sta webapi-sta || true
-
-            # Pull the new image and redeploy the service
-            docker compose -f $USER_DIR/bento/docker-compose.yml pull bot-sta webapi-sta
-            docker compose -f $USER_DIR/bento/docker-compose.yml up -d bot-sta webapi-sta
+          envs: DEPLOY_TAG,DEPLOY_REVISION
+          command_timeout: 15m
+          script_path: /tmp/bento-deploy.sh
