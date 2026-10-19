@@ -24,6 +24,17 @@ def state_at(revision):
     }
 
 
+def ssh_output(state):
+    # capture_stdout includes drone-ssh's banner, as seen in failed run 39331479075.
+    return (
+        "SSH session notice\n{\"unrelated\": true}\n"
+        "BENTO_DEPLOYMENT_STATE=" + json.dumps(state) + "\n"
+        "===============================================\n"
+        "✅ Successfully executed commands to all hosts.\n"
+        "===============================================\n"
+    )
+
+
 class DeploymentPlansTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -127,12 +138,38 @@ class DeploymentPlansTests(unittest.TestCase):
         output = Path("outputs.txt")
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "plan-staging"], check=True, capture_output=True, text=True,
-            env={**os.environ, "DEPLOYMENT_STATE": json.dumps(state_at(self.production)),
+            env={**os.environ, "DEPLOYMENT_STATE": ssh_output(state_at(self.production)),
                  "GITHUB_OUTPUT": str(output)},
         )
         self.assertEqual("deploy", json.loads(result.stdout)["action"])
         self.assertEqual({"action": "deploy", "revision": candidate, "tag": f"v2.3.1-pre-{candidate[:8]}"},
                          dict(line.split("=", 1) for line in output.read_text().splitlines()))
+
+    def test_cli_plans_ignore_ssh_action_banners(self):
+        self.change("src/dotBento.Bot/Bot.cs", "candidate")
+        candidate = self.commit()
+        self.git("update-ref", "refs/remotes/origin/master", candidate)
+        for action, state, expected in [
+            ("plan-staging", state_at(self.production), "deploy"),
+            ("plan-release", state_at(candidate), "stop"),
+        ]:
+            with self.subTest(action=action):
+                output = Path(f"{action}.txt")
+                result = subprocess.run(
+                    [sys.executable, str(SCRIPT), action], check=True, capture_output=True, text=True,
+                    env={**os.environ, "DEPLOYMENT_STATE": ssh_output(state), "GITHUB_OUTPUT": str(output)},
+                )
+                self.assertEqual(expected, json.loads(result.stdout)["action"])
+                self.assertIn(f"action={expected}\n", output.read_text())
+
+    def test_state_parser_rejects_missing_duplicate_or_invalid_records(self):
+        valid = ssh_output(state_at(self.production))
+        for output in ["", json.dumps(state_at(self.production)), valid + valid,
+                       "BENTO_DEPLOYMENT_STATE=not-json", "BENTO_DEPLOYMENT_STATE=[]",
+                       "BENTO_DEPLOYMENT_STATE={}"]:
+            with self.subTest(output=output):
+                with self.assertRaises(ValueError):
+                    deployment.parse_deployment_state(output)
 
 
 class RemoteDeploymentTests(unittest.TestCase):
@@ -250,14 +287,22 @@ class RemoteDeploymentTests(unittest.TestCase):
         script = self.directory / "remote.sh"
         deployment.render_remote("inspect", script)
         result = subprocess.run(["sh", str(script)], env=env, check=True, capture_output=True, text=True)
-        self.assertEqual(self.state, json.loads(result.stdout))
+        self.assertEqual("BENTO_DEPLOYMENT_STATE=" + json.dumps(self.state) + "\n", result.stdout)
         self.assertNotIn("must-not-be-returned", result.stdout)
         deployment.render_remote("stop-staging", script)
-        subprocess.run(["sh", str(script)], env={**env, "DEPLOYMENT_STATE": result.stdout}, check=True)
+        subprocess.run(["sh", str(script)], env={**env, "DEPLOYMENT_STATE": ssh_output(self.state)}, check=True)
         self.assertEqual(
             ["compose", "-f", str(self.compose), "stop", "--timeout", "60", *deployment.STAGING_STACK],
             json.loads((self.directory / "commands.json").read_text()),
         )
+        (self.directory / "commands.json").unlink()
+        for invalid in ["missing state record", ssh_output(self.state) * 2,
+                        "BENTO_DEPLOYMENT_STATE=not-json"]:
+            with self.subTest(invalid=invalid):
+                result = subprocess.run(["sh", str(script)], env={**env, "DEPLOYMENT_STATE": invalid},
+                                        capture_output=True, text=True)
+                self.assertNotEqual(0, result.returncode)
+                self.assertFalse((self.directory / "commands.json").exists())
 
 
 if __name__ == "__main__":

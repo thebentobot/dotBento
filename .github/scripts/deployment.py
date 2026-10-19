@@ -13,6 +13,7 @@ import tempfile
 PRODUCTION = ("bot-prod", "webapi")
 STAGING = ("bot-sta", "webapi-sta")
 STAGING_STACK = (*STAGING, "postgres-sta", "valkey-sta")
+STATE_PREFIX = "BENTO_DEPLOYMENT_STATE="
 APPLICATION_PATHS = (
     "src/dotBento.Bot", "src/dotBento.WebApi", "src/dotBento.Domain",
     "src/dotBento.Infrastructure", "src/dotBento.EntityFramework",
@@ -72,6 +73,26 @@ def release_plan(state, revision, master_revision):
     ):
         raise RuntimeError("Production has not successfully deployed this release")
     return "keep" if application_changed(revision, master_revision) else "stop"
+
+
+def parse_deployment_state(output):
+    # ssh-action captures drone-ssh's success banner along with remote stdout.
+    # Read one explicit record rather than treating logs as JSON or guessing
+    # which JSON-looking line describes the intended host.
+    records = [line[len(STATE_PREFIX):] for line in output.splitlines() if line.startswith(STATE_PREFIX)]
+    if len(records) != 1:
+        raise ValueError("Expected exactly one deployment state record from SSH")
+    state = json.loads(records[0])
+    if not isinstance(state, dict):
+        raise ValueError("Invalid deployment state object")
+    for service in (*PRODUCTION, *STAGING):
+        snapshot = state.get(service)
+        if (not isinstance(snapshot, dict) or not isinstance(snapshot.get("healthy"), bool)
+                or "id" not in snapshot or "revision" not in snapshot
+                or not isinstance(snapshot["id"], (str, type(None)))
+                or not isinstance(snapshot["revision"], (str, type(None)))):
+            raise ValueError(f"Invalid deployment state for {service}")
+    return state
 
 
 def inspect_deployment():
@@ -176,7 +197,7 @@ def main():
         render_remote(*args.arguments)
         return
     if args.action.startswith("plan-"):
-        state = json.loads(os.environ["DEPLOYMENT_STATE"])
+        state = parse_deployment_state(os.environ["DEPLOYMENT_STATE"])
         revision = git("rev-parse", "HEAD")
         master = git("rev-parse", "origin/master")
         action = (staging_plan if args.action == "plan-staging" else release_plan)(state, revision, master)
@@ -193,9 +214,9 @@ def main():
     with (directory / ".deployment.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if args.action == "inspect":
-            print(json.dumps(inspect_deployment()))
+            print(STATE_PREFIX + json.dumps(inspect_deployment()))
         elif args.action == "stop-staging":
-            stop_staging(directory, json.loads(os.environ["DEPLOYMENT_STATE"]))
+            stop_staging(directory, parse_deployment_state(os.environ["DEPLOYMENT_STATE"]))
         else:
             environment = "staging" if args.action == "deploy-staging" else "production"
             deploy(directory, environment, os.environ["DEPLOY_TAG"], os.environ["DEPLOY_REVISION"])
