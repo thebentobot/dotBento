@@ -158,7 +158,7 @@ services:
       - bento_net
       - web
 
-  # Optional staging database; retains its existing volume despite the service rename.
+  # Optional persistent database for staging.
   postgres-sta:
     image: postgres:18.6-bookworm
     container_name: postgres-sta
@@ -268,8 +268,6 @@ services:
 volumes:
   postgres_prod_data:
   postgres_sta_data:
-    # Keep this existing physical volume name to avoid initializing an empty staging DB.
-    name: bento_postgres_sta18_data
 
 networks:
   web:
