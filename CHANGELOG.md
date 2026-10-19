@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.0](https://github.com/thebentobot/dotBento/compare/v2.3.1...v2.4.0) (2026-10-19)
+
+
+### Features
+
+* **ci:** run staging only for unreleased application changes ([94b0497](https://github.com/thebentobot/dotBento/commit/94b04976df3fb8595f3f5ce0cff575ecb38d9bfb))
+* **ci:** run staging only for unreleased application changes ([74a25fe](https://github.com/thebentobot/dotBento/commit/74a25fe68789d55152f0fa9a0f0d929c30b20c9a))
+
 ## [2.3.1](https://github.com/thebentobot/dotBento/compare/v2.3.0...v2.3.1) (2026-10-19)
 
 
