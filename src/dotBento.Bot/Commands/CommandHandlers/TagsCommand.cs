@@ -160,6 +160,18 @@ public sealed class TagsCommand(TagCommands tagCommands, BotPresentation? presen
         }
         var tags = result.Value;
 
+        if (tags.Count == 0)
+        {
+            var emptyResponse = new ResponseModel { ResponseType = ResponseType.Embed };
+            emptyResponse.Embed
+                .WithTitle(top ? "Top Tags" : "Tags")
+                .WithColor(_presentation.Primary)
+                .WithDescription(author.HasValue
+                    ? "No tags found for this author."
+                    : "This server has no tags yet.");
+            return emptyResponse;
+        }
+
         var tagsPageChunks = tags.ChunkBy(10);
         
         var title = top ? "Top Tags" : "Tags";

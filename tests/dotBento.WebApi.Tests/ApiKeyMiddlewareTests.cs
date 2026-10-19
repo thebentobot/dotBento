@@ -68,6 +68,46 @@ public class ApiKeyMiddlewareTests
         Assert.Equal("API Key was not provided", await ReadBody(context.Response));
     }
 
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/health/")]
+    [InlineData("/HEALTH")]
+    public async Task InvokeAsync_HealthProbe_BypassesApiKeyWithoutChangingFailures(string path)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        cache.Set("Failures_127.0.0.1", 2);
+        var calls = 0;
+        var middleware = CreateMiddleware(cache, _ => calls++);
+
+        for (var i = 0; i < 5; i++)
+        {
+            var context = CreateContext(path);
+            await middleware.InvokeAsync(context, Configuration(apiKey: null));
+            Assert.Equal(StatusCodes.Status204NoContent, context.Response.StatusCode);
+        }
+
+        Assert.Equal(5, calls);
+        Assert.Equal(2, cache.Get<int>("Failures_127.0.0.1"));
+        Assert.False(cache.TryGetValue("Blocked_127.0.0.1", out _));
+    }
+
+    [Theory]
+    [InlineData("/health/details")]
+    [InlineData("/healthy")]
+    [InlineData("/healthz")]
+    public async Task InvokeAsync_HealthLikePath_StillRequiresApiKey(string path)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var nextCalled = false;
+        var middleware = CreateMiddleware(cache, _ => nextCalled = true);
+        var context = CreateContext(path);
+
+        await middleware.InvokeAsync(context, Configuration());
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+    }
+
     [Fact]
     public async Task InvokeAsync_InvalidApiKey_Returns401()
     {
