@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.1](https://github.com/thebentobot/dotBento/compare/v2.3.0...v2.3.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* handle empty tag lists and align container deployment ([8fb0086](https://github.com/thebentobot/dotBento/commit/8fb00861a69de102cc46cdb2dace90eacc8c2324))
+* handle empty tag lists and align container deployment ([b25441c](https://github.com/thebentobot/dotBento/commit/b25441cd8f9dd7303868dc7d08b36b9b5a751cfa))
+
 ## [2.3.0](https://github.com/thebentobot/dotBento/compare/v2.2.0...v2.3.0) (2026-10-18)
 
 
