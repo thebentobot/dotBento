@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Discord;
 using Discord.WebSocket;
 using dotBento.Bot.Handlers;
@@ -12,9 +13,9 @@ public sealed class ClientLogHandlerTests
 {
     private sealed class CapturingSink : ILogEventSink
     {
-        public List<LogEvent> Events { get; } = [];
+        public ConcurrentQueue<LogEvent> Events { get; } = new();
 
-        public void Emit(LogEvent logEvent) => Events.Add(logEvent);
+        public void Emit(LogEvent logEvent) => Events.Enqueue(logEvent);
     }
 
     private static async Task InvokeLogEvent(LogMessage logMessage)
@@ -23,6 +24,25 @@ public sealed class ClientLogHandlerTests
         Assert.NotNull(method);
         var task = Assert.IsAssignableFrom<Task>(method.Invoke(null, [logMessage]));
         await task;
+    }
+
+    [Fact]
+    public async Task CapturingSink_EnumerationRemainsStableWhileAnotherThreadLogs()
+    {
+        var sink = new CapturingSink();
+        using var logger = new LoggerConfiguration().WriteTo.Sink(sink).CreateLogger();
+        logger.Information("Before enumeration");
+
+        using var events = sink.Events.GetEnumerator();
+        Assert.True(events.MoveNext());
+        Assert.Equal("Before enumeration", events.Current.MessageTemplate.Text);
+
+        await Task.Run(() => logger.Information("During enumeration"), TestContext.Current.CancellationToken);
+
+        Assert.False(events.MoveNext());
+        Assert.Collection(sink.Events,
+            logEvent => Assert.Equal("Before enumeration", logEvent.MessageTemplate.Text),
+            logEvent => Assert.Equal("During enumeration", logEvent.MessageTemplate.Text));
     }
 
     [Theory]
@@ -36,10 +56,11 @@ public sealed class ClientLogHandlerTests
     {
         var sink = new CapturingSink();
         var previousLogger = Log.Logger;
-        Log.Logger = new LoggerConfiguration()
+        using var logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Sink(sink)
             .CreateLogger();
+        Log.Logger = logger;
 
         try
         {
