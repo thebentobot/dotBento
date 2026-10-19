@@ -3,29 +3,70 @@
   "extends": [
     "config:recommended"
   ],
-  "schedule": ["after 6:00am and before 7:00am"],
+  "schedule": [
+    "after 6:00am and before 7:00am"
+  ],
   "timezone": "Europe/Copenhagen",
-  "assignees": ["christianhook"],
+  "assignees": [
+    "christianhook"
+  ],
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "rangeStrategy": "bump",
   "packageRules": [
-      {
-        "matchDatasources": ["docker"],
-        "minimumReleaseAge": "3 day"
-      },
-      {
-        "matchManagers": ["github-actions"],
-        "minimumReleaseAge": "3 day"
-      },
-      {
-        "matchDatasources": ["nuget"],
-        "minimumReleaseAge": "3 day"
-      },
-      {
-        "matchDatasources": ["docker"],
-        "matchPackageNames": ["mcr.microsoft.com/dotnet/sdk"],
-        "versioning": "loose"
-      }
-    ]
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "minimumReleaseAge": "3 day"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "minimumReleaseAge": "3 day"
+    },
+    {
+      "matchDatasources": [
+        "nuget"
+      ],
+      "minimumReleaseAge": "3 day"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mcr.microsoft.com/dotnet/sdk"
+      ],
+      "versioning": "loose"
+    },
+    {
+      "description": "Review Compose image updates manually and retain readable version tags.",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchFileNames": [
+        "src/docker-compose.*.yml"
+      ],
+      "automerge": false,
+      "pinDigests": false
+    },
+    {
+      "description": "PostgreSQL major upgrades need an explicit migration decision.",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchPackageNames": [
+        "postgres"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true,
+      "prBodyNotes": [
+        "PostgreSQL major upgrades require a tested data migration. Review the volume/PGDATA layout before deploying; changing the image tag alone does not upgrade an existing database."
+      ]
+    }
+  ]
 }

@@ -1,41 +1,199 @@
-# This is equivalent to the production docker-compose file
+# Production deployment reference. Keep secrets in the referenced, untracked .env files.
+# Production DB host: postgres-prod; staging DB host: postgres-sta; both use port 5432.
+# Database env files supply POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB.
+# The health probes below expect POSTGRES_USER=pg18_admin; adjust if provisioning differently.
+# Service order: production, shared feature services, staging, then observability.
+# Staging and observability are optional; core production services are listed first.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
-  pushgateway:
-    image: prom/pushgateway:latest
-    container_name: pushgateway
+  # Required for Discord commands; optional for an API-only installation.
+  bot-prod:
+    image: ghcr.io/thebentobot/dotbento:v2.3.0
+    container_name: bot-prod
     restart: unless-stopped
-    ports:
-      - "9091:9091"
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    logging: *default-logging
+    env_file:
+      - .env-prod
+    expose:
+      - '8080'
     networks:
       - bento_net
+      - web
 
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
+  # Required for website/API endpoints; optional for a bot-only installation.
+  webapi:
+    image: ghcr.io/thebentobot/dotbento-webapi:v2.3.0
+    container_name: webapi
     restart: unless-stopped
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    logging: *default-logging
+    # Compatibility for deployed images that still authenticate /health.
+    # The key comes from env_file at runtime; no credential is stored here.
+    healthcheck:
+      test: ["CMD-SHELL", 'curl --fail --silent --show-error --max-time 5 -H "X-API-KEY: $$ApiKey" http://127.0.0.1:8080/health >/dev/null']
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    env_file:
+      - .env-webapi
     ports:
-      - "9093:9093"
+      - "127.0.0.1:8080:8080"
+    networks:
+      - bento_net
+      - web
+
+  # Required persistent production database for the bot and API. Do not remove its volume.
+  postgres-prod:
+    image: postgres:18.6-bookworm
+    container_name: postgres-prod
+    restart: unless-stopped
+    logging: *default-logging
+    shm_size: 128mb
+    env_file:
+      - .env-postgres-prod
     volumes:
-      - ./alertmanager:/etc/alertmanager
-    command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - postgres_prod_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pg18_admin -d pg18_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - bento_net
 
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    ports:
-      - "3100:3100"
+  # Required shared cache for this production configuration, including the API.
+  valkey-prod:
+    image: valkey/valkey:9.0.0-alpine
+    container_name: valkey-prod
     restart: unless-stopped
-    command: -config.file=/etc/loki/local-config.yaml
+    logging: *default-logging
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
     networks:
       - bento_net
 
+  # Optional: needed for image-rendering commands; other commands can run without it.
+  sushii-image-server:
+    image: ghcr.io/sushiibot/sushii-image-server:latest
+    container_name: sushii-image-server
+    restart: unless-stopped
+    init: true
+    logging: *default-logging
+    cap_add:
+      - SYS_ADMIN
+    expose:
+      - '3000'
+    networks:
+      - bento_net
+
+  # Optional private service; requires access to its image.
+  bento-media-server:
+    image: ghcr.io/thebentobot/bento-media-server:latest
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "8082:8082"
+    environment:
+      REDIS_URL: redis://valkey-prod:6379
+      CACHE_TTL: 3600
+    networks:
+      - bento_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 100s
+
+  # Optional staging bot. The entire staging group can be stopped to save RAM.
+  bot-sta:
+    image: ghcr.io/thebentobot/dotbento:v2.2.0-pre-296514ee
+    container_name: bot-sta
+    logging: *default-logging
+    restart: unless-stopped
+    env_file:
+      - .env-sta
+    depends_on:
+      postgres-sta:
+        condition: service_healthy
+    expose:
+      - '8080'
+    networks:
+      - bento_net
+      - web
+
+  # Optional staging API; uses the staging database and cache.
+  webapi-sta:
+    image: ghcr.io/thebentobot/dotbento-webapi:v2.2.0-pre-296514ee
+    container_name: webapi-sta
+    restart: unless-stopped
+    depends_on:
+      postgres-sta:
+        condition: service_healthy
+    logging: *default-logging
+    # Compatibility for deployed images that still authenticate /health.
+    # The key comes from env_file at runtime; no credential is stored here.
+    healthcheck:
+      test: ["CMD-SHELL", 'curl --fail --silent --show-error --max-time 5 -H "X-API-KEY: $$ApiKey" http://127.0.0.1:8080/health >/dev/null']
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    env_file:
+      - .env-webapi-sta
+    ports:
+      - "8081:8080"
+    networks:
+      - bento_net
+      - web
+
+  # Optional staging database; retains its existing volume despite the service rename.
+  postgres-sta:
+    image: postgres:18.6-bookworm
+    container_name: postgres-sta
+    restart: unless-stopped
+    logging: *default-logging
+    shm_size: 128mb
+    env_file:
+      - .env-postgres-sta
+    volumes:
+      - postgres_sta_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pg18_admin -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - bento_net
+
+  # Optional separate cache for staging; never shares production cache state.
+  valkey-sta:
+    image: valkey/valkey:9.0.0-alpine
+    container_name: valkey-sta
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - bento_net
+
+  # Optional dashboards; uses Prometheus and Loki. Not required for bot/API requests.
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.6.1
     container_name: grafana
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "3001:3000"
     volumes:
@@ -43,38 +201,12 @@ services:
     networks:
       - bento_net
 
-  # Exposes system metrics to prometheus
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    restart: unless-stopped
-    ports:
-      - "9100:9100"
-    networks:
-      - bento_net
-        
-  # --- Valkey for Production ---
-  valkey-prod:
-    image: valkey/valkey:9-alpine
-    container_name: valkey-prod
-    restart: unless-stopped
-    command: [ "valkey-server", "--save", "", "--appendonly", "no" ]
-    networks:
-      - bento_net
-        
-  # --- Valkey for Staging --- (optional if you want a staging environment)
-#  valkey-sta:
-#    image: valkey/valkey:9-alpine
-#    container_name: valkey-sta
-#    restart: unless-stopped
-#    command: [ "valkey-server", "--save", "", "--appendonly", "no" ]
-#    networks:
-#      - bento_net
-
+  # Optional metrics storage and alert evaluation; scrapes exporters and Pushgateway.
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.3.0
     container_name: prometheus
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "9090:9090"
     volumes:
@@ -84,83 +216,60 @@ services:
     networks:
       - bento_net
 
-  sushii-image-server:
-    image: ghcr.io/sushiibot/sushii-image-server:latest
-    container_name: sushii-image-server
-    restart: unless-stopped
-    init: true
-    cap_add:
-      - SYS_ADMIN
-    expose:
-      - '3000'
-    networks:
-      - bento_net
-
-  # Production Bot Service
-  bot-prod:
-    image: ghcr.io/thebentobot/dotbento
-    container_name: bot-prod
-    restart: unless-stopped
-    env_file:
-      - .env-prod
-    expose:
-      - '8080'
-    networks:
-      - bento_net
-      - web
-
-  # PostgreSQL Database for Staging Bot
-#  postgres:
-#    image: postgres
-#    container_name: postgres
-#    restart: unless-stopped
-#    environment:
-#      POSTGRES_USER: username
-#      POSTGRES_PASSWORD: password
-#      POSTGRES_DB: bento
-#    networks:
-#      - bento_net
-
-  # Staging Bot Service - optional if you want a staging environment
-#  bot-sta:
-#    image: ghcr.io/thebentobot/dotbento:staging
-#    container_name: bot-sta
-#    restart: unless-stopped
-#    env_file:
-#      - .env-sta
-#    depends_on:
-#      - postgres
-#    expose:
-#      - '8080'
-#    networks:
-#      - bento_net
-#      - web
-
-  # WebAPI - Production
-  webapi:
-    image: ghcr.io/thebentobot/dotbento-webapi
-    container_name: webapi
-    restart: unless-stopped
-    env_file:
-      - .env-webapi
+  # Optional application log storage. Disable the application Loki sink if omitting it.
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: loki
     ports:
-      - "8080:8080"
-    networks:
-      - bento_net
-      - web
-
-  # WebAPI - Staging
-  webapi-sta:
-    image: ghcr.io/thebentobot/dotbento-webapi
-    container_name: webapi-sta
+      - "3100:3100"
     restart: unless-stopped
-    env_file:
-      - .env-webapi-sta
-    ports:
-      - "8081:8080"
+    logging: *default-logging
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - bento_net
-      - web
+
+  # Optional routing and delivery of Prometheus alerts.
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - bento_net
+
+  # Optional receiver for the bot metrics pusher; consumed by Prometheus.
+  pushgateway:
+    image: prom/pushgateway:v1.11.1
+    container_name: pushgateway
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9091:9091"
+    networks:
+      - bento_net
+
+  # Optional host metrics exporter for Prometheus.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9100:9100"
+    networks:
+      - bento_net
+
+volumes:
+  postgres_prod_data:
+  postgres_sta_data:
+    # Keep this existing physical volume name to avoid initializing an empty staging DB.
+    name: bento_postgres_sta18_data
 
 networks:
   web:

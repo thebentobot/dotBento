@@ -95,6 +95,27 @@ public sealed class TagsCommandTests
         Assert.Equal("tag", info.Embed.Build().Title);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task ListTagsAsync_NoTagsInGuild_ReturnsNoTagsEmbed(bool top, bool otherGuildHasTags)
+    {
+        var (command, factory) = CreateCommand();
+        if (otherGuildHasTags)
+            await SeedTagAsync(factory);
+
+        var response = await command.ListTagsAsync(999, top,
+            CSharpFunctionalExtensions.Maybe<Discord.WebSocket.SocketGuildUser>.None);
+
+        Assert.Equal(ResponseType.Embed, response.ResponseType);
+        Assert.Null(response.StaticPaginator);
+        var embed = response.Embed.Build();
+        Assert.Equal(top ? "Top Tags" : "Tags", embed.Title);
+        Assert.Equal("This server has no tags yet.", embed.Description);
+    }
+
     private static async Task SeedTagAsync(TestDbFactory factory)
     {
         await using var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);

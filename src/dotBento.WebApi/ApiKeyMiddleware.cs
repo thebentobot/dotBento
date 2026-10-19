@@ -18,7 +18,10 @@ public class ApiKeyMiddleware
 
     public async Task InvokeAsync(HttpContext context, IConfiguration configuration)
     {
-        if (context.Request.Path.StartsWithSegments("/metrics"))
+        // Docker probes must work without credentials and must not count as failed API requests.
+        if (context.Request.Path.Equals(new PathString("/health"), StringComparison.OrdinalIgnoreCase)
+            || context.Request.Path.Equals(new PathString("/health/"), StringComparison.OrdinalIgnoreCase)
+            || context.Request.Path.StartsWithSegments("/metrics"))
         {
             await _next(context);
             return;
