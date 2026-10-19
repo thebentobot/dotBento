@@ -2,7 +2,9 @@
 # Production DB host: postgres-prod; staging DB host: postgres-sta; both use port 5432.
 # Database env files supply POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB.
 # The health probes below expect POSTGRES_USER=pg18_admin; adjust if provisioning differently.
-# Service order: production, shared feature services, staging, then observability.
+# Proxy config, renewal/reload scripts, certificates and dashboard passwords are
+# provisioned separately on the VPS; these bind-mounted files are not in this repo.
+# Service order: HTTPS entry point, production, shared services, staging, observability.
 # Staging and observability are optional; core production services are listed first.
 x-logging: &default-logging
   driver: json-file
@@ -11,6 +13,63 @@ x-logging: &default-logging
     max-file: "5"
 
 services:
+  # Required public HTTPS entry point for API and monitoring domains.
+  # Uses the existing VPS-managed configuration and certificate reload script.
+  nginx:
+    image: nginx:1.30.6-alpine
+    container_name: nginx
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/40-watch-certificates.sh:/docker-entrypoint.d/40-watch-certificates.sh:ro
+      - type: bind
+        source: ./nginx/.htpasswd
+        target: /etc/nginx/auth/htpasswd
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
+        bind:
+          create_host_path: false
+      - certbot_webroot:/var/www/certbot:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8088/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - bento_net
+
+  # Automatic HTTPS renewal using the existing VPS-managed webroot renewal script.
+  certbot:
+    image: certbot/certbot:v5.8.0
+    container_name: certbot
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      nginx:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/opt/certbot/renew.sh"]
+    volumes:
+      - ./certbot/renew.sh:/opt/certbot/renew.sh:ro
+      - type: bind
+        source: ./letsencrypt
+        target: /etc/letsencrypt
+        bind:
+          create_host_path: false
+      - certbot_webroot:/var/www/certbot
+    networks:
+      - web
+
   # Required for Discord commands; optional for an API-only installation.
   bot-prod:
     image: ghcr.io/thebentobot/dotbento:v2.3.0
@@ -266,6 +325,7 @@ services:
       - bento_net
 
 volumes:
+  certbot_webroot:
   postgres_prod_data:
   postgres_sta_data:
 
