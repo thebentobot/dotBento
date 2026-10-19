@@ -114,3 +114,7 @@ coverage-report-infrastructure/
 # Python deployment helper tests
 __pycache__/
 *.py[cod]
+
+# VPS-only TLS certificates, ACME accounts and dashboard password hashes
+letsencrypt/
+.htpasswd

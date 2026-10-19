@@ -6,3 +6,7 @@
 *.suo
 *.csproj.user
 Dockerfile
+
+# Never send VPS certificate/account data or dashboard password hashes to builds.
+**/letsencrypt
+**/.htpasswd
