@@ -14,11 +14,50 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Reflection;
+using Newtonsoft.Json;
 
 namespace dotBento.Bot.Tests.Services;
 
 public sealed class BackgroundServiceTests
 {
+    [Fact]
+    public async Task ClearUserCache_ReleasesGuildAndGlobalMembersButPreservesBotAndInteractionMember()
+    {
+        using var client = new DiscordSocketClient();
+        var state = typeof(DiscordSocketClient).GetProperty("State", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(client)!;
+        var guild = (SocketGuild)Activator.CreateInstance(typeof(SocketGuild), BindingFlags.Instance | BindingFlags.NonPublic,
+            null, [client, 100UL], null)!;
+        // The gateway's guild-create update normally initializes this collection.
+        var membersField = typeof(SocketGuild).GetField("_members", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        membersField.SetValue(guild, Activator.CreateInstance(membersField.FieldType));
+        var addMember = typeof(SocketGuild).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+            .Single(m => m.Name == "AddOrUpdateUser" && m.GetParameters()[0].ParameterType.FullName == "Discord.API.User");
+        var modelType = addMember.GetParameters()[0].ParameterType;
+        object Model(ulong id) => JsonConvert.DeserializeObject(
+            $$"""{"id":"{{id}}","username":"member{{id}}","discriminator":"0001","bot":{{(id == 1 ? "true" : "false")}}}""", modelType)!;
+        var self = typeof(SocketSelfUser).GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [client, state, Model(1)]);
+        typeof(BaseSocketClient).GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Single(p => p.Name == "CurrentUser" && p.PropertyType == typeof(SocketSelfUser)).SetValue(client, self);
+        state.GetType().GetMethod("AddGuild", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .Invoke(state, [guild]);
+        addMember.Invoke(guild, [Model(1)]);
+        var actor = (SocketGuildUser)addMember.Invoke(guild, [Model(2)])!;
+        Assert.Equal(2, guild.Users.Count);
+        Assert.NotNull(client.GetUser(2));
+
+        var sut = CreateSut(null!, client, null!, null!, null!, null!);
+        sut.ClearUserCache();
+
+        Assert.Equal(1UL, Assert.Single(guild.Users).Id);
+        Assert.Null(guild.GetUser(2));
+        Assert.Null(client.GetUser(2));
+        var resolved = await new DiscordGuildMemberResolver().ResolveAsync(guild, actor.Id, actor);
+        Assert.Same(actor, resolved.Value.Value);
+        Assert.Equal("member2", dotBento.Bot.Extensions.GuildMemberExtensions.Appearance(actor, resolved.Value).Name);
+    }
+
     private sealed class InMemoryDbFactory(string? dbName = null, InMemoryDatabaseRoot? root = null)
         : IDbContextFactory<BotDbContext>
     {

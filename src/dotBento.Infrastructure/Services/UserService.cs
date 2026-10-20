@@ -159,7 +159,7 @@ public sealed class UserService(IMemoryCache cache,
     }
 
     [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketUser; internal overload covers the behavior.")]
-    public async Task UpdateUserAvatarAsync(SocketUser newUser)
+    public async Task UpdateUserAvatarAsync(IUser newUser)
     {
         await UpdateUserAvatarAsync(newUser.Id, newUser.GetAvatarUrl(ImageFormat.Auto, 512));
     }

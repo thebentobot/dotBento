@@ -34,7 +34,7 @@ var remoteLogging = configuration.GetSection("Logging").Get<dotBento.Domain.Remo
 var lokiUrl = configuration["LokiUrl"] ?? "http://localhost:3100";
 if (remoteLogging.LokiEnabled && !string.IsNullOrWhiteSpace(lokiUrl))
 {
-    loggerConfig.WriteTo.GrafanaLoki(lokiUrl, labels:
+    loggerConfig.WriteTo.GrafanaLoki(lokiUrl, queueLimit: dotBento.Domain.RemoteLoggingConfig.LokiQueueLimit, labels:
     [
         new LokiLabel { Key = "app", Value = "dotbento-webapi" },
         new LokiLabel { Key = "environment", Value = configuration["Environment"] ?? "development" }
@@ -96,6 +96,8 @@ builder.Services.AddDbContextFactory<BotDbContext>(options =>
         npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
 var app = builder.Build();
+dotBento.Infrastructure.Services.MemoryMetrics.Register(
+    app.Services.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(), Metrics.DefaultRegistry);
 
 if (app.Environment.IsDevelopment())
 {

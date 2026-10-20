@@ -1,5 +1,4 @@
 using Discord;
-using SpotifyAPI.Web;
 
 namespace dotBento.Bot.Resources;
 
@@ -10,5 +9,4 @@ public sealed class DiscordConstants
 
     public const int PaginationTimeoutInSeconds = 120;
 
-    public static SpotifyClientConfig? SpotifyConfig = null;
 }

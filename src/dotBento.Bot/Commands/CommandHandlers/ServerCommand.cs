@@ -8,14 +8,14 @@ namespace dotBento.Bot.Commands.CommandHandlers;
 
 public sealed class ServerCommand(StylingUtilities stylingUtilities)
 {
-    public async Task<ResponseModel> UserServerCommand(SocketGuildUser guildMember)
+    public async Task<ResponseModel> UserServerCommand(IGuildUser guildMember, IGuild guild)
     {
         var avatar = guildMember.GetGuildAvatarUrl() ?? guildMember.GetDisplayAvatarUrl();
         var embed = new ResponseModel{ ResponseType = ResponseType.Embed };
-        var guildIconColour = await stylingUtilities.GetDominantColorAsync(guildMember.Guild.IconUrl);
+        var guildIconColour = await stylingUtilities.GetDominantColorAsync(guild.IconUrl);
         var embedAuthor = new EmbedAuthorBuilder()
-            .WithName(guildMember.Guild.Name)
-            .WithIconUrl(guildMember.Guild.IconUrl);
+            .WithName(guild.Name)
+            .WithIconUrl(guild.IconUrl);
         embed.Embed
             .WithAuthor(embedAuthor)
             .WithColor(guildIconColour)
@@ -38,7 +38,7 @@ public sealed class ServerCommand(StylingUtilities stylingUtilities)
 
         embed.Embed.AddField("User Roles",
             string.Join(", ",
-                guildMember.Roles.OrderBy(x => x.Position)
+                guild.Roles.Where(role => role.Id == guild.Id || guildMember.RoleIds.Contains(role.Id)).OrderBy(x => x.Position)
                     .Select(x => x.Mention)
                     .ToList()));        
         
@@ -55,7 +55,7 @@ public sealed class ServerCommand(StylingUtilities stylingUtilities)
             .WithThumbnailUrl(guild.IconUrl)
             .AddField("Server ID", guild.Id.ToString())
             .AddField("Server created on", $"<t:{guild.CreatedAt.ToUnixTimeSeconds()}:F>")
-            .AddField("Server Owner", guild.Owner.Mention)
+            .AddField("Server Owner", MentionUtils.MentionUser(guild.OwnerId))
             .AddField("Server Members", $"{guild.MemberCount} members")
             .AddField("Server Verification Level", guild.VerificationLevel.ToString());
         
