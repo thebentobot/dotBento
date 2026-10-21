@@ -304,7 +304,7 @@ services:
 
   # Optional receiver for the bot metrics pusher; consumed by Prometheus.
   pushgateway:
-    image: prom/pushgateway:v1.11.1
+    image: prom/pushgateway:v1.11.4
     container_name: pushgateway
     restart: unless-stopped
     logging: *default-logging
