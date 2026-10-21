@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using DotNetEnv;
@@ -107,6 +107,7 @@ public sealed class Startup
         {
             loggerConfig.WriteTo.GrafanaLoki(
                 lokiUrl,
+                queueLimit: dotBento.Domain.RemoteLoggingConfig.LokiQueueLimit,
                 labels:
                 [
                     new LokiLabel { Key = "app", Value = "dotbento-bot" },
@@ -141,6 +142,10 @@ public sealed class Startup
         ConfigureServices(services);
         
         var provider = services.BuildServiceProvider();
+        MemoryMetrics.Register(provider.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+            Prometheus.Metrics.DefaultRegistry,
+            () => provider.GetRequiredService<DiscordSocketClient>().Guilds.Sum(g => g.Users.Count),
+            () => provider.GetRequiredService<SpotifyResultCache>().Count);
         provider.GetRequiredService<MessageHandler>();
         provider.GetRequiredService<InteractionHandler>();
         provider.GetRequiredService<ClientLogHandler>();
@@ -181,7 +186,7 @@ public sealed class Startup
                              GatewayIntents.GuildMessageReactions | GatewayIntents.GuildMembers |
                              GatewayIntents.DirectMessages | GatewayIntents.DirectMessageReactions,
             FormatUsersInBidirectionalUnicode = false,
-            AlwaysDownloadUsers = true,
+            AlwaysDownloadUsers = config.Discord.AlwaysDownloadUsers,
             LogGatewayIntentWarnings = true,
             LogLevel = LogSeverity.Info,
             MessageCacheSize = 0,
@@ -190,6 +195,7 @@ public sealed class Startup
         services
             .AddSingleton(discordClient)
             .AddSingleton<IDiscordUserResolver, DiscordUserResolver>()
+            .AddSingleton<IDiscordGuildMemberResolver, DiscordGuildMemberResolver>()
             .AddSingleton<IDmSender, DmSender>()
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(),
                 new InteractionServiceConfig()
@@ -239,6 +245,7 @@ public sealed class Startup
             .AddSingleton<ProfileCommands>()
             .AddSingleton<ProfileService>()
             .AddSingleton<SpotifyApiService>()
+            .AddSingleton<SpotifyResultCache>()
             .AddSingleton<ImageCommands>()
             .AddSingleton<ToolsCommand>()
             .AddSingleton<LeaderboardService>()

@@ -1,0 +1,539 @@
+{
+  "uid": "dotbento-memory",
+  "title": "dotBento memory investigation",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "tags": [
+    "dotbento",
+    "memory"
+  ],
+  "timezone": "utc",
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Process working set",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((process_working_set_bytes{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(process_working_set_bytes{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Managed memory estimate",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((dotnet_total_memory_bytes{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(dotnet_total_memory_bytes{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "GC committed memory",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((system_runtime_dotnet_gc_last_collection_memory_committed_size{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(system_runtime_dotnet_gc_last_collection_memory_committed_size{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Last GC heap by generation",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((system_runtime_dotnet_gc_last_collection_heap_size{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(system_runtime_dotnet_gc_last_collection_heap_size{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Last GC fragmentation by generation",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((system_runtime_dotnet_gc_last_collection_heap_fragmentation_size{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(system_runtime_dotnet_gc_last_collection_heap_fragmentation_size{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "GC collections per second",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(system_runtime_dotnet_gc_collections{job=~\"webapi(-sta)?\"}[5m])",
+          "legendFormat": "{{job}} {{gc_heap_generation}}"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(system_runtime_dotnet_gc_collections{job=\"pushgateway\"}[5m]) and on(job,instance,exported_job) (time() - push_time_seconds < 120)",
+          "legendFormat": "{{exported_job}} {{gc_heap_generation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Host available RAM and swap used",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_MemAvailable_bytes",
+          "legendFormat": "Available RAM"
+        },
+        {
+          "refId": "B",
+          "expr": "node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes",
+          "legendFormat": "Swap used"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Swap activity",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(node_vmstat_pswpin[5m])",
+          "legendFormat": "Pages swapped in"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(node_vmstat_pswpout[5m])",
+          "legendFormat": "Pages swapped out"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Local cache entries",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((dotbento_memory_cache_entries{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(dotbento_memory_cache_entries{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}} {{cache}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Cached Discord members",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace((dotbento_discord_cached_guild_members{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"} and on(job,instance,exported_job) (time() - push_time_seconds < 120)), \"service\", \"$1\", \"exported_job\", \"(.*)\") or label_replace(dotbento_discord_cached_guild_members{job=~\"webapi(-sta)?\"}, \"service\", \"$1\", \"job\", \"(.*)\")",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Observed process restarts",
+      "type": "timeseries",
+      "description": "Counts sampled start-time changes; does not prove crash cause or count restarts between scrapes.",
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "changes(process_start_time_seconds{job=~\"webapi(-sta)?\"}[1h])",
+          "legendFormat": "{{job}}"
+        },
+        {
+          "refId": "B",
+          "expr": "changes(process_start_time_seconds{job=\"pushgateway\",exported_job=~\"dotbento-bot.*\"}[1h]) and on(job,instance,exported_job) (time() - push_time_seconds < 120)",
+          "legendFormat": "{{exported_job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Bot metric age",
+      "type": "timeseries",
+      "description": "Staging is normally stopped. Memory panels hide bot samples after 120 seconds.",
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - push_time_seconds",
+          "legendFormat": "{{exported_job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Kernel OOM kills",
+      "type": "timeseries",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(node_vmstat_oom_kill[1h])",
+          "legendFormat": "OOM kills in last hour"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "API scrape availability",
+      "type": "timeseries",
+      "description": "A stopped staging API is expected to be down; production has a separate alert.",
+      "gridPos": {
+        "x": 12,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=~\"webapi(-sta)?\"}",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ]
+}

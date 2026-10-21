@@ -1,0 +1,11 @@
+# Merge with existing Grafana provisioning; mount the dashboard JSON at this directory.
+apiVersion: 1
+providers:
+  - name: dotbento-memory
+    orgId: 1
+    folder: dotBento
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dotbento-dashboards

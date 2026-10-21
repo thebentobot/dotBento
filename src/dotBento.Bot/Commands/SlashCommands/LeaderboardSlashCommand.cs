@@ -13,7 +13,7 @@ namespace dotBento.Bot.Commands.SlashCommands;
 public sealed class LeaderboardSlashCommand(
     InteractiveService interactiveService,
     LeaderboardCommand leaderboardCommand,
-    UserSettingService userSettingService, BotPresentation? presentation = null)
+    UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("server", "Server XP leaderboard")]
@@ -40,13 +40,11 @@ public sealed class LeaderboardSlashCommand(
         [Summary("user", "Pick a user")] SocketUser? user = null,
         [Summary("hide", "Only show the result for you")] bool? hide = null)
     {
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
         var guild = Context.Guild;
-        var displayName = guild.Users.FirstOrDefault(x => x.Id == user.Id)?.Nickname
-                          ?? user.GlobalName ?? user.Username;
-        var avatarUrl = guild.Users.FirstOrDefault(x => x.Id == user.Id)?.GetGuildAvatarUrl()
-                        ?? user.GetDisplayAvatarUrl();
-        await Context.SendResponse(interactiveService,
+        var (displayName, avatarUrl) = await Context.MemberAppearanceAsync(guildMembers, user);
+        await Context.SendFollowUpResponse(interactiveService,
             await leaderboardCommand.GetUserSummaryAsync(
                 (long)user.Id, (long)guild.Id, displayName, avatarUrl, guild.Name),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));

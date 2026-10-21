@@ -10,7 +10,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("user", "Commands for Discord Users")]
-public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+public sealed class UserSlashCommand(InteractiveService interactiveService, UserCommand userCommand, SettingsCommand settingsCommand, UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("info", "Show info for a user")]
@@ -28,10 +28,16 @@ public sealed class UserSlashCommand(InteractiveService interactiveService, User
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
         user ??= Context.User;
-        await user.ReturnIfBot(Context, interactiveService);
-        var guildMember = Context.Guild.Users.First(x => x.Id == user.Id);
+        if (user.IsBot)
+        {
+            await user.ReturnIfBot(Context, interactiveService);
+            return;
+        }
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        var member = await Context.RequireMemberAsync(guildMembers, user);
+        if (member.HasNoValue) return;
+        var guildMember = member.Value;
         var botPfp = Context.Client.CurrentUser.GetDisplayAvatarUrl();
         await Context.SendFollowUpResponse(interactiveService,
             await userCommand.GetProfileAsync((long)user.Id,
