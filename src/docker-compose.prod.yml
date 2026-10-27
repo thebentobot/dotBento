@@ -277,7 +277,7 @@ services:
 
   # Optional application log storage. Disable the application Loki sink if omitting it.
   loki:
-    image: grafana/loki:3.5.0
+    image: grafana/loki:3.7.9
     container_name: loki
     ports:
       - "3100:3100"
