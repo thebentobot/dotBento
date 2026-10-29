@@ -16,7 +16,7 @@ services:
   # Required public HTTPS entry point for API and monitoring domains.
   # Uses the existing VPS-managed configuration and certificate reload script.
   nginx:
-    image: nginx:1.30.6-alpine
+    image: nginx:1.31.7-alpine
     container_name: nginx
     restart: unless-stopped
     logging: *default-logging
