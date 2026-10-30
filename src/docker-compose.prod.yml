@@ -315,7 +315,7 @@ services:
 
   # Optional host metrics exporter for Prometheus.
   node-exporter:
-    image: prom/node-exporter:v1.9.1
+    image: prom/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     logging: *default-logging
