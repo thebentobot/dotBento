@@ -255,6 +255,124 @@ class RemoteDeploymentTests(unittest.TestCase):
                     deployment.update_images(self.original, services, tag)
         self.assertEqual(self.original, self.compose.read_text())
 
+    def test_infrastructure_sync_changes_only_image_tags(self):
+        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+        with patch.object(deployment, "run") as run, \
+                patch.object(deployment, "inspect_compose_services", return_value={}):
+            changes = deployment.sync_infra(self.directory, desired)
+        self.assertEqual({"prometheus": "prom/prometheus:v3.15.1"}, changes)
+        self.assertEqual(desired, self.compose.read_text())
+        commands = [call.args[0][4:] for call in run.call_args_list]
+        self.assertEqual(["config", "--quiet"], commands[0])
+        self.assertEqual(["pull", "prometheus"], commands[1])
+        self.assertEqual(["up", "-d", "--no-deps", "--wait", "--wait-timeout", "300", "prometheus"], commands[2])
+        backups = list(self.directory.glob("docker-compose.yml.bak-*"))
+        self.assertEqual([self.original], [backup.read_text() for backup in backups])
+
+    def test_infrastructure_sync_ignores_application_and_unknown_services(self):
+        desired = (self.original
+                   .replace("ghcr.io/thebentobot/dotbento:v2.3.0", "ghcr.io/thebentobot/dotbento:v2.9.0")
+                   .replace("ghcr.io/thebentobot/dotbento-webapi:v2.3.0",
+                            "ghcr.io/thebentobot/dotbento-webapi:v2.9.0"))
+        with patch.object(deployment, "run") as run:
+            self.assertEqual({}, deployment.sync_infra(self.directory, desired))
+        run.assert_not_called()
+        self.assertEqual(self.original, self.compose.read_text())
+
+    def test_infrastructure_sync_is_a_noop_when_tags_already_match(self):
+        with patch.object(deployment, "run") as run:
+            self.assertEqual({}, deployment.sync_infra(self.directory, self.original))
+        run.assert_not_called()
+        self.assertFalse(list(self.directory.glob("docker-compose.yml.bak-*")))
+
+    def test_infrastructure_sync_does_not_add_services_missing_from_the_vps(self):
+        desired = self.original.replace(
+            "  # Optional receiver for the bot metrics pusher; consumed by Prometheus.",
+            "  extra-exporter:\n    image: prom/example:v1.0.0\n\n"
+            "  # Optional receiver for the bot metrics pusher; consumed by Prometheus.",
+        )
+        with patch.object(deployment, "run") as run:
+            self.assertEqual({}, deployment.sync_infra(self.directory, desired))
+        run.assert_not_called()
+        self.assertEqual(self.original, self.compose.read_text())
+
+    def test_postgres_major_upgrade_is_refused_before_touching_the_live_file(self):
+        desired = self.original.replace("postgres:18.6-bookworm", "postgres:19.1-bookworm")
+        with patch.object(deployment, "run") as run:
+            with self.assertRaisesRegex(RuntimeError, "major upgrade"):
+                deployment.sync_infra(self.directory, desired)
+        run.assert_not_called()
+        self.assertEqual(self.original, self.compose.read_text())
+
+    def test_postgres_patch_upgrade_is_applied(self):
+        desired = self.original.replace("postgres:18.6-bookworm", "postgres:18.7-bookworm")
+        with patch.object(deployment, "run") as run, \
+                patch.object(deployment, "inspect_compose_services", return_value={}):
+            changes = deployment.sync_infra(self.directory, desired)
+        self.assertEqual({"postgres-prod": "postgres:18.7-bookworm",
+                          "postgres-sta": "postgres:18.7-bookworm"}, changes)
+        self.assertIn("    image: postgres:18.7-bookworm", self.compose.read_text())
+        self.assertEqual(["pull", "postgres-prod", "postgres-sta"],
+                         [call.args[0][4:] for call in run.call_args_list][1])
+
+    def test_infrastructure_pull_failure_keeps_the_live_file(self):
+        desired = self.original.replace("nginx:1.30.6-alpine", "nginx:1.31.7-alpine")
+
+        def fail_pull(args, **kwargs):
+            if "pull" in args:
+                raise subprocess.CalledProcessError(1, args)
+        with patch.object(deployment, "run", side_effect=fail_pull) as run:
+            with self.assertRaises(subprocess.CalledProcessError):
+                deployment.sync_infra(self.directory, desired)
+        self.assertEqual(self.original, self.compose.read_text())
+        self.assertFalse(any("up" in call.args[0] for call in run.call_args_list))
+
+    def test_failed_infrastructure_restart_restores_the_previous_file(self):
+        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+
+        def fail_up(args, **kwargs):
+            if "up" in args:
+                raise subprocess.CalledProcessError(1, args)
+        with patch.object(deployment, "run", side_effect=fail_up):
+            with self.assertRaises(subprocess.CalledProcessError):
+                deployment.sync_infra(self.directory, desired)
+        self.assertEqual(self.original, self.compose.read_text())
+
+    def test_unhealthy_infrastructure_after_restart_rolls_back(self):
+        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+        with patch.object(deployment, "run"), \
+                patch.object(deployment, "inspect_compose_services",
+                             side_effect=RuntimeError("Deployed infrastructure services are not healthy")):
+            with self.assertRaisesRegex(RuntimeError, "not healthy"):
+                deployment.sync_infra(self.directory, desired)
+        self.assertEqual(self.original, self.compose.read_text())
+
+    def test_inspect_compose_services_rejects_unhealthy_or_missing_services(self):
+        healthy = json.dumps({"Service": "prometheus", "State": "running", "Health": ""})
+        restarting = json.dumps({"Service": "prometheus", "State": "restarting", "Health": ""})
+        unhealthy = json.dumps({"Service": "prometheus", "State": "running", "Health": "unhealthy"})
+        for output, services in [(healthy, ["prometheus"]), (healthy + "\n" + healthy, ["prometheus"])]:
+            with self.subTest(output=output):
+                result = subprocess.CompletedProcess([], 0, stdout=output, stderr="")
+                with patch.object(subprocess, "run", return_value=result):
+                    deployment.inspect_compose_services(self.compose, services)
+        for output in [restarting, unhealthy, ""]:
+            with self.subTest(output=output):
+                result = subprocess.CompletedProcess([], 0, stdout=output, stderr="")
+                with patch.object(subprocess, "run", return_value=result):
+                    with self.assertRaises(RuntimeError):
+                        deployment.inspect_compose_services(self.compose, ["prometheus"])
+
+    def test_generated_infrastructure_script_embeds_the_desired_compose_file(self):
+        script = self.directory / "infra.sh"
+        deployment.render_remote("apply-infra", script, self.original)
+        subprocess.run(["sh", "-n", str(script)], check=True)
+        text = script.read_text()
+        self.assertIn("BENTO_COMPOSE_PAYLOAD", text)
+        self.assertIn("export BENTO_DESIRED_COMPOSE=", text)
+        self.assertIn("python3 - apply-infra", text)
+        self.assertIn("prom/prometheus:v3.3.0", text)
+
     def test_generated_remote_script_is_valid_shell(self):
         script = self.directory / "inspect.sh"
         deployment.render_remote("inspect", script)
