@@ -262,7 +262,7 @@ services:
 
   # Optional metrics storage and alert evaluation; scrapes exporters and Pushgateway.
   prometheus:
-    image: prom/prometheus:v3.3.0
+    image: prom/prometheus:v3.15.1
     container_name: prometheus
     restart: unless-stopped
     logging: *default-logging
