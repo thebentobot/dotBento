@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.0](https://github.com/thebentobot/dotBento/compare/v2.4.1...v2.5.0) (2026-10-31)
+
+
+### Features
+
+* **deploy:** sync infrastructure image tags to the VPS on merge ([b409ea5](https://github.com/thebentobot/dotBento/commit/b409ea5564a9eaa33efa6a573a66af457e2530b3))
+* **deploy:** sync infrastructure image tags to the VPS on merge ([7ee253f](https://github.com/thebentobot/dotBento/commit/7ee253f387d3cc4277481a9a5d86bf9c0819c487))
+
 ## [2.4.1](https://github.com/thebentobot/dotBento/compare/v2.4.0...v2.4.1) (2026-10-19)
 
 

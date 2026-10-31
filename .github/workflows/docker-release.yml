@@ -75,15 +75,23 @@ jobs:
           tags: ghcr.io/thebentobot/dotbento-webapi:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.SERVER_HOST }}
+
       - name: Deploy production and wait for healthy containers
         uses: appleboy/ssh-action@master
         env:
           DEPLOY_TAG: ${{ github.event.release.tag_name }}
           DEPLOY_REVISION: ${{ steps.source.outputs.revision }}
         with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USERNAME }}
-          password: ${{ secrets.PROD_SERVER_PASSWORD }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
           envs: DEPLOY_TAG,DEPLOY_REVISION
           command_timeout: 15m
           script_path: /tmp/bento-deploy.sh
@@ -92,9 +100,9 @@ jobs:
         id: deployed
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USERNAME }}
-          password: ${{ secrets.PROD_SERVER_PASSWORD }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
           script_path: /tmp/bento-inspect.sh
           capture_stdout: true
 
@@ -112,9 +120,9 @@ jobs:
         env:
           DEPLOYMENT_STATE: ${{ steps.deployed.outputs.stdout }}
         with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USERNAME }}
-          password: ${{ secrets.PROD_SERVER_PASSWORD }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
           envs: DEPLOYMENT_STATE
           script_path: /tmp/bento-stop.sh
 

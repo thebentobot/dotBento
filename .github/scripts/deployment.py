@@ -7,12 +7,18 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
+import time
 
 
 PRODUCTION = ("bot-prod", "webapi")
 STAGING = ("bot-sta", "webapi-sta")
 STAGING_STACK = (*STAGING, "postgres-sta", "valkey-sta")
+# Image tags owned by the release and pre-release workflows, never by the
+# infrastructure sync. Everything else is reconciled from the repository.
+APPLICATION_SERVICES = (*PRODUCTION, *STAGING)
+BACKUP_KEEP = 5
 STATE_PREFIX = "BENTO_DEPLOYMENT_STATE="
 APPLICATION_PATHS = (
     "src/dotBento.Bot", "src/dotBento.WebApi", "src/dotBento.Domain",
@@ -115,17 +121,17 @@ def inspect_deployment():
     return state
 
 
-def update_images(text, services, tag):
-    if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-pre-[0-9a-f]{8})?", tag):
-        raise ValueError("Invalid deployment image tag")
-    for service in services:
-        image = "dotbento-webapi" if service.startswith("webapi") else "dotbento"
+def set_images(text, images):
+    """Replace the image of every named service, leaving all other config alone."""
+    for service, image in images.items():
+        if not re.fullmatch(r"[A-Za-z0-9._/:@-]+", image):
+            raise ValueError(f"Invalid image reference for {service}")
         pattern = rf"(^  {re.escape(service)}:\n)(.*?)(?=^  [\w-]+:\s*$|^\S|\Z)"
 
         def replace(match):
             body, count = re.subn(
                 r"^    image: .*$",
-                f"    image: ghcr.io/thebentobot/{image}:{tag}",
+                f"    image: {image}",
                 match[2], count=1, flags=re.MULTILINE,
             )
             if count != 1:
@@ -136,6 +142,139 @@ def update_images(text, services, tag):
         if count != 1:
             raise ValueError(f"Missing service {service}")
     return text
+
+
+def update_images(text, services, tag):
+    if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-pre-[0-9a-f]{8})?", tag):
+        raise ValueError("Invalid deployment image tag")
+    images = {}
+    for service in services:
+        image = "dotbento-webapi" if service.startswith("webapi") else "dotbento"
+        images[service] = f"ghcr.io/thebentobot/{image}:{tag}"
+    return set_images(text, images)
+
+
+def parse_images(text):
+    """Read the image of every service in a Compose file, ignoring other config."""
+    images, service, in_services = {}, None, False
+    for line in text.splitlines():
+        if re.match(r"^services:\s*$", line):
+            in_services, service = True, None
+            continue
+        if not in_services:
+            continue
+        if re.match(r"^\S", line):
+            break
+        declaration = re.match(r"^  ([\w-]+):\s*$", line)
+        if declaration:
+            service = declaration.group(1)
+            continue
+        image = re.match(r"^    image:\s*(\S+)\s*$", line)
+        if image and service:
+            images[service] = image.group(1)
+    return images
+
+
+def postgres_major(image):
+    tag = image.rsplit(":", 1)[-1]
+    major = re.match(r"(\d+)", tag)
+    return major.group(1) if major else None
+
+
+def inspect_compose_services(path, services):
+    """Confirm the given services are running and healthy in the live Compose project."""
+    result = subprocess.run(
+        ["docker", "compose", "-f", str(path), "ps", "--format", "json", *services],
+        capture_output=True, text=True,
+    )
+    if result.returncode:
+        raise RuntimeError("Could not inspect deployed services")
+    state = {}
+    for line in result.stdout.splitlines():
+        if line.strip():
+            item = json.loads(line)
+            state[item["Service"]] = {
+                "state": item.get("State"),
+                "health": item.get("Health") or "none",
+            }
+    missing = [service for service in services if service not in state]
+    if missing:
+        raise RuntimeError(f"Missing deployed services: {', '.join(missing)}")
+    if not all(
+        snapshot["state"] == "running" and snapshot["health"] in ("healthy", "none")
+        for snapshot in state.values()
+    ):
+        raise RuntimeError("Deployed infrastructure services are not healthy")
+    return state
+
+
+def prune_backups(directory):
+    backups = sorted(directory.glob("docker-compose.yml.bak-*"))
+    for backup in backups[:-BACKUP_KEEP]:
+        backup.unlink()
+
+
+def sync_infra(directory, desired_text):
+    """Apply image tags from the repository Compose file to the live one.
+
+    Only ``image:`` values change, so VPS-specific config in the live file is
+    preserved. Services owned by the release workflows are never touched.
+    """
+    path = directory / "docker-compose.yml"
+    current_text = path.read_text()
+    current = parse_images(current_text)
+    changes = {
+        service: image
+        for service, image in parse_images(desired_text).items()
+        # Adding or removing services is a config change, not a tag change.
+        if service in current
+        and service not in APPLICATION_SERVICES
+        and current[service] != image
+    }
+    if not changes:
+        print("Infrastructure images already match the repository")
+        return {}
+
+    # A tag swap cannot upgrade an existing PostgreSQL data directory, and the
+    # container would fail to start against the old volume.
+    for service, image in changes.items():
+        if service.startswith("postgres"):
+            before, after = postgres_major(current[service]), postgres_major(image)
+            if before and after and before != after:
+                raise RuntimeError(
+                    f"Refusing {service} {current[service]} -> {image}: "
+                    "a PostgreSQL major upgrade needs a data migration"
+                )
+
+    candidate = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", dir=directory, delete=False) as file:
+            candidate = Path(file.name)
+            file.write(set_images(current_text, changes))
+        # Validate and pull before replacing the live config or recreating containers.
+        compose(candidate, "config", "--quiet")
+        compose(candidate, "pull", *changes)
+        candidate.chmod(path.stat().st_mode & 0o777)
+        candidate.replace(path)
+    finally:
+        if candidate is not None:
+            candidate.unlink(missing_ok=True)
+
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    (directory / f"docker-compose.yml.bak-{stamp}").write_text(current_text)
+    try:
+        compose(path, "up", "-d", "--no-deps", "--wait", "--wait-timeout", "300", *changes)
+        inspect_compose_services(path, list(changes))
+    except Exception:
+        path.write_text(current_text)
+        try:
+            compose(path, "up", "-d", "--no-deps", *changes)
+        except subprocess.CalledProcessError:
+            print("Rollback restart failed; restore docker-compose.yml manually", file=sys.stderr)
+        raise
+    prune_backups(directory)
+    print("Updated " + ", ".join(f"{service} -> {image}" for service, image in changes.items()))
+    return changes
 
 
 def compose(path, *args):
@@ -176,25 +315,38 @@ def stop_staging(directory, expected):
     compose(directory / "docker-compose.yml", "stop", "--timeout", "60", *STAGING_STACK)
 
 
-def render_remote(action, destination):
+def render_remote(action, destination, payload=None):
     # ssh-action sends this generated file; no helper installation on the VPS is needed.
     source = Path(__file__).read_text()
-    Path(destination).write_text(
-        "#!/bin/sh\nset -eu\npython3 - " + action
+    script = "#!/bin/sh\nset -eu\n"
+    if payload is not None:
+        # Ship the repository Compose file inside the script so the VPS needs no
+        # checkout, and expose it to the action through an environment variable.
+        script += (
+            "BENTO_PAYLOAD=$(mktemp)\n"
+            "trap 'rm -f \"$BENTO_PAYLOAD\"' EXIT\n"
+            "cat > \"$BENTO_PAYLOAD\" <<'BENTO_COMPOSE_PAYLOAD'\n"
+            + payload.rstrip("\n") + "\nBENTO_COMPOSE_PAYLOAD\n"
+            "export BENTO_DESIRED_COMPOSE=\"$BENTO_PAYLOAD\"\n"
+        )
+    script += (
+        "python3 - " + action
         + " <<'BENTO_DEPLOYMENT_PYTHON'\n" + source + "\nBENTO_DEPLOYMENT_PYTHON\n"
     )
+    Path(destination).write_text(script)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=(
         "plan-staging", "plan-release", "render", "inspect", "deploy-staging",
-        "deploy-production", "stop-staging",
+        "deploy-production", "stop-staging", "apply-infra",
     ))
     parser.add_argument("arguments", nargs="*")
     args = parser.parse_args()
     if args.action == "render":
-        render_remote(*args.arguments)
+        action, destination, *payload = args.arguments
+        render_remote(action, destination, Path(payload[0]).read_text() if payload else None)
         return
     if args.action.startswith("plan-"):
         state = parse_deployment_state(os.environ["DEPLOYMENT_STATE"])
@@ -217,6 +369,8 @@ def main():
             print(STATE_PREFIX + json.dumps(inspect_deployment()))
         elif args.action == "stop-staging":
             stop_staging(directory, parse_deployment_state(os.environ["DEPLOYMENT_STATE"]))
+        elif args.action == "apply-infra":
+            sync_infra(directory, Path(os.environ["BENTO_DESIRED_COMPOSE"]).read_text())
         else:
             environment = "staging" if args.action == "deploy-staging" else "production"
             deploy(directory, environment, os.environ["DEPLOY_TAG"], os.environ["DEPLOY_REVISION"])

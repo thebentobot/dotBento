@@ -16,7 +16,7 @@ services:
   # Required public HTTPS entry point for API and monitoring domains.
   # Uses the existing VPS-managed configuration and certificate reload script.
   nginx:
-    image: nginx:1.30.6-alpine
+    image: nginx:1.31.7-alpine
     container_name: nginx
     restart: unless-stopped
     logging: *default-logging
@@ -249,7 +249,7 @@ services:
 
   # Optional dashboards; uses Prometheus and Loki. Not required for bot/API requests.
   grafana:
-    image: grafana/grafana:11.6.1
+    image: grafana/grafana:11.6.16
     container_name: grafana
     restart: unless-stopped
     logging: *default-logging
@@ -262,7 +262,7 @@ services:
 
   # Optional metrics storage and alert evaluation; scrapes exporters and Pushgateway.
   prometheus:
-    image: prom/prometheus:v3.3.0
+    image: prom/prometheus:v3.15.1
     container_name: prometheus
     restart: unless-stopped
     logging: *default-logging
@@ -277,7 +277,7 @@ services:
 
   # Optional application log storage. Disable the application Loki sink if omitting it.
   loki:
-    image: grafana/loki:3.5.0
+    image: grafana/loki:3.7.9
     container_name: loki
     ports:
       - "3100:3100"
@@ -289,7 +289,7 @@ services:
 
   # Optional routing and delivery of Prometheus alerts.
   alertmanager:
-    image: prom/alertmanager:v0.28.1
+    image: prom/alertmanager:v0.34.1
     container_name: alertmanager
     restart: unless-stopped
     logging: *default-logging
@@ -304,7 +304,7 @@ services:
 
   # Optional receiver for the bot metrics pusher; consumed by Prometheus.
   pushgateway:
-    image: prom/pushgateway:v1.11.1
+    image: prom/pushgateway:v1.11.5
     container_name: pushgateway
     restart: unless-stopped
     logging: *default-logging
@@ -315,10 +315,19 @@ services:
 
   # Optional host metrics exporter for Prometheus.
   node-exporter:
-    image: prom/node-exporter:v1.9.1
+    image: prom/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     logging: *default-logging
+    # Read the host's proc, sys and filesystem instead of the container's own.
+    # Without these the exporter reports container-local mounts and PIDs.
+    pid: host
+    command:
+      - "--path.rootfs=/host"
+      # udev properties live outside the mounted root, so point at the host copy.
+      - "--path.udev.data=/host/run/udev/data"
+    volumes:
+      - "/:/host:ro,rslave"
     ports:
       - "9100:9100"
     networks:

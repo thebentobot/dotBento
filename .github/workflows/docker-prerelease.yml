@@ -35,13 +35,21 @@ jobs:
           python3 .github/scripts/deployment.py render deploy-staging /tmp/bento-deploy.sh
           python3 .github/scripts/deployment.py render stop-staging /tmp/bento-stop.sh
 
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.SERVER_HOST }}
+
       - name: Read deployed source revisions
         id: deployed
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_KEY }}
           script_path: /tmp/bento-inspect.sh
           capture_stdout: true
 
@@ -59,7 +67,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_KEY }}
           envs: DEPLOYMENT_STATE
           script_path: /tmp/bento-stop.sh
 
@@ -139,7 +147,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_KEY }}
           envs: DEPLOY_TAG,DEPLOY_REVISION
           command_timeout: 15m
           script_path: /tmp/bento-deploy.sh
