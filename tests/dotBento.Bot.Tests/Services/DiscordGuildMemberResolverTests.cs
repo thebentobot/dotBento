@@ -65,19 +65,37 @@ public sealed class DiscordGuildMemberResolverTests
     }
 
     [Fact]
-    public async Task ResolveAsync_AfterCacheCleared_FetchesMemberWithoutRepopulatingCache()
+    public async Task ResolveAsync_RepeatedLookups_AreServedFromTheResolverCache()
     {
         var guild = Guild();
         var member = Member();
-        guild.SetupSequence(g => g.GetUserAsync(2, CacheMode.CacheOnly, null))
-            .ReturnsAsync(member.Object).ReturnsAsync((IGuildUser)null!).ReturnsAsync((IGuildUser)null!);
+        guild.Setup(g => g.GetUserAsync(2, CacheMode.CacheOnly, null)).ReturnsAsync((IGuildUser)null!);
         guild.Setup(g => g.GetUserAsync(2, CacheMode.AllowDownload, It.IsAny<RequestOptions>())).ReturnsAsync(member.Object);
 
         for (var i = 0; i < 3; i++)
             Assert.Same(member.Object, (await _resolver.ResolveAsync(guild.Object, 2)).Value.Value);
 
-        guild.Verify(g => g.GetUserAsync(2, CacheMode.AllowDownload, It.IsAny<RequestOptions>()), Times.Exactly(2));
+        // Autocomplete calls this per keystroke; only the first lookup may reach Discord.
+        guild.Verify(g => g.GetUserAsync(2, CacheMode.AllowDownload, It.IsAny<RequestOptions>()), Times.Once);
         guild.Verify(g => g.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_AbsentMember_IsRememberedSoOneRESTCallCoversRepeatedChecks()
+    {
+        var guild = Guild();
+        guild.Setup(g => g.GetUserAsync(2, CacheMode.CacheOnly, null)).ReturnsAsync((IGuildUser)null!);
+        guild.Setup(g => g.GetUserAsync(2, CacheMode.AllowDownload, It.IsAny<RequestOptions>()))
+            .ThrowsAsync(new HttpException(HttpStatusCode.NotFound, null!));
+
+        for (var i = 0; i < 3; i++)
+        {
+            var result = await _resolver.ResolveAsync(guild.Object, 2);
+            Assert.True(result.IsSuccess);
+            Assert.True(result.Value.HasNoValue);
+        }
+
+        guild.Verify(g => g.GetUserAsync(2, CacheMode.AllowDownload, It.IsAny<RequestOptions>()), Times.Once);
     }
 
     [Theory]
