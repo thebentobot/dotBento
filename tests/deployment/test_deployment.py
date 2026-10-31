@@ -3,6 +3,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -183,6 +184,20 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.revision = "a" * 40
         self.state = state_at(self.revision)
 
+    def retag(self, service, image):
+        """Change one image so tests never depend on Renovate's current tags."""
+        return deployment.set_images(self.original, {service: image})
+
+    def postgres_upgrade(self, bump):
+        """Build a postgres fixture image one minor or major version ahead."""
+        current = deployment.parse_images(self.original)["postgres-prod"]
+        major, minor, suffix = re.match(r"postgres:(\d+)\.(\d+)(.*)", current).groups()
+        target = (f"postgres:{major}.{int(minor) + 1}{suffix}" if bump == "minor"
+                  else f"postgres:{int(major) + 1}.0{suffix}")
+        return deployment.set_images(
+            self.original, {"postgres-prod": target, "postgres-sta": target}
+        ), target
+
     def test_production_updates_only_production_images(self):
         updated = deployment.update_images(self.original, deployment.PRODUCTION, "v2.3.9")
         self.assertIn("ghcr.io/thebentobot/dotbento:v2.3.9", updated)
@@ -256,11 +271,11 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertEqual(self.original, self.compose.read_text())
 
     def test_infrastructure_sync_changes_only_image_tags(self):
-        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+        desired = self.retag("prometheus", "prom/prometheus:v99.9.9")
         with patch.object(deployment, "run") as run, \
                 patch.object(deployment, "inspect_compose_services", return_value={}):
             changes = deployment.sync_infra(self.directory, desired)
-        self.assertEqual({"prometheus": "prom/prometheus:v3.15.1"}, changes)
+        self.assertEqual({"prometheus": "prom/prometheus:v99.9.9"}, changes)
         self.assertEqual(desired, self.compose.read_text())
         commands = [call.args[0][4:] for call in run.call_args_list]
         self.assertEqual(["config", "--quiet"], commands[0])
@@ -270,10 +285,9 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertEqual([self.original], [backup.read_text() for backup in backups])
 
     def test_infrastructure_sync_ignores_application_and_unknown_services(self):
-        desired = (self.original
-                   .replace("ghcr.io/thebentobot/dotbento:v2.3.0", "ghcr.io/thebentobot/dotbento:v2.9.0")
-                   .replace("ghcr.io/thebentobot/dotbento-webapi:v2.3.0",
-                            "ghcr.io/thebentobot/dotbento-webapi:v2.9.0"))
+        desired = deployment.update_images(
+            self.original, deployment.APPLICATION_SERVICES, "v9.9.9"
+        )
         with patch.object(deployment, "run") as run:
             self.assertEqual({}, deployment.sync_infra(self.directory, desired))
         run.assert_not_called()
@@ -291,13 +305,14 @@ class RemoteDeploymentTests(unittest.TestCase):
             "  extra-exporter:\n    image: prom/example:v1.0.0\n\n"
             "  # Optional receiver for the bot metrics pusher; consumed by Prometheus.",
         )
+        self.assertIn("extra-exporter", desired)
         with patch.object(deployment, "run") as run:
             self.assertEqual({}, deployment.sync_infra(self.directory, desired))
         run.assert_not_called()
         self.assertEqual(self.original, self.compose.read_text())
 
     def test_postgres_major_upgrade_is_refused_before_touching_the_live_file(self):
-        desired = self.original.replace("postgres:18.6-bookworm", "postgres:19.1-bookworm")
+        desired, image = self.postgres_upgrade("major")
         with patch.object(deployment, "run") as run:
             with self.assertRaisesRegex(RuntimeError, "major upgrade"):
                 deployment.sync_infra(self.directory, desired)
@@ -305,18 +320,17 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertEqual(self.original, self.compose.read_text())
 
     def test_postgres_patch_upgrade_is_applied(self):
-        desired = self.original.replace("postgres:18.6-bookworm", "postgres:18.7-bookworm")
+        desired, image = self.postgres_upgrade("minor")
         with patch.object(deployment, "run") as run, \
                 patch.object(deployment, "inspect_compose_services", return_value={}):
             changes = deployment.sync_infra(self.directory, desired)
-        self.assertEqual({"postgres-prod": "postgres:18.7-bookworm",
-                          "postgres-sta": "postgres:18.7-bookworm"}, changes)
-        self.assertIn("    image: postgres:18.7-bookworm", self.compose.read_text())
+        self.assertEqual({"postgres-prod": image, "postgres-sta": image}, changes)
+        self.assertIn(f"    image: {image}", self.compose.read_text())
         self.assertEqual(["pull", "postgres-prod", "postgres-sta"],
                          [call.args[0][4:] for call in run.call_args_list][1])
 
     def test_infrastructure_pull_failure_keeps_the_live_file(self):
-        desired = self.original.replace("nginx:1.30.6-alpine", "nginx:1.31.7-alpine")
+        desired = self.retag("nginx", "nginx:9.9.9-alpine")
 
         def fail_pull(args, **kwargs):
             if "pull" in args:
@@ -328,7 +342,7 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertFalse(any("up" in call.args[0] for call in run.call_args_list))
 
     def test_failed_infrastructure_restart_restores_the_previous_file(self):
-        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+        desired = self.retag("prometheus", "prom/prometheus:v99.9.9")
 
         def fail_up(args, **kwargs):
             if "up" in args:
@@ -339,7 +353,7 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertEqual(self.original, self.compose.read_text())
 
     def test_unhealthy_infrastructure_after_restart_rolls_back(self):
-        desired = self.original.replace("prom/prometheus:v3.3.0", "prom/prometheus:v3.15.1")
+        desired = self.retag("prometheus", "prom/prometheus:v99.9.9")
         with patch.object(deployment, "run"), \
                 patch.object(deployment, "inspect_compose_services",
                              side_effect=RuntimeError("Deployed infrastructure services are not healthy")):
@@ -371,7 +385,7 @@ class RemoteDeploymentTests(unittest.TestCase):
         self.assertIn("BENTO_COMPOSE_PAYLOAD", text)
         self.assertIn("export BENTO_DESIRED_COMPOSE=", text)
         self.assertIn("python3 - apply-infra", text)
-        self.assertIn("prom/prometheus:v3.3.0", text)
+        self.assertIn(f"    image: {deployment.parse_images(self.original)['prometheus']}", text)
 
     def test_generated_remote_script_is_valid_shell(self):
         script = self.directory / "inspect.sh"
