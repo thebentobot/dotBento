@@ -32,6 +32,14 @@ jobs:
           python3 .github/scripts/deployment.py \
             render apply-infra /tmp/bento-infra.sh src/docker-compose.prod.yml
 
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.SERVER_HOST }}
+
       # Only image tags are reconciled. The live file keeps its VPS-specific
       # config, and the bot/API services stay owned by the release workflows.
       - name: Apply infrastructure image updates
@@ -39,6 +47,6 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_KEY }}
           command_timeout: 15m
           script_path: /tmp/bento-infra.sh
