@@ -66,6 +66,25 @@ public sealed class SpotifyApiServiceTests
     }
 
     [Fact]
+    public async Task GetArtist_DifferentCasing_ReusesOneCacheEntry()
+    {
+        using var cache = new SpotifyResultCache();
+        var search = new Mock<ISearchClient>(MockBehavior.Strict);
+        var artist = new FullArtist { Id = "artist-1", Name = "The Beatles" };
+        search.Setup(s => s.Item(It.IsAny<SearchRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SearchResponse { Artists = new Paging<FullArtist, SearchResponse> { Items = [artist] } });
+        var spotify = new Mock<ISpotifyClient>();
+        spotify.SetupGet(s => s.Search).Returns(search.Object);
+        var sut = new SpotifyApiService(spotify.Object, cache);
+
+        Assert.Same(artist, (await sut.GetArtist("The Beatles")).Value);
+        Assert.Same(artist, (await sut.GetArtist("the beatles")).Value);
+        Assert.Same(artist, (await sut.GetArtist("THE BEATLES")).Value);
+        Assert.Equal(1, cache.Count);
+        search.Verify(s => s.Item(It.IsAny<SearchRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Cache_FailedLoad_IsNotRetained()
     {
         using var cache = new SpotifyResultCache();

@@ -12,7 +12,10 @@ public sealed class SpotifyResultCache : IDisposable
 
     public async Task<Maybe<T>> GetOrCreateAsync<T>(string key, Func<Task<Maybe<T>>> load) where T : class
     {
-        if (_cache.TryGetValue(key, out T? cached))
+        // Spotify search ignores casing, so "The Beatles" and "the beatles" are the
+        // same lookup. Fold to upper-invariant to avoid caching each variant separately.
+        var cacheKey = key.ToUpperInvariant();
+        if (_cache.TryGetValue(cacheKey, out T? cached))
             return cached.AsMaybe();
 
         var value = await load();
@@ -21,7 +24,7 @@ public sealed class SpotifyResultCache : IDisposable
 
         if (_cache.Count >= Capacity)
             _cache.Compact(0.1);
-        _cache.Set(key, value.Value, new MemoryCacheEntryOptions
+        _cache.Set(cacheKey, value.Value, new MemoryCacheEntryOptions
         {
             Size = 1,
             AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
