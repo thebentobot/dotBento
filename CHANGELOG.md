@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.1](https://github.com/thebentobot/dotBento/compare/v2.5.0...v2.5.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* **metrics:** report host metrics from node-exporter ([1c8689d](https://github.com/thebentobot/dotBento/commit/1c8689dc1dc802689fa2d9d2db5978a4ac1423c3))
+* **metrics:** report host metrics from node-exporter ([7a18512](https://github.com/thebentobot/dotBento/commit/7a185120c6d337a1ffe3ffa7eb32a2778a6ca0ba))
+
 ## [2.5.0](https://github.com/thebentobot/dotBento/compare/v2.4.1...v2.5.0) (2026-10-31)
 
 
