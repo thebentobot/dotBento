@@ -52,6 +52,9 @@ public sealed class PrometheusConfig
 
 public sealed class DiscordConfig
 {
+    // Downloading every member is expensive for bots connected to many servers.
+    public bool AlwaysDownloadUsers { get; set; }
+
     public string Token { get; set; } = string.Empty;
     
     public string LogWebhookId { get; set; } = string.Empty;

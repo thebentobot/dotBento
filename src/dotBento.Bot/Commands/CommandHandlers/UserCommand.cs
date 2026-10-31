@@ -36,7 +36,7 @@ public sealed class UserCommand(
         return embed;
     }
     
-    public async Task<ResponseModel> GetProfileAsync(long userId, long guildId, SocketGuildUser guildMember, int guildMemberCount, string botAvatarUrl)
+    public async Task<ResponseModel> GetProfileAsync(long userId, long guildId, IGuildUser guildMember, int guildMemberCount, string botAvatarUrl)
     {
         var result = new ResponseModel
         {
