@@ -203,6 +203,8 @@ public sealed class BackgroundService(UserService userService,
                 return;
             }
 
+            Statistics.DiscordGatewayLatency.Set(client.Latency);
+
             using var currentProcess = Process.GetCurrentProcess();
             var startTime = DateTime.Now - currentProcess.StartTime;
 

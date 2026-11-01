@@ -68,23 +68,23 @@ public sealed class InteractionHandler : IDisposable
             return;
         }
 
-        using (Statistics.SlashCommandHandlerDuration.NewTimer())
+        var context = new SocketInteractionContext(_client, socketInteraction);
+
+        if (await RejectDisabledAsync(socketInteraction)) return;
+
+        var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
+
+        if (!commandSearch.IsSuccess)
         {
-            var context = new SocketInteractionContext(_client, socketInteraction);
+            Log.Error("Someone tried to execute a non-existent slash command! {SlashCommand}",
+                socketSlashCommand.CommandName);
+            return;
+        }
 
-            if (await RejectDisabledAsync(socketInteraction)) return;
+        var command = commandSearch.Command;
 
-            var commandSearch = _interactionService.SearchSlashCommand(socketSlashCommand);
-
-            if (!commandSearch.IsSuccess)
-            {
-                Log.Error("Someone tried to execute a non-existent slash command! {SlashCommand}",
-                    socketSlashCommand.CommandName);
-                return;
-            }
-
-            var command = commandSearch.Command;
-
+        using (Statistics.SlashCommandHandlerDuration.WithLabels(command.Name).NewTimer())
+        {
             await EnsureGuildAndUserExists(context);
 
             var keepGoing = await CheckAttributes(context, commandSearch.Command);

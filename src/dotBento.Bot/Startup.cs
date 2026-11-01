@@ -145,10 +145,13 @@ public sealed class Startup
         MemoryMetrics.Register(provider.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             Prometheus.Metrics.DefaultRegistry,
             () => provider.GetRequiredService<DiscordSocketClient>().Guilds.Sum(g => g.Users.Count),
-            () => provider.GetRequiredService<SpotifyResultCache>().Count);
+            () => provider.GetRequiredService<SpotifyResultCache>().Count,
+            () => provider.GetRequiredService<DiscordSocketClient>().Guilds.Count,
+            () => provider.GetRequiredService<DiscordSocketClient>().Guilds.Sum(g => g.Channels.Count));
         provider.GetRequiredService<MessageHandler>();
         provider.GetRequiredService<InteractionHandler>();
         provider.GetRequiredService<ClientLogHandler>();
+        provider.GetRequiredService<GatewayMetricsHandler>();
         provider.GetRequiredService<UserUpdateHandler>();
         provider.GetRequiredService<GuildMemberUpdateHandler>();
         provider.GetRequiredService<GuildMemberRemoveHandler>();
@@ -211,6 +214,7 @@ public sealed class Startup
             .AddSingleton<BackgroundService>()
             .AddSingleton<MessageHandler>()
             .AddSingleton<ClientLogHandler>()
+            .AddSingleton<GatewayMetricsHandler>()
             .AddSingleton<ClientJoinedGuildHandler>()
             .AddSingleton<ClientLeftGuildHandler>()
             .AddSingleton<GuildMemberRemoveHandler>()
