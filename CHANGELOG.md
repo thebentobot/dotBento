@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.9.1](https://github.com/thebentobot/dotBento/compare/v2.9.0...v2.9.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **lastfm:** default the collage to top tracks ([6416b0e](https://github.com/thebentobot/dotBento/commit/6416b0e5bd3c80aafe3d4219f3ba032902f146a5))
+* **lastfm:** default the collage to top tracks ([5985ee3](https://github.com/thebentobot/dotBento/commit/5985ee3128101517eed6b777a3265fd7fbaf6e8e))
+
 ## [2.9.0](https://github.com/thebentobot/dotBento/compare/v2.8.0...v2.9.0) (2026-11-01)
 
 
