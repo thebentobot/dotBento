@@ -41,7 +41,8 @@ jobs:
           ping: ${{ secrets.SERVER_HOST }}
 
       # Only image tags are reconciled. The live file keeps its VPS-specific
-      # config, and the bot/API services stay owned by the release workflows.
+      # config, and the bot/API, image renderer and media server services stay
+      # owned by their release workflows.
       - name: Apply infrastructure image updates
         uses: appleboy/ssh-action@master
         with:

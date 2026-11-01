@@ -293,6 +293,19 @@ class RemoteDeploymentTests(unittest.TestCase):
         run.assert_not_called()
         self.assertEqual(self.original, self.compose.read_text())
 
+    def test_infrastructure_sync_ignores_externally_released_services(self):
+        desired = deployment.set_images(
+            self.original,
+            {
+                "image-renderer": "ghcr.io/thebentobot/bento-image-service:9.9.9",
+                "bento-media-server": "ghcr.io/thebentobot/bento-media-server:9.9.9",
+            },
+        )
+        with patch.object(deployment, "run") as run:
+            self.assertEqual({}, deployment.sync_infra(self.directory, desired))
+        run.assert_not_called()
+        self.assertEqual(self.original, self.compose.read_text())
+
     def test_infrastructure_sync_is_a_noop_when_tags_already_match(self):
         with patch.object(deployment, "run") as run:
             self.assertEqual({}, deployment.sync_infra(self.directory, self.original))

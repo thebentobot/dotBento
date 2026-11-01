@@ -15,9 +15,12 @@ import time
 PRODUCTION = ("bot-prod", "webapi")
 STAGING = ("bot-sta", "webapi-sta")
 STAGING_STACK = (*STAGING, "postgres-sta", "valkey-sta")
-# Image tags owned by the release and pre-release workflows, never by the
-# infrastructure sync. Everything else is reconciled from the repository.
+# Image tags owned by this repository's release and pre-release workflows.
 APPLICATION_SERVICES = (*PRODUCTION, *STAGING)
+# Image tags owned by the bento-image-service and bento-media-server release
+# workflows, never by the infrastructure sync.
+EXTERNAL_RELEASE_SERVICES = ("image-renderer", "bento-media-server")
+RELEASE_MANAGED_SERVICES = (*APPLICATION_SERVICES, *EXTERNAL_RELEASE_SERVICES)
 BACKUP_KEEP = 5
 STATE_PREFIX = "BENTO_DEPLOYMENT_STATE="
 APPLICATION_PATHS = (
@@ -228,7 +231,7 @@ def sync_infra(directory, desired_text):
         for service, image in parse_images(desired_text).items()
         # Adding or removing services is a config change, not a tag change.
         if service in current
-        and service not in APPLICATION_SERVICES
+        and service not in RELEASE_MANAGED_SERVICES
         and current[service] != image
     }
     if not changes:
