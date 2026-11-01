@@ -200,7 +200,7 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Choice("Top Artists", "Top Artists")]
         [Choice("Top Albums", "Top Albums")]
         [Choice("Top Tracks", "Top Tracks")]
-        string type = "Top Artists",
+        string type = "Top Tracks",
         [Summary("timePeriod", "Time period")]
         [Choice("Overall", "Overall")]
         [Choice("7 Days", "7 Days")]
