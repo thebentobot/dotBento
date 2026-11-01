@@ -1,0 +1,33 @@
+groups:
+  - name: dotbento-memory
+    rules:
+      - alert: HostMemoryLow
+        expr: node_memory_MemAvailable_bytes < 200 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VPS available RAM has been below 200 MiB for ten minutes"
+          description: "Compare process working set, GC heap, and swap activity before restarting services."
+      - alert: HostOomKill
+        expr: increase(node_vmstat_oom_kill[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "The kernel killed a process because of memory exhaustion"
+          description: "Inspect journalctl -k for the victim and process memory table; an OOM victim is not necessarily the source."
+      - alert: ProductionApiScrapeFailed
+        expr: up{job="webapi"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Production API metrics are unavailable"
+      - alert: ProductionBotMetricsStale
+        expr: (time() - push_time_seconds{exported_job="dotbento-bot"} > 120) or absent(push_time_seconds{exported_job="dotbento-bot"})
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Production bot has stopped pushing metrics"
+          description: "Pushgateway retains old samples. Do not interpret stale memory samples as a running bot."
