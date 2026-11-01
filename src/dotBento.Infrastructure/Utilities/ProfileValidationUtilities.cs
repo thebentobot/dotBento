@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.RegularExpressions;
 
 namespace dotBento.Infrastructure.Utilities;
@@ -9,6 +10,29 @@ public static class ProfileValidationUtilities
         if (string.IsNullOrWhiteSpace(url)) return false;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
         return uri.Scheme is "http" or "https";
+    }
+
+    /// <summary>
+    /// Validates the URL and resolves it, rejecting hosts that map to loopback,
+    /// private, link-local, carrier-grade NAT, or other non-public addresses.
+    /// </summary>
+    public static async Task<bool> IsPublicHttpUrlAsync(string url, CancellationToken cancellationToken = default)
+    {
+        if (!IsValidHttpUrl(url)) return false;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+
+        try
+        {
+            // Keep the slash command responsive even if the resolver is slow.
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(2));
+            var addresses = await Dns.GetHostAddressesAsync(uri.DnsSafeHost, timeout.Token);
+            return PublicAddressValidator.AllPublic(addresses);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     public static string? NormalizeHex(string hex)

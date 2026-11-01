@@ -34,15 +34,23 @@ services:
     networks:
       - bento_net
 
-  sushii-image-server:
-    image: ghcr.io/sushiibot/sushii-image-server:latest
-    container_name: bento-sushii
+  image-renderer:
+    image: ghcr.io/thebentobot/bento-image-service:0.1.0
+    container_name: bento-image-renderer
     restart: unless-stopped
     init: true
-    cap_add:
-      - SYS_ADMIN
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    shm_size: 256mb
+    pids_limit: 256
+    mem_limit: 1g
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - bento_net
 

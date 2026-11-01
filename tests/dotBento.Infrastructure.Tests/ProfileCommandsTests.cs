@@ -48,7 +48,7 @@ public class ProfileCommandsTests
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3]) };
             });
         using var http = new HttpClient(handler.Object);
-        var command = CreateCommand(factory, sushiiClient: http);
+        var command = CreateCommand(factory, rendererClient: http);
         var result = await command.GetProfileAsync("http://image.test/", "", 10, 100, member.Object, 1234, "bot.png");
 
         Assert.True(result.IsSuccess);
@@ -575,7 +575,7 @@ public class ProfileCommandsTests
     private static ProfileCommands CreateCommand(
         InfrastructureTestDbFactory factory,
         HttpClient? lastFmClient = null,
-        HttpClient? sushiiClient = null,
+        HttpClient? rendererClient = null,
         dotBento.Domain.Branding? branding = null,
         Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
     {
@@ -583,10 +583,10 @@ public class ProfileCommandsTests
         var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         return new ProfileCommands(
             new ProfileService(distributedCache, factory),
-            new SushiiImageServerService(sushiiClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK })),
+            new ImageRendererService(rendererClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK })),
             new LastFmCommands(
                 new LastFmApiService(lastFmClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK })),
-                new SushiiImageServerService(sushiiClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK }))),
+                new ImageRendererService(rendererClient ?? CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK }))),
             new LastFmService(factory),
             new UserService(memoryCache, factory),
             new GuildService(factory, memoryCache),

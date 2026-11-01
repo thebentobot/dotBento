@@ -20,7 +20,7 @@ public sealed class ImageCommandsTests
             StatusCode = HttpStatusCode.OK,
             Content = new StreamContent(new MemoryStream([1, 2, 3]))
         });
-        var command = new ImageCommands(new SushiiImageServerService(httpClient), new HtmlSanitizer());
+        var command = new ImageCommands(new ImageRendererService(httpClient), new HtmlSanitizer());
 
         var result = await command.GetColour("https://image.example/render", colour);
 
@@ -36,7 +36,7 @@ public sealed class ImageCommandsTests
     public async Task GetColour_ReturnsValidationFailureForInvalidColours(string colour, string expectedError)
     {
         using var httpClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
-        var command = new ImageCommands(new SushiiImageServerService(httpClient), new HtmlSanitizer());
+        var command = new ImageCommands(new ImageRendererService(httpClient), new HtmlSanitizer());
 
         var result = await command.GetColour("https://image.example/render", colour);
 
@@ -48,12 +48,12 @@ public sealed class ImageCommandsTests
     public async Task GetColour_ReturnsFailureWhenImageServerFails()
     {
         using var httpClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError });
-        var command = new ImageCommands(new SushiiImageServerService(httpClient), new HtmlSanitizer());
+        var command = new ImageCommands(new ImageRendererService(httpClient), new HtmlSanitizer());
 
         var result = await command.GetColour("https://image.example/render", "#ffffff");
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Could not get image from Sushii Image Server", result.Error);
+        Assert.Equal("Could not get image from the image renderer", result.Error);
     }
 
     private static HttpClient CreateHttpClient(HttpResponseMessage response)

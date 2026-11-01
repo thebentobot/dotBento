@@ -1,5 +1,6 @@
 using System.Net;
 using dotBento.Infrastructure.Services.Api;
+using dotBento.Infrastructure.Services.Assets;
 using Moq;
 using Moq.Protected;
 
@@ -30,13 +31,13 @@ public sealed class StreamingApiServiceTests
     }
 
     [Fact]
-    public async Task SushiiImageServer_ReturnsStreamWithoutBufferingResponseBody()
+    public async Task ImageRenderer_ReturnsStreamWithoutBufferingResponseBody()
     {
         var contentStream = new CountingStream(new byte[1024 * 1024]);
         using var httpClient = CreateHttpClient(contentStream);
-        var service = new SushiiImageServerService(httpClient);
+        var service = new ImageRendererService(httpClient);
 
-        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+        var result = await service.GetImage("https://image.example/render", "<html></html>", 600, 400);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(0, contentStream.ReadCount);
@@ -52,13 +53,13 @@ public sealed class StreamingApiServiceTests
     }
 
     [Fact]
-    public async Task SushiiImageServerStream_DelegatesSyncMembersAndRejectsWrites()
+    public async Task ImageRendererStream_DelegatesSyncMembersAndRejectsWrites()
     {
         var contentStream = new CountingStream([1, 2, 3, 4]);
         using var httpClient = CreateHttpClient(contentStream);
-        var service = new SushiiImageServerService(httpClient);
+        var service = new ImageRendererService(httpClient);
 
-        var result = await service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400);
+        var result = await service.GetImage("https://image.example/render", "<html></html>", 600, 400);
 
         Assert.True(result.IsSuccess);
         using var stream = result.Value;
@@ -87,13 +88,53 @@ public sealed class StreamingApiServiceTests
     }
 
     [Fact]
-    public async Task SushiiImageServer_DisposesResponseWhenStreamCreationFails()
+    public async Task ImageRenderer_DisposesResponseWhenStreamCreationFails()
     {
         using var httpClient = CreateHttpClient(new ThrowingStreamContent());
-        var service = new SushiiImageServerService(httpClient);
+        var service = new ImageRendererService(httpClient);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.GetSushiiImage("https://image.example/render", "<html></html>", 600, 400));
+            service.GetImage("https://image.example/render", "<html></html>", 600, 400));
+    }
+
+    [Fact]
+    public async Task ImageRenderer_InlinesHtmlBeforeSending()
+    {
+        string? posted = null;
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                posted = await request.Content!.ReadAsStringAsync(token);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent([1, 2, 3])
+                };
+            });
+        using var http = new HttpClient(handler.Object);
+        var service = new ImageRendererService(http, new FakeInliner("<html>inlined</html>"));
+
+        var result = await service.GetImage(
+            "https://image.example/render",
+            "<html>raw</html>",
+            100,
+            100,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("inlined", posted);
+        Assert.DoesNotContain("raw", posted);
+        await result.Value.DisposeAsync();
+    }
+
+    private sealed class FakeInliner(string output) : IHtmlAssetInliner
+    {
+        public Task<string> InlineAsync(string html, CancellationToken cancellationToken = default) =>
+            Task.FromResult(output);
     }
 
     private static HttpClient CreateHttpClient(Stream contentStream)
