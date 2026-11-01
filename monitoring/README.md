@@ -20,10 +20,29 @@ These files are reviewable artifacts; implementation does not modify the VPS or 
 1. Merge `prometheus-memory.example.yml` into the existing VPS-managed Prometheus configuration. Keep existing scrape jobs and alert routing; avoid duplicate job names. The production API container is named `webapi`, not `webapi-prod`.
 2. Mount/copy `memory-alerts.yml` under `/etc/prometheus/` and add its path to `rule_files`. Existing Compose mounts `./prometheus` there. Retain `honor_labels: false` for Pushgateway so the `exported_job` selectors remain valid. Verify node-exporter exposes `node_vmstat_oom_kill`.
 3. Validate with `promtool check rules memory-alerts.yml` and `promtool check config prometheus.yml` before reloading Prometheus through the existing deployment procedure. No API credentials are needed for `/metrics`.
-4. Import `dotbento-memory.json` into Grafana and choose the Prometheus datasource. Alternatively, use the example dashboard provider with read-only mounts for the JSON and provider file. Do not replace existing provisioning or datasources.
+4. Provision the dashboards from files: mount `grafana-provisioning/` at `/etc/grafana/provisioning` (read-only) and copy `dotbento-memory.json` and `dotbento-bot-overview.json` into `grafana-provisioning/dashboards/`, next to `dashboards.yaml`. Grafana re-reads the directory every 30 seconds, so no restart is needed after a change. Do not replace existing provisioning or datasources; to import by hand instead, use the Grafana UI and pick the Prometheus and Loki datasources.
 5. Check all panels after deploying the new application image. The new cache gauges are absent on older images. Bot memory panels exclude pushes older than 120 seconds. GC rate panels and restart panels use reset-aware rates and process start times respectively; sampled start-time changes cannot detect every restart between samples.
 
 Staging targets are included so a controlled validation can observe them, but stopped staging is expected to show `up=0`. Only production API availability and production bot freshness alert by default. Existing Loki labels (`app`, `environment`, `level`) remain compatible.
+
+## Dashboards
+
+Both dashboards are provisioned into the `dotBento` folder from `grafana-provisioning/dashboards/`.
+
+`dotBento memory investigation` (`dotbento-memory.json`) is the read-only investigation view described above: working set, managed heap, GC generation sizes and fragmentation, host RAM, swap, cache counts and metric age.
+
+`dotBento bot overview` (`dotbento-bot-overview.json`) is the day-to-day view and refreshes every minute:
+
+- **At a glance** — guilds, registered users and guilds, supporters, gateway latency and how stale the pushed metrics are.
+- **Slash commands** — executions and failures per command, p95 handler time per command, the top commands over 24 hours and a failure ratio.
+- **Interactions and gateway events** — user commands, autocompletes, buttons, select menus, modals, and the Discord gateway events the handlers observe.
+- **Audience and cache** — database populations next to the Discord client cache (guild members, channels, guilds) and the local application caches.
+- **Performance** — working set, private and managed memory, CPU, GC collections by generation, allocation rate, exceptions, process restarts and gateway connection state.
+- **Database** — EF Core query and SaveChanges rates, Npgsql pool state, query p95 and execution-strategy failures.
+- **Host (VPS)** — available RAM, swap, CPU, load, disk, detected OOM kills and the API scrape state.
+- **Logs** — warning/error lines and recent logs from Loki.
+
+Panels using `bot_gateway_*`, `dotbento_discord_cached_guilds` and `dotbento_discord_cached_channels` stay empty until an image carrying those metrics is deployed. The Loki template variable is limited to the `loki-1` datasource because the older `loki` datasource still points at `http://localhost:3100`, which does not resolve from inside the Grafana container.
 
 ## Configuration and behavior
 

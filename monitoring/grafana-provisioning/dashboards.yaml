@@ -1,0 +1,23 @@
+# File-based dashboard provisioning for the dotBento monitoring stack.
+#
+# Mount this directory at /etc/grafana/provisioning/dashboards (read-only) in the Grafana
+# service, together with the dashboard JSON files next to this file:
+#
+#   volumes:
+#     - ./grafana-provisioning:/etc/grafana/provisioning:ro
+#
+# Dashboards are reloaded every 30 seconds, so editing a JSON file and copying it back is
+# enough; no Grafana restart is needed. allowUiUpdates stays on so a panel can be tweaked in
+# the browser first and exported afterwards.
+apiVersion: 1
+providers:
+  - name: dotbento
+    orgId: 1
+    folder: dotBento
+    folderUid: dotbento
+    type: file
+    disableDeletion: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
