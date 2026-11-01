@@ -49,7 +49,7 @@ Both dashboards are provisioned into the `dotBento` folder from `grafana-provisi
 - **Database** — EF Core query and SaveChanges rates, Npgsql pool state, query p95 and execution-strategy failures.
 - **Host (VPS)** — available RAM, swap, CPU, load, disk, detected OOM kills and the API scrape state.
 - **Activity, reminders and media** — daily, weekly and monthly active users from the activity tracker, reminder delivery and failure rates, p95 image render/upload latency, and Discord 429 rate limits.
-- **Image renderer** — scrape and Chromium health, queue depth, in-flight renders, browser restarts, render rate by status, p95 render duration, resident/Go memory, CPU and goroutines. These panels read `bento_image_service_*`, `go_*` and `process_*` from `image-renderer:3000/metrics` and stay red or empty until the scrape target is reachable.
+- **Image renderer** — scrape and Chromium health, queue depth, in-flight renders, browser restarts, render rate by status, p95 render duration, resident/Go memory, CPU and goroutines. These panels read `bento_image_service_*`, `go_*` and `process_*` from `image-renderer:3000/metrics` and stay red or empty until the scrape target is reachable. The memory values are the renderer Go process only; Chromium child processes are not included, so use `docker stats image-renderer` for the full container footprint.
 - **Logs** — warning/error lines and recent logs from Loki.
 
 Active users are tracked per UTC day by `ActivityTracker`, which buffers the day sets in memory and flushes them to the distributed cache every two minutes; the cache retains 40 days. A restart loses at most the interactions recorded since the last flush, so `bot_active_users_count_1d` can dip briefly after a deployment.
