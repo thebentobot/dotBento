@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.2](https://github.com/thebentobot/dotBento/compare/v2.5.1...v2.5.2) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ci:** keep the Docker SDK pin in sync with global.json ([b8d57b9](https://github.com/thebentobot/dotBento/commit/b8d57b9c95db03fb0351472575c27add67210722))
+* **ci:** keep the Docker SDK pin in sync with global.json ([22f046d](https://github.com/thebentobot/dotBento/commit/22f046d9a14e3227012b53a9179e7de4f565f07e))
+
 ## [2.5.1](https://github.com/thebentobot/dotBento/compare/v2.5.0...v2.5.1) (2026-11-01)
 
 
