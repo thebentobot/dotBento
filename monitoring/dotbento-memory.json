@@ -537,9 +537,9 @@
     },
     {
       "id": 15,
-      "title": "Image renderer memory",
+      "title": "Image renderer process memory",
       "type": "timeseries",
-      "description": "Resident and Go heap memory for the image renderer. Chromium dominates RSS.",
+      "description": "Resident and Go heap memory for the renderer process. Chromium child processes are not included.",
       "gridPos": {
         "x": 0,
         "y": 56,

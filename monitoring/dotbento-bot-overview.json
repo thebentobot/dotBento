@@ -4293,7 +4293,7 @@
     {
       "id": 62,
       "type": "timeseries",
-      "title": "Process memory",
+      "title": "Go process memory",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -4304,7 +4304,7 @@
         "x": 12,
         "y": 145
       },
-      "description": "Resident memory and Go heap for the renderer. Chromium dominates RSS.",
+      "description": "Resident memory and Go heap for the renderer process. Chromium runs in child processes and is not included in these Go metrics.",
       "fieldConfig": {
         "defaults": {
           "unit": "bytes",
