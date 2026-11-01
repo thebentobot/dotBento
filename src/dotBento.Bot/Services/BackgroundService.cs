@@ -22,7 +22,8 @@ public sealed class BackgroundService(UserService userService,
     IDbContextFactory<BotDbContext> contextFactory,
     IDiscordUserResolver userResolver,
     IDmSender dmSender,
-    IOptions<BotEnvConfig> botSettings)
+    IOptions<BotEnvConfig> botSettings,
+    ActivityTracker activityTracker)
 {
     private static readonly string[] RetiredDataMaintenanceJobIds =
     [
@@ -57,7 +58,10 @@ public sealed class BackgroundService(UserService userService,
 
         if (isProduction || isStaging)
         {
-            Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
+            Log.Information($"RecurringJob: Adding {nameof(FlushActivity)}");
+        RecurringJob.AddOrUpdate(nameof(FlushActivity), () => FlushActivity(), "*/2 * * * *");
+
+        Log.Information($"RecurringJob: Adding {nameof(UpdateMetrics)}");
             RecurringJob.AddOrUpdate(nameof(UpdateMetrics), () => UpdateMetrics(), "* * * * *");
 
             RemoveRetiredDataMaintenanceJobs();
@@ -150,6 +154,7 @@ public sealed class BackgroundService(UserService userService,
                 Log.Warning(
                     "User {UserId} could not be resolved when attempting to send reminder {ReminderId}. Deleting reminder.",
                     reminder.UserId, reminder.Id);
+                Statistics.RemindersFailed.WithLabels("unresolved").Inc();
                 await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
                 continue;
             }
@@ -160,9 +165,11 @@ public sealed class BackgroundService(UserService userService,
                 switch (result)
                 {
                     case DmSendResult.Success:
+                        Statistics.RemindersSent.Inc();
                         await reminderCommands.DeleteReminderAsync(reminder.UserId, reminder.Id);
                         break;
                     case DmSendResult.Forbidden:
+                        Statistics.RemindersFailed.WithLabels("forbidden").Inc();
                         Log.Warning(
                             "Cannot send reminder {ReminderId} to user {UserId} due to permission/DM restrictions. Deleting reminder.",
                             reminder.Id, reminder.UserId);
@@ -176,8 +183,14 @@ public sealed class BackgroundService(UserService userService,
                 Log.Error(ex,
                     "Unexpected error sending reminder {ReminderId} to user {UserId}. Reminder will not be deleted to allow retry.",
                     reminder.Id, reminder.UserId);
+                Statistics.RemindersFailed.WithLabels("exception").Inc();
             }
         }
+    }
+
+    public async Task FlushActivity()
+    {
+        await activityTracker.FlushAsync();
     }
 
     public async Task UpdateMetrics()
@@ -194,6 +207,9 @@ public sealed class BackgroundService(UserService userService,
         Statistics.RegisteredDiscordUserCount.Set(discordUserCount.HasValue ? discordUserCount.Value : 0);
         Statistics.RegisteredGuildCount.Set(await guildService.GetTotalGuildCountAsync());
         Statistics.ActiveSupporterCount.Set(await supporterService.GetActiveSupporterCountAsync());
+        Statistics.OneDayActiveUserCount.Set(await activityTracker.GetActiveUserCountAsync(1));
+        Statistics.SevenDayActiveUserCount.Set(await activityTracker.GetActiveUserCountAsync(7));
+        Statistics.ThirtyDayActiveUserCount.Set(await activityTracker.GetActiveUserCountAsync(30));
 
         try
         {

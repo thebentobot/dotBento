@@ -5,9 +5,11 @@ using dotBento.Bot.Enums;
 using dotBento.Bot.Models.Discord;
 using dotBento.Bot.Resources;
 using dotBento.Bot.Utilities;
+using dotBento.Domain;
 using dotBento.Domain.Enums;
 using dotBento.Domain.Extensions;
 using Fergun.Interactive;
+using Prometheus;
 using Serilog;
 
 namespace dotBento.Bot.Extensions;
@@ -77,6 +79,7 @@ public static class InteractionContextExtensions
                     response.FileName;
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("image_embed").NewTimer())
                     await context.Interaction.RespondWithFileAsync(response.Stream,
                         (response.Spoiler
                             ? "SPOILER_"
@@ -96,6 +99,7 @@ public static class InteractionContextExtensions
                 var imageName = response.FileName;
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("image").NewTimer())
                     await context.Interaction.RespondWithFileAsync(response.Stream,
                         (response.Spoiler
                             ? "SPOILER_"
@@ -111,6 +115,7 @@ public static class InteractionContextExtensions
             case ResponseType.FileWithEmbed:
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("file").NewTimer())
                     await context.Interaction.RespondWithFileAsync(response.Stream,
                         (response.Spoiler ? "SPOILER_" : "") + response.FileName,
                         null,
@@ -150,6 +155,7 @@ public static class InteractionContextExtensions
                 var imageEmbedFilename = (response.FileName ?? throw new InvalidOperationException()).ReplaceInvalidChars().TruncateLongString(60);
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("image_embed").NewTimer())
                     await context.Interaction.FollowupWithFileAsync(response.Stream,
                         (response.Spoiler
                             ? "SPOILER_"
@@ -170,6 +176,7 @@ public static class InteractionContextExtensions
                 var imageName = response.FileName;
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("image").NewTimer())
                     await context.Interaction.FollowupWithFileAsync(response.Stream,
                     (response.Spoiler
                         ? "SPOILER_"
@@ -186,6 +193,7 @@ public static class InteractionContextExtensions
                 var fileEmbedFilename = response.FileName ?? throw new InvalidOperationException();
                 try
                 {
+                    using (Statistics.FileUploadDuration.WithLabels("file").NewTimer())
                     await context.Interaction.FollowupWithFileAsync(
                         response.Stream,
                         (response.Spoiler ? "SPOILER_" : "") + fileEmbedFilename,

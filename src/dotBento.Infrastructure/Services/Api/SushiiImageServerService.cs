@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using dotBento.Domain;
+using Prometheus;
 
 namespace dotBento.Infrastructure.Services.Api;
 
@@ -20,7 +22,11 @@ public sealed class SushiiImageServerService(HttpClient httpClient)
 
         request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        HttpResponseMessage response;
+        using (Statistics.ImageRenderDuration.WithLabels(type).NewTimer())
+        {
+            response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        }
 
         if (!response.IsSuccessStatusCode)
         {

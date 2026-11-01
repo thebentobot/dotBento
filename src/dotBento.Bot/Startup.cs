@@ -250,6 +250,7 @@ public sealed class Startup
             .AddSingleton<ProfileService>()
             .AddSingleton<SpotifyApiService>()
             .AddSingleton<SpotifyResultCache>()
+            .AddSingleton<ActivityTracker>()
             .AddSingleton<ImageCommands>()
             .AddSingleton<ToolsCommand>()
             .AddSingleton<LeaderboardService>()

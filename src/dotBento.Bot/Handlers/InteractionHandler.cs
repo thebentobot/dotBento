@@ -29,6 +29,7 @@ public sealed class InteractionHandler : IDisposable
     private readonly GuildSettingService _guildSettingService;
     private readonly PrivacyService? _privacyService;
     private readonly IDiscordGuildMemberResolver _guildMembers;
+    private readonly ActivityTracker _activityTracker;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
@@ -38,6 +39,7 @@ public sealed class InteractionHandler : IDisposable
         GuildService guildService,
         GuildSettingService guildSettingService,
         IDiscordGuildMemberResolver guildMembers,
+        ActivityTracker activityTracker,
         BotPresentation? presentation = null,
         PrivacyService? privacyService = null)
     {
@@ -50,6 +52,7 @@ public sealed class InteractionHandler : IDisposable
         _guildService = guildService;
         _guildSettingService = guildSettingService;
         _guildMembers = guildMembers;
+        _activityTracker = activityTracker;
         _privacyService = privacyService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
@@ -62,6 +65,7 @@ public sealed class InteractionHandler : IDisposable
     private async Task SlashCommandExecuted(SocketInteraction socketInteraction)
     {
         Statistics.DiscordEvents.WithLabels(nameof(SlashCommandExecuted)).Inc();
+        _activityTracker.Record(socketInteraction.User.Id);
 
         if (socketInteraction is not SocketSlashCommand socketSlashCommand)
         {
@@ -165,6 +169,7 @@ public sealed class InteractionHandler : IDisposable
     private async Task UserCommandExecuted(SocketInteraction socketInteraction)
     {
         Statistics.DiscordEvents.WithLabels(nameof(UserCommandExecuted)).Inc();
+        _activityTracker.Record(socketInteraction.User.Id);
 
         if (socketInteraction is not SocketUserCommand socketUserCommand)
         {
@@ -279,6 +284,7 @@ public sealed class InteractionHandler : IDisposable
     private async Task AutoCompleteExecuted(SocketInteraction socketInteraction)
     {
         Statistics.DiscordEvents.WithLabels(nameof(AutoCompleteExecuted)).Inc();
+        _activityTracker.Record(socketInteraction.User.Id);
 
         var context = new SocketInteractionContext(_client, socketInteraction);
         await _interactionService.ExecuteCommandAsync(context, _provider);
@@ -290,6 +296,7 @@ public sealed class InteractionHandler : IDisposable
     {
         if (await RejectDisabledAsync(socketInteraction)) return;
         Statistics.DiscordEvents.WithLabels(nameof(SelectMenuExecuted)).Inc();
+        _activityTracker.Record(socketInteraction.User.Id);
 
         var context = new SocketInteractionContext(_client, socketInteraction);
         await _interactionService.ExecuteCommandAsync(context, _provider);
@@ -300,6 +307,7 @@ public sealed class InteractionHandler : IDisposable
     private async Task ModalSubmitted(SocketModal socketModal)
     {
         Statistics.DiscordEvents.WithLabels(nameof(ModalSubmitted)).Inc();
+        _activityTracker.Record(socketModal.User.Id);
 
         var context = new SocketInteractionContext(_client, socketModal);
         await _interactionService.ExecuteCommandAsync(context, _provider);
@@ -311,6 +319,7 @@ public sealed class InteractionHandler : IDisposable
     {
         if (await RejectDisabledAsync(socketMessageComponent)) return;
         Statistics.DiscordEvents.WithLabels(nameof(ButtonExecuted)).Inc();
+        _activityTracker.Record(socketMessageComponent.User.Id);
 
         var context = new SocketInteractionContext(_client, socketMessageComponent);
 

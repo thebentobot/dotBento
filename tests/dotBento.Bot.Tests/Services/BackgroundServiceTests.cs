@@ -10,6 +10,7 @@ using dotBento.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -123,7 +124,7 @@ public sealed class BackgroundServiceTests
         var botListService = (BotListService)null!;
         var botSettings = new Mock<IOptions<BotEnvConfig>>();
         botSettings.Setup(s => s.Value).Returns(new BotEnvConfig { Environment = "local" });
-        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object);
+        return new BackgroundService(userService, guildService, client, supporterService, botListService, reminderCommands, contextFactory, userResolver, dmSender, botSettings.Object, new ActivityTracker(new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()))));
     }
 
     [Fact]
