@@ -106,6 +106,15 @@ public static class Statistics
     public static readonly Gauge RegisteredGuildCount = Metrics
         .CreateGauge("bot_registered_guilds_count", "Total count of all guilds in the database");
 
+    public static readonly Gauge OneDayActiveUserCount = Metrics
+        .CreateGauge("bot_active_users_count_1d", "Total count of users who've used the bot in the last day");
+
+    public static readonly Gauge SevenDayActiveUserCount = Metrics
+        .CreateGauge("bot_active_users_count_7d", "Total count of users who've used the bot in the last 7 days");
+
+    public static readonly Gauge ThirtyDayActiveUserCount = Metrics
+        .CreateGauge("bot_active_users_count_30d", "Total count of users who've used the bot in the last 30 days");
+
     public static readonly Gauge DiscordGatewayLatency = Metrics
         .CreateGauge("bot_gateway_latency_ms", "Latency of the Discord gateway connection in milliseconds");
 
@@ -131,5 +140,29 @@ public static class Statistics
             new CounterConfiguration
             {
                 LabelNames = new[] { "name" }
+            });
+
+    public static readonly Counter RemindersSent = Metrics
+        .CreateCounter("bot_reminders_sent_total", "Amount of reminders delivered to users");
+
+    public static readonly Counter RemindersFailed = Metrics
+        .CreateCounter("bot_reminders_failed_total", "Amount of reminders that could not be delivered",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "reason" }
+            });
+
+    public static readonly Histogram ImageRenderDuration = Metrics
+        .CreateHistogram("bot_image_render_duration_seconds", "Duration of image renders served by the image server",
+            new HistogramConfiguration
+            {
+                LabelNames = new[] { "format" }
+            });
+
+    public static readonly Histogram FileUploadDuration = Metrics
+        .CreateHistogram("bot_file_upload_duration_seconds", "Duration of file uploads to Discord",
+            new HistogramConfiguration
+            {
+                LabelNames = new[] { "type" }
             });
 }
