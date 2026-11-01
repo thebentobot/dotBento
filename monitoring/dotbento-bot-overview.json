@@ -3420,6 +3420,93 @@
       ]
     },
     {
+      "id": 51,
+      "type": "timeseries",
+      "title": "Discord rate limits per minute",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 112
+      },
+      "description": "HTTP 429 responses from Discord, counted from the library's warning log. Preemptive throttling is not included.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(bot_discord_rate_limits_total{exported_job=\"dotbento-bot\"}[5m])) * 60",
+          "legendFormat": "429s/min",
+          "range": true,
+          "instant": false
+        }
+      ]
+    },
+    {
       "id": 42,
       "type": "row",
       "title": "Logs",
@@ -3428,7 +3515,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 112
+        "y": 120
       },
       "panels": []
     },
@@ -3444,7 +3531,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 113
+        "y": 121
       },
       "description": "Loki lines that look like problems.",
       "options": {
@@ -3482,7 +3569,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 113
+        "y": 121
       },
       "description": "Everything the bot logged, newest first.",
       "options": {

@@ -40,12 +40,12 @@ Both dashboards are provisioned into the `dotBento` folder from `grafana-provisi
 - **Performance** — working set, private and managed memory, CPU, GC collections by generation, allocation rate, exceptions, process restarts and gateway connection state.
 - **Database** — EF Core query and SaveChanges rates, Npgsql pool state, query p95 and execution-strategy failures.
 - **Host (VPS)** — available RAM, swap, CPU, load, disk, detected OOM kills and the API scrape state.
-- **Activity, reminders and media** — daily, weekly and monthly active users from the activity tracker, reminder delivery and failure rates, and p95 image render/upload latency.
+- **Activity, reminders and media** — daily, weekly and monthly active users from the activity tracker, reminder delivery and failure rates, p95 image render/upload latency, and Discord 429 rate limits.
 - **Logs** — warning/error lines and recent logs from Loki.
 
 Active users are tracked per UTC day by `ActivityTracker`, which buffers the day sets in memory and flushes them to the distributed cache every two minutes; the cache retains 40 days. A restart loses at most the interactions recorded since the last flush, so `bot_active_users_count_1d` can dip briefly after a deployment.
 
-Panels using `bot_gateway_*`, `dotbento_discord_cached_*`, `bot_active_users_count_*`, `bot_reminders_*` and the render/upload histograms stay empty until an image carrying those metrics is deployed. Both Loki datasources point at `http://loki:3100`; the older one used to target `http://localhost:3100`, which resolves to the Grafana container itself.
+Panels using `bot_gateway_*`, `dotbento_discord_cached_*`, `bot_active_users_count_*`, `bot_reminders_*`, `bot_discord_rate_limits_total` and the render/upload histograms stay empty until an image carrying those metrics is deployed. The rate-limit counter reads Discord.Net's `Rate limit triggered` warning, so it counts HTTP 429 responses only; the library's preemptive throttling is verbose and excluded. Both Loki datasources point at `http://loki:3100`; the older one used to target `http://localhost:3100`, which resolves to the Grafana container itself.
 
 ## Configuration and behavior
 

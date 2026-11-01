@@ -165,4 +165,7 @@ public static class Statistics
             {
                 LabelNames = new[] { "type" }
             });
+
+    public static readonly Counter DiscordRateLimits = Metrics
+        .CreateCounter("bot_discord_rate_limits_total", "Amount of Discord REST requests answered with HTTP 429");
 }
