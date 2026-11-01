@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/thebentobot/dotBento/compare/v2.7.0...v2.8.0) (2026-11-01)
+
+
+### Features
+
+* **metrics:** count Discord rate limits from the REST warning log ([#628](https://github.com/thebentobot/dotBento/issues/628)) ([a8578c3](https://github.com/thebentobot/dotBento/commit/a8578c3d733f58e218fbf29b102363125dbf41b5))
+
 ## [2.7.0](https://github.com/thebentobot/dotBento/compare/v2.6.0...v2.7.0) (2026-11-01)
 
 
