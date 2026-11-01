@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using DotNetEnv;
 using dotBento.Bot.Commands.CommandHandlers;
+using dotBento.Bot.Extensions;
 using dotBento.Bot.Handlers;
 using dotBento.Bot.Logging;
 using dotBento.Bot.Models;
@@ -12,14 +13,12 @@ using dotBento.Infrastructure.Commands;
 using dotBento.Infrastructure.Interfaces;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
-using dotBento.Infrastructure.Services.Assets;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
 using Ganss.Xss;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -270,26 +269,7 @@ public sealed class Startup
         services.AddHttpClient<UrbanDictionaryService>();
         services.AddHttpClient<WeatherApiService>();
         services.AddHttpClient<LastFmApiService>();
-        services.AddMemoryCache(options => options.SizeLimit = 64 * 1024 * 1024);
-        services.AddSingleton<IAssetFetcher, PublicHttpAssetFetcher>();
-        services.AddSingleton<IHtmlAssetInliner, HtmlAssetInliner>();
-        services.AddHttpClient<ImageRendererService>(client =>
-            {
-                // The resilience pipeline owns the timeout; HttpClient's own
-                // timeout would race it and produce less useful errors.
-                client.Timeout = Timeout.InfiniteTimeSpan;
-            })
-            .AddStandardResilienceHandler(options =>
-            {
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(20);
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(12);
-                // Re-rendering is expensive; fail fast instead of retrying storms.
-                options.Retry.MaxRetryAttempts = 0;
-                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
-                options.CircuitBreaker.MinimumThroughput = 5;
-                options.CircuitBreaker.FailureRatio = 0.5;
-                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-            });
+        services.AddImageRenderer();
         services.AddHttpClient<BentoMediaServerService>(client =>
         {
             // Resolve calls are fast; proxy calls stream video so we allow more time
