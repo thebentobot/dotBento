@@ -97,4 +97,31 @@ public sealed class ClientLogHandlerTests
 
         handler.Dispose();
     }
+
+    [Fact]
+    public void IsRateLimitResponse_TrueForHttpRateLimitWarning()
+    {
+        var message = new LogMessage(LogSeverity.Warning, "Discord.Rest",
+            "Rate limit triggered: POST /channels/1/messages Remaining: 2s (Bucket: abc)");
+
+        Assert.True(ClientLogHandler.IsRateLimitResponse(message));
+    }
+
+    [Fact]
+    public void IsRateLimitResponse_FalseForPreemptiveThrottle()
+    {
+        var message = new LogMessage(LogSeverity.Verbose, "Discord.Rest",
+            "Preemptive Rate limit triggered: POST /channels/1/messages (Bucket: abc)");
+
+        Assert.False(ClientLogHandler.IsRateLimitResponse(message));
+    }
+
+    [Fact]
+    public void IsRateLimitResponse_FalseForUnrelatedLog()
+    {
+        var message = new LogMessage(LogSeverity.Warning, "Discord.Rest",
+            "Rate limit headers were missing for this endpoint");
+
+        Assert.False(ClientLogHandler.IsRateLimitResponse(message));
+    }
 }
