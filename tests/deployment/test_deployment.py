@@ -173,6 +173,24 @@ class DeploymentPlansTests(unittest.TestCase):
                     deployment.parse_deployment_state(output)
 
 
+class BackupRetentionTests(unittest.TestCase):
+    def test_prunes_only_old_timestamped_backups(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            for hour in range(7):
+                (directory / f"docker-compose.yml.bak-20260101T{hour:02d}0000Z").write_text(str(hour))
+            manual = directory / "docker-compose.yml.bak-nodeexporter"
+            manual.write_text("manual")
+
+            deployment.prune_backups(directory)
+
+            remaining = sorted(path.name for path in directory.glob("docker-compose.yml.bak-[0-9]*"))
+            self.assertEqual(5, len(remaining))
+            self.assertNotIn("docker-compose.yml.bak-20260101T000000Z", remaining)
+            self.assertNotIn("docker-compose.yml.bak-20260101T010000Z", remaining)
+            self.assertTrue(manual.exists())
+
+
 class RemoteDeploymentTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
