@@ -42,4 +42,6 @@ The workspace had restored dependencies already; no package changes were needed.
 
 ## Remaining operational verification
 
+- Add `render_net` to the live Prometheus service, add the `image-renderer` scrape job, and verify `up{job="image-renderer"}` plus the new renderer panels after the monitoring config is deployed.
+
 Follow `README.md` before enabling monitoring or deploying images. The established failure was global host OOM, not an independently proven managed-memory leak. Reduced member downloading and bounded buffering address identifiable pressure sources, but a small staging bot cannot reproduce the production bot's 573-guild footprint. Any continuing post-GC retained-heap growth needs controlled diagnostics before further changes.
