@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.1](https://github.com/thebentobot/dotBento/compare/v2.5.0...v2.5.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **docker:** stop pinning the bot SDK patch version ([b305bc3](https://github.com/thebentobot/dotBento/commit/b305bc31323fbefb981bc0cd41c3c1fb1f311e84))
+* **members:** lease resolved guild members to stop per-request REST lookups ([9d7a1a1](https://github.com/thebentobot/dotBento/commit/9d7a1a1c3fdbe992c6921f2cc2c23114282de6d0))
+* **metrics:** report host metrics from node-exporter ([1c8689d](https://github.com/thebentobot/dotBento/commit/1c8689dc1dc802689fa2d9d2db5978a4ac1423c3))
+* **metrics:** report host metrics from node-exporter ([7a18512](https://github.com/thebentobot/dotBento/commit/7a185120c6d337a1ffe3ffa7eb32a2778a6ca0ba))
+* reduce memory pressure and add memory monitoring ([5b4ecc6](https://github.com/thebentobot/dotBento/commit/5b4ecc6e052044e4102517e34aad12d53c40b1c8))
+* **spotify:** fold search cache keys to upper-invariant ([049a93d](https://github.com/thebentobot/dotBento/commit/049a93d655647c98774f8047af3bebdc1acb2702))
+
 ## [2.5.0](https://github.com/thebentobot/dotBento/compare/v2.4.1...v2.5.0) (2026-10-31)
 
 
