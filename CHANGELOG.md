@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.9.0](https://github.com/thebentobot/dotBento/compare/v2.8.0...v2.9.0) (2026-11-01)
+
+
+### Features
+
+* **images:** use bento-image-service for image rendering ([#630](https://github.com/thebentobot/dotBento/issues/630)) ([11ba8e0](https://github.com/thebentobot/dotBento/commit/11ba8e0752f09e471c7e83c39dd234f6122a282b))
+* **monitoring:** add image renderer dashboards and scrape target ([#637](https://github.com/thebentobot/dotBento/issues/637)) ([34ec38f](https://github.com/thebentobot/dotBento/commit/34ec38f6bba77c8b8f42b030c6dc0fbe0d285a1b))
+
+
+### Bug Fixes
+
+* **compose:** bind admin ports to loopback ([#635](https://github.com/thebentobot/dotBento/issues/635)) ([b1a9d0b](https://github.com/thebentobot/dotBento/commit/b1a9d0b07cf00934085fe6775d30c57e51b2a780))
+* **images:** isolate inliner cache size limit ([#634](https://github.com/thebentobot/dotBento/issues/634)) ([4a3a2bc](https://github.com/thebentobot/dotBento/commit/4a3a2bc1374e24cd191a9ee3237d3c253caa0137))
+* **images:** prevent renderer options validation crash ([#633](https://github.com/thebentobot/dotBento/issues/633)) ([4e34b5d](https://github.com/thebentobot/dotBento/commit/4e34b5d7df4cbeb09586b57af68ff9730cd57af0))
+* **monitoring:** clarify image renderer memory scope ([#638](https://github.com/thebentobot/dotBento/issues/638)) ([e44a177](https://github.com/thebentobot/dotBento/commit/e44a177bf5f655b537cbd977f5f4127370334292))
+
 ## [2.8.0](https://github.com/thebentobot/dotBento/compare/v2.7.0...v2.8.0) (2026-11-01)
 
 
