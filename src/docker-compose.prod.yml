@@ -134,7 +134,7 @@ services:
 
   # Required shared cache for this production configuration, including the API.
   valkey-prod:
-    image: valkey/valkey:9.0.0-alpine
+    image: valkey/valkey:9.1.3-alpine
     container_name: valkey-prod
     restart: unless-stopped
     logging: *default-logging
@@ -239,7 +239,7 @@ services:
 
   # Optional separate cache for staging; never shares production cache state.
   valkey-sta:
-    image: valkey/valkey:9.0.0-alpine
+    image: valkey/valkey:9.1.3-alpine
     container_name: valkey-sta
     restart: unless-stopped
     logging: *default-logging
