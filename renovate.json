@@ -49,6 +49,14 @@
       "versioning": "loose"
     },
     {
+      "description": "Bump the .NET SDK, the setup-dotnet version and the Docker build stage together. If the Dockerfile pin and global.json diverge, dotnet restore fails inside the image (see #603).",
+      "matchPackageNames": [
+        "mcr.microsoft.com/dotnet/sdk",
+        "dotnet-sdk"
+      ],
+      "groupName": "dotnet-sdk"
+    },
+    {
       "description": "Review Compose image updates manually and retain readable version tags.",
       "matchManagers": [
         "docker-compose"
