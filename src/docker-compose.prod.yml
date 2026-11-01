@@ -51,7 +51,7 @@ services:
 
   # Automatic HTTPS renewal using the existing VPS-managed webroot renewal script.
   certbot:
-    image: certbot/certbot:v5.8.0
+    image: certbot/certbot:v5.9.0
     container_name: certbot
     restart: unless-stopped
     logging: *default-logging
