@@ -35,7 +35,7 @@ services:
       - bento_net
 
   image-renderer:
-    image: ghcr.io/thebentobot/bento-image-service:0.1.1
+    image: ghcr.io/thebentobot/bento-image-service:0.1.2
     container_name: bento-image-renderer
     restart: unless-stopped
     init: true

@@ -147,7 +147,7 @@ services:
   # Point ImageServer__Url at http://image-renderer:3000/html in .env-prod and .env-sta.
   # The image tag is owned by the bento-image-service release workflow.
   image-renderer:
-    image: ghcr.io/thebentobot/bento-image-service:0.1.1
+    image: ghcr.io/thebentobot/bento-image-service:0.1.2
     container_name: image-renderer
     restart: unless-stopped
     init: true
@@ -174,10 +174,9 @@ services:
       start_period: 20s
 
   # Optional private service; requires access to its image.
-  # The live tag is versioned and owned by the bento-media-server release workflow.
-  # This reference keeps the currently published tag for a fresh installation.
+  # The image tag is owned by the bento-media-server release workflow.
   bento-media-server:
-    image: ghcr.io/thebentobot/bento-media-server:latest
+    image: ghcr.io/thebentobot/bento-media-server:0.1.6
     restart: unless-stopped
     logging: *default-logging
     ports:

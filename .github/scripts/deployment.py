@@ -212,7 +212,8 @@ def inspect_compose_services(path, services):
 
 
 def prune_backups(directory):
-    backups = sorted(directory.glob("docker-compose.yml.bak-*"))
+    """Keep the newest timestamped backups; leave named manual backups alone."""
+    backups = sorted(directory.glob("docker-compose.yml.bak-[0-9]*"))
     for backup in backups[:-BACKUP_KEEP]:
         backup.unlink()
 
