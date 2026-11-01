@@ -8,9 +8,9 @@ using Prometheus;
 namespace dotBento.Infrastructure.Services.Api;
 
 /// <summary>
-/// Client for the internal HTML-to-image renderer. The public API matches the
-/// old sushii-image-server call, with an optional asset inliner so generated
-/// HTML can be rendered by a service that has no network access.
+/// Client for the internal HTML-to-image renderer. An optional asset inliner
+/// rewrites generated HTML so it can be rendered by a service that has no
+/// network access.
 /// </summary>
 public sealed class ImageRendererService(HttpClient httpClient, IHtmlAssetInliner? assetInliner = null)
 {
