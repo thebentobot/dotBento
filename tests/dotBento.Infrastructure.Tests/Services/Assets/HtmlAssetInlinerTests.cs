@@ -1,5 +1,4 @@
 using dotBento.Infrastructure.Services.Assets;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace dotBento.Infrastructure.Tests.Services.Assets;
 
@@ -8,12 +7,11 @@ public sealed class HtmlAssetInlinerTests
     [Fact]
     public async Task InlineAsync_ReplacesImagesAndCssUrlsAndRemovesActiveContent()
     {
-        using var cache = CreateCache();
         var fetcher = new FakeFetcher();
         fetcher.Assets["https://cdn.example/avatar.png"] = new FetchedAsset([1, 2, 3], "image/png");
         fetcher.Assets["https://cdn.example/background.jpg"] = new FetchedAsset([4, 5, 6], "image/jpeg");
 
-        var inliner = new HtmlAssetInliner(fetcher, cache);
+        using var inliner = new HtmlAssetInliner(fetcher);
         const string html = """
                             <html>
                               <head>
@@ -41,8 +39,7 @@ public sealed class HtmlAssetInlinerTests
     [Fact]
     public async Task InlineAsync_UsesTransparentPixelWhenImageFetchFails()
     {
-        using var cache = CreateCache();
-        var inliner = new HtmlAssetInliner(new FakeFetcher(), cache);
+        using var inliner = new HtmlAssetInliner(new FakeFetcher());
 
         var result = await inliner.InlineAsync(
             """<img src="https://cdn.example/missing.png">""",
@@ -54,8 +51,7 @@ public sealed class HtmlAssetInlinerTests
     [Fact]
     public async Task InlineAsync_ReplacesFailedCssBackgroundWithNone()
     {
-        using var cache = CreateCache();
-        var inliner = new HtmlAssetInliner(new FakeFetcher(), cache);
+        using var inliner = new HtmlAssetInliner(new FakeFetcher());
 
         var result = await inliner.InlineAsync(
             """<style>.bg { background-image: url('https://cdn.example/missing.png'); }</style>""",
@@ -68,10 +64,9 @@ public sealed class HtmlAssetInlinerTests
     [Fact]
     public async Task InlineAsync_CachesFetchedAssets()
     {
-        using var cache = CreateCache();
         var fetcher = new FakeFetcher();
         fetcher.Assets["https://cdn.example/avatar.png"] = new FetchedAsset([1, 2, 3], "image/png");
-        var inliner = new HtmlAssetInliner(fetcher, cache);
+        using var inliner = new HtmlAssetInliner(fetcher);
 
         await inliner.InlineAsync("""<img src="https://cdn.example/avatar.png">""",
             TestContext.Current.CancellationToken);
@@ -84,8 +79,7 @@ public sealed class HtmlAssetInlinerTests
     [Fact]
     public async Task InlineAsync_LeavesDataUrisAlone()
     {
-        using var cache = CreateCache();
-        var inliner = new HtmlAssetInliner(new FakeFetcher(), cache);
+        using var inliner = new HtmlAssetInliner(new FakeFetcher());
 
         var result = await inliner.InlineAsync(
             """<img src="data:image/png;base64,AAAA">""",
@@ -93,9 +87,6 @@ public sealed class HtmlAssetInlinerTests
 
         Assert.Contains("data:image/png;base64,AAAA", result);
     }
-
-    private static MemoryCache CreateCache() =>
-        new(new MemoryCacheOptions { SizeLimit = 64 * 1024 * 1024 });
 
     private sealed class FakeFetcher : IAssetFetcher
     {

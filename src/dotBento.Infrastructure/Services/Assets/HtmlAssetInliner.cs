@@ -13,9 +13,10 @@ namespace dotBento.Infrastructure.Services.Assets;
 /// The image renderer has no network access and runs with JavaScript disabled,
 /// so this class is the other half of that security model.
 /// </summary>
-public sealed partial class HtmlAssetInliner : IHtmlAssetInliner
+public sealed partial class HtmlAssetInliner : IHtmlAssetInliner, IDisposable
 {
     private const long MaxTotalBytes = 12 * 1024 * 1024;
+    private const long MaxCacheBytes = 64 * 1024 * 1024;
     private const string TransparentPixel =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
@@ -28,13 +29,17 @@ public sealed partial class HtmlAssetInliner : IHtmlAssetInliner
     };
 
     private readonly IAssetFetcher _fetcher;
-    private readonly IMemoryCache _cache;
 
-    public HtmlAssetInliner(IAssetFetcher fetcher, IMemoryCache cache)
+    // Keep the size limit on a private cache. Setting SizeLimit on the shared
+    // IMemoryCache would require every existing cache entry to specify a Size.
+    private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = MaxCacheBytes });
+
+    public HtmlAssetInliner(IAssetFetcher fetcher)
     {
         _fetcher = fetcher;
-        _cache = cache;
     }
+
+    public void Dispose() => _cache.Dispose();
 
     public async Task<string> InlineAsync(string html, CancellationToken cancellationToken = default)
     {

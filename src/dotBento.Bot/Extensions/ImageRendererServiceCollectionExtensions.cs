@@ -12,7 +12,6 @@ public static class ImageRendererServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddImageRenderer(this IServiceCollection services)
     {
-        services.AddMemoryCache(options => options.SizeLimit = 64 * 1024 * 1024);
         services.AddSingleton<IAssetFetcher, PublicHttpAssetFetcher>();
         services.AddSingleton<IHtmlAssetInliner, HtmlAssetInliner>();
 
