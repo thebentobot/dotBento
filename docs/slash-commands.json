@@ -810,7 +810,7 @@
           "description": "Type of collage",
           "type": "String",
           "required": false,
-          "defaultValue": "Top Artists",
+          "defaultValue": "Top Tracks",
           "choices": [
             {
               "name": "Top Artists",
