@@ -257,6 +257,9 @@ services:
       - "3001:3000"
     volumes:
       - ./grafana:/var/lib/grafana
+      # Dashboards and providers from monitoring/grafana-provisioning; read-only so Grafana
+      # never writes into it. Changes are re-read every 30 seconds.
+      - ./grafana-provisioning:/etc/grafana/provisioning:ro
     networks:
       - bento_net
 
