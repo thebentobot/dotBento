@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.0](https://github.com/thebentobot/dotBento/compare/v2.5.2...v2.6.0) (2026-11-01)
+
+
+### Features
+
+* **metrics:** expose gateway health and Discord cache metrics ([#623](https://github.com/thebentobot/dotBento/issues/623)) ([6de7244](https://github.com/thebentobot/dotBento/commit/6de72449fe7c34a9d7994cb4371001c55af0d0db))
+* **monitoring:** provision a bot overview dashboard ([#624](https://github.com/thebentobot/dotBento/issues/624)) ([a48538b](https://github.com/thebentobot/dotBento/commit/a48538bfe0897062f1c7a3500caaa70611259423))
+
 ## [2.5.2](https://github.com/thebentobot/dotBento/compare/v2.5.1...v2.5.2) (2026-11-01)
 
 
