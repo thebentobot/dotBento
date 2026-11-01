@@ -66,7 +66,11 @@ public static class Statistics
             });
 
     public static readonly Histogram SlashCommandHandlerDuration = Metrics
-        .CreateHistogram("bot_slash_command_handler_duration", "Histogram of slash command handler duration");
+        .CreateHistogram("bot_slash_command_handler_duration", "Histogram of slash command handler duration",
+            new HistogramConfiguration
+            {
+                LabelNames = new[] { "name" }
+            });
 
     public static readonly Counter UserCommandsExecuted = Metrics
         .CreateCounter("bot_user_commands_executed", "Amount of user commands executed");
@@ -101,6 +105,15 @@ public static class Statistics
 
     public static readonly Gauge RegisteredGuildCount = Metrics
         .CreateGauge("bot_registered_guilds_count", "Total count of all guilds in the database");
+
+    public static readonly Gauge DiscordGatewayLatency = Metrics
+        .CreateGauge("bot_gateway_latency_ms", "Latency of the Discord gateway connection in milliseconds");
+
+    public static readonly Gauge DiscordGatewayConnected = Metrics
+        .CreateGauge("bot_gateway_connected", "1 while the bot holds a Discord gateway connection, otherwise 0");
+
+    public static readonly Counter DiscordGatewayReconnects = Metrics
+        .CreateCounter("bot_gateway_reconnects_total", "Amount of times the Discord gateway connection was lost");
 
     /*
     public static readonly Gauge OneDayActiveUserCount = Metrics
