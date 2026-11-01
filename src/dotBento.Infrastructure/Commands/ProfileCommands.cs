@@ -7,12 +7,13 @@ using dotBento.Domain.Entities;
 using dotBento.Infrastructure.Extensions;
 using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
+using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Infrastructure.Commands;
 
 public sealed class ProfileCommands(
     ProfileService profileService,
-    SushiiImageServerService sushiiImageServerService,
+    ImageRendererService imageRendererService,
     LastFmCommands lastFmCommands,
     LastFmService lastFmService,
     UserService userService,
@@ -45,12 +46,12 @@ public sealed class ProfileCommands(
             botAvatarUrl,
             guildMember);
 
-        var image = await sushiiImageServerService
-            .GetSushiiImage(imageServerHost, await html, 600, 400);
+        var image = await imageRendererService
+            .GetImage(imageServerHost, await html, 600, 400);
 
         return image.IsSuccess
             ? Result.Success(image.Value)
-            : Result.Failure<Stream>("Could not get image from Sushii Image Server");
+            : Result.Failure<Stream>("Could not get image from the image renderer");
     }
 
     // TODO Improve this mess of arguments
@@ -132,9 +133,11 @@ public sealed class ProfileCommands(
 
         var avatarUrl = guildMember.AvatarUrl ??
                         $"https://cdn.discordapp.com/embed/avatars/{int.Parse(guildMember.Discriminator ?? "0") % 5}.png";
-        var usernameSlot = guildMember.DisplayName ?? "User";
-        var discriminatorSlot = guildMember.Nickname ?? $"#{guildMember.Discriminator}";
-        var usernameSize = UsernamePxSize(usernameSlot);
+        var rawUsername = guildMember.DisplayName ?? "User";
+        var rawDiscriminator = guildMember.Nickname ?? $"#{guildMember.Discriminator}";
+        var usernameSlot = HtmlText.Encode(rawUsername);
+        var discriminatorSlot = HtmlText.Encode(rawDiscriminator);
+        var usernameSize = UsernamePxSize(rawUsername);
         var xpServer = bentoGuildUser.Xp;
         var xpGlobal = bentoUser.Xp;
 
@@ -148,7 +151,7 @@ public sealed class ProfileCommands(
             { "AVATAR_URL", avatarUrl },
             { "USERNAME", usernameSlot },
             { "DISCRIMINATOR", discriminatorSlot },
-            { "DESCRIPTION", System.Security.SecurityElement.Escape(profile.Description ?? _branding.DefaultProfileDescription) },
+            { "DESCRIPTION", HtmlText.Encode(profile.Description ?? _branding.DefaultProfileDescription) },
             { "SERVER_LEVEL", userServerRank.ToString() ?? "0" },
             { "GLOBAL_LEVEL", userGlobalRank.ToString() ?? "0" },
             { "USERNAME_SIZE", usernameSize }
@@ -163,7 +166,7 @@ public sealed class ProfileCommands(
 
         var css = $@"
             :root {{
-                --bgimage: url('{replacements["BACKGROUND_IMAGE"]}');
+                --bgimage: url('{HtmlText.CssUrl(replacements["BACKGROUND_IMAGE"])}');
                 --user-color: {replacements["USER_COLOR"]};
             }}
             
@@ -576,7 +579,7 @@ public sealed class ProfileCommands(
                     <div class='sidebar {replacements["SIDEBAR_CLASS"]}'>
             
                         <div class='avatar-container'>
-                            <img class='avatar' src='{replacements["AVATAR_URL"]}'>
+                            <img class='avatar' src='{HtmlText.Attr(replacements["AVATAR_URL"])}'>
                         </div>
             
                         <div class='name-container'>
@@ -600,7 +603,7 @@ public sealed class ProfileCommands(
                                 Of {Math.Floor(bentoUserCount.Value / 100.0) / 10.0:F1}k Users
                             </li>
                             {(bentoGameData.HasValue
-                                ? $"<li class='sidebar-itemBento'><span class='sidebar-valueBento'>{bentoGameData.Value.Bento1} {System.Security.SecurityElement.Escape(_branding.GiftEmoji)}</span><br>Rank {bentoRank.Value}/{bentoTotalUserCount} {System.Security.SecurityElement.Escape(_branding.GiftName)} Users</li>"
+                                ? $"<li class='sidebar-itemBento'><span class='sidebar-valueBento'>{bentoGameData.Value.Bento1} {HtmlText.Encode(_branding.GiftEmoji)}</span><br>Rank {bentoRank.Value}/{bentoTotalUserCount} {HtmlText.Encode(_branding.GiftName)} Users</li>"
                                 : string.Empty)}
                             <li class='sidebar-itemTimezone'>
                                 <span class='sidebar-valueEmote'>{string.Join("", emoteArray)}</span><br>
@@ -619,7 +622,7 @@ public sealed class ProfileCommands(
         htmlString = $@"
             <html>
             <head>
-                <link href='https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&display=swap' rel='stylesheet'>
+                <!-- Urbanist is installed in the image renderer; no external fonts are fetched. -->
                 <meta charset='UTF-8'>
             </head>
             <style>
@@ -649,13 +652,13 @@ public sealed class ProfileCommands(
                         <div class='fmDivBGBG'>
                             <div class='fmDivBG'>
                                 <div class='fmDiv'>
-                                    <img src='{latestSong.Image}' width='36' height='36' style='float:left'>
+                                    <img src='{HtmlText.Attr(latestSong.Image)}' width='36' height='36' style='float:left'>
                                     <div>
                                         <div class='fmSongText'>
-                                            {latestSong.Track}
+                                            {HtmlText.Encode(latestSong.Track)}
                                         </div>
                                         <div class='fmArtistText'>
-                                            {latestSong.Artist}
+                                            {HtmlText.Encode(latestSong.Artist)}
                                         </div>
                                     </div>
                                     <div class='fmBar'>
@@ -691,7 +694,7 @@ public sealed class ProfileCommands(
                     <div class='xpDivBG'>
                         <div class='xpDiv'>
                             <div class='xpText'>
-                                {(guild.Value.Icon != "🏠" ? $"<img src='{guild.Value.Icon}' width='20' height='20'>" : "🏠")}
+                                {(guild.Value.Icon != "🏠" ? $"<img src='{HtmlText.Attr(guild.Value.Icon)}' width='20' height='20'>" : "🏠")}
                                 Level {guildMember.Value.Level}
                             </div>
                             <div class='xpBar'>
@@ -700,7 +703,7 @@ public sealed class ProfileCommands(
                         </div>
                         <div class='xpDiv'>
                             <div class='xpText2'>
-                                <img src='{botAvatarUrl}' width='20' height='20'> Level {user.Value.Level}
+                                <img src='{HtmlText.Attr(botAvatarUrl)}' width='20' height='20'> Level {user.Value.Level}
                             </div>
                             <div class='xpBar2'>
                                 <div class='xpDoneGlobal'></div>
@@ -729,7 +732,7 @@ public sealed class ProfileCommands(
             _ => "10px"
         };
 
-    private static string GetEmote(string emote) => $"<img src=\"{emote}\" width=\"24\" height=\"24\">";
+    private static string GetEmote(string emote) => $"<img src=\"{HtmlText.Attr(emote)}\" width=\"24\" height=\"24\">";
 
     private Profile DefaultProfile(long userId) => new(
         UserId: userId,
@@ -869,7 +872,7 @@ public sealed class ProfileCommands(
         var guildMember = await guildService.GetGuildMemberAsync(_supportServerId, (ulong)userId);
         if (guildMember.HasValue)
         {
-            emotes.Add(System.Security.SecurityElement.Escape(_branding.Emoji));
+            emotes.Add(HtmlText.Encode(_branding.Emoji));
         }
     }
 

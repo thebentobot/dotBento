@@ -53,7 +53,8 @@ Services in `dotBento.Infrastructure/Services/`:
 - `BentoService` - Core "bento box" gift feature
 - `TagService` - Custom server tags
 - `ReminderService` - User reminders with Hangfire
-- API clients in `Services/Api/` for Last.fm, weather, urban dictionary, Sushii image server
+- API clients in `Services/Api/` for Last.fm, weather, urban dictionary, and the internal image renderer
+- `Services/Assets/` for HTML escaping and public-image inlining before rendering
 
 ### Handlers
 
@@ -78,7 +79,7 @@ Uses EF Core with PostgreSQL. The `BotDbContext` in `dotBento.EntityFramework/Co
 
 ### Docker Development
 
-The dev compose runs infrastructure only (Postgres, Valkey, Sushii image server). Run the bot and webapi locally with `dotnet run`.
+The dev compose runs infrastructure only (Postgres, Valkey, and the image renderer). Run the bot and webapi locally with `dotnet run`.
 
 ```bash
 # 1. Start infrastructure

@@ -14,9 +14,9 @@ public sealed class ProfileEditCommand(ProfileService profileService, BotPresent
 
     public async Task<ResponseModel> SetBackgroundUrlAsync(ulong userId, string url)
     {
-        if (!ProfileValidationUtilities.IsValidHttpUrl(url))
+        if (!await ProfileValidationUtilities.IsPublicHttpUrlAsync(url))
         {
-            return Error("Invalid URL", "Please provide a valid http/https URL to an image.");
+            return Error("Invalid URL", "Please provide a public http/https URL to an image.");
         }
 
         await profileService.CreateOrUpdateProfileAsync((long)userId, p =>

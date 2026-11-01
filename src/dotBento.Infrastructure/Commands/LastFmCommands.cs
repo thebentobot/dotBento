@@ -3,13 +3,14 @@ using CSharpFunctionalExtensions;
 using dotBento.Domain.Entities.LastFm;
 using dotBento.Infrastructure.Extensions;
 using dotBento.Infrastructure.Services.Api;
+using dotBento.Infrastructure.Utilities;
 
 namespace dotBento.Infrastructure.Commands;
 
 public sealed class LastFmCommands(
     LastFmApiService lastFmApiService,
     //HtmlSanitizer htmlSanitizer,
-    SushiiImageServerService sushiiImageServerService)
+    ImageRendererService imageRendererService)
 {
     public async Task<Result<List<BentoLastFmTopArtist>>> GetTopArtists(
         string userName,
@@ -157,12 +158,12 @@ public sealed class LastFmCommands(
         // TODO: Sanitize HTML. Currently disabled due to it sanitizing too well
         //var sanitizedHtml = htmlSanitizer.Sanitize(htmlString);
 
-        var image = await sushiiImageServerService.GetSushiiImage(imageServerHost, htmlString, screenWidth,
+        var image = await imageRendererService.GetImage(imageServerHost, htmlString, screenWidth,
             screenHeight);
 
         return image.IsSuccess
             ? Result.Success(image.Value)
-            : Result.Failure<Stream>("Could not get image from Sushii Image Server");
+            : Result.Failure<Stream>("Could not get image from the image renderer");
     }
 
     private static string GenerateCollageHtml(List<BentoLastFmCollage> collection, int dimension)
@@ -223,8 +224,8 @@ public sealed class LastFmCommands(
 
                 htmlString.Append($@"
                 <div class=""container"">
-                    <img src=""{item.ImageUrl}"" width=""300"" height=""300"">
-                    <div class=""text"">{item.Artist}<br>{(item.Name != null ? $"{item.Name}<br>" : "")}Plays: {item.PlayCount}</div>
+                    <img src=""{HtmlText.Attr(item.ImageUrl)}"" width=""300"" height=""300"">
+                    <div class=""text"">{HtmlText.Encode(item.Artist)}<br>{(item.Name != null ? $"{HtmlText.Encode(item.Name)}<br>" : "")}Plays: {item.PlayCount}</div>
                 </div>\n");
 
                 itemIndex++;

@@ -8,7 +8,7 @@ Command reference and guides: [docs.bentobot.xyz](https://docs.bentobot.xyz).
 
 Use the .NET SDK specified in [global.json](global.json), Docker Compose, and a Discord bot token.
 
-From the repository root, start PostgreSQL, Valkey, and the image server:
+From the repository root, start PostgreSQL, Valkey, and the image renderer:
 
 ```sh
 docker compose -f src/docker-compose.dev.yml up -d

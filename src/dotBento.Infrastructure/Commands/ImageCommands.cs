@@ -6,7 +6,7 @@ using Ganss.Xss;
 
 namespace dotBento.Infrastructure.Commands;
 
-public sealed class ImageCommands(SushiiImageServerService sushiiImageServerService, HtmlSanitizer htmlSanitizer)
+public sealed class ImageCommands(ImageRendererService imageRendererService, HtmlSanitizer htmlSanitizer)
 {
     public async Task<Result<ColourResponseDto>> GetColour(string imageServerHost, string colour)
     {
@@ -58,11 +58,11 @@ public sealed class ImageCommands(SushiiImageServerService sushiiImageServerServ
         
         var sanitizedHtml = htmlSanitizer.Sanitize($"<html><style>*{{margin:0;padding:0;}}</style><div style=\"background-color:{(hexColour != null ? $"#{hexColour}" : rgbColour)}; width:200px; height:200px\"></div></html>");
 
-        var image = await sushiiImageServerService.GetSushiiImage(imageServerHost, sanitizedHtml, 200, 200);
+        var image = await imageRendererService.GetImage(imageServerHost, sanitizedHtml, 200, 200);
         
         var result = image.IsSuccess ? new ColourResponseDto(image.Value, hexMatch.Success) : new ColourResponseDto(Stream.Null, false);
         
-        return image.IsFailure ? Result.Failure<ColourResponseDto>("Could not get image from Sushii Image Server") : Result.Success(result);
+        return image.IsFailure ? Result.Failure<ColourResponseDto>("Could not get image from the image renderer") : Result.Success(result);
     }
     
     private string RgbToHex(int colour)

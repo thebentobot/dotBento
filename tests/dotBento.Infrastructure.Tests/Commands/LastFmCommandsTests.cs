@@ -226,7 +226,7 @@ public sealed class LastFmCommandsTests
     {
         HttpRequestMessage? request = null;
         string? requestBody = null;
-        using var sushiiClient = CreateHttpClient(
+        using var rendererClient = CreateHttpClient(
             new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
@@ -239,7 +239,7 @@ public sealed class LastFmCommandsTests
                     .GetAwaiter()
                     .GetResult();
             });
-        var command = CreateCommand(CreateHttpClient(), sushiiClient);
+        var command = CreateCommand(CreateHttpClient(), rendererClient);
         var collage = Enumerable.Range(1, 12)
             .Select(i => new BentoLastFmCollage($"https://img.example/{i}.png", $"Artist {i}", i, $"Name {i}"))
             .ToList();
@@ -258,8 +258,8 @@ public sealed class LastFmCommandsTests
     [Fact]
     public async Task GetLastFmCollageImage_ReturnsFailureWhenImageServerFails()
     {
-        using var sushiiClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError });
-        var command = CreateCommand(CreateHttpClient(), sushiiClient);
+        using var rendererClient = CreateHttpClient(new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError });
+        var command = CreateCommand(CreateHttpClient(), rendererClient);
 
         var result = await command.GetLastFmCollageImage(
             "2x2",
@@ -267,7 +267,7 @@ public sealed class LastFmCommandsTests
             "https://image.example/render");
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Could not get image from Sushii Image Server", result.Error);
+        Assert.Equal("Could not get image from the image renderer", result.Error);
     }
 
     private const string GetTopArtistsFailure = nameof(GetTopArtistsFailure);
@@ -277,9 +277,9 @@ public sealed class LastFmCommandsTests
     private const string GetRecentTracksFailure = nameof(GetRecentTracksFailure);
     private const string GetUserInfoFailure = nameof(GetUserInfoFailure);
 
-    private static LastFmCommands CreateCommand(HttpClient lastFmClient, HttpClient? sushiiClient = null) =>
+    private static LastFmCommands CreateCommand(HttpClient lastFmClient, HttpClient? rendererClient = null) =>
         new(new LastFmApiService(lastFmClient),
-            new SushiiImageServerService(sushiiClient ?? CreateHttpClient()));
+            new ImageRendererService(rendererClient ?? CreateHttpClient()));
 
     private static HttpResponseMessage JsonResponse(string json) =>
         new()
