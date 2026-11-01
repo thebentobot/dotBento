@@ -68,6 +68,17 @@
       "pinDigests": false
     },
     {
+      "description": "The image renderer and media server tags are owned by their own release workflows. Do not look them up or update them from this repository.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/thebentobot/bento-image-service",
+        "ghcr.io/thebentobot/bento-media-server"
+      ],
+      "enabled": false
+    },
+    {
       "description": "PostgreSQL major upgrades need an explicit migration decision.",
       "matchManagers": [
         "docker-compose"
