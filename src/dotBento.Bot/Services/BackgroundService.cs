@@ -203,7 +203,7 @@ public sealed class BackgroundService(UserService userService,
                 return;
             }
 
-            var currentProcess = Process.GetCurrentProcess();
+            using var currentProcess = Process.GetCurrentProcess();
             var startTime = DateTime.Now - currentProcess.StartTime;
 
             if (startTime.Minutes > 8)
@@ -220,8 +220,10 @@ public sealed class BackgroundService(UserService userService,
 
     public void ClearUserCache()
     {
+        foreach (var guild in client.Guilds)
+            guild.PurgeUserCache(); // Discord.NET preserves the bot's own guild member.
         client.PurgeUserCache();
-        Log.Information("Purged discord user cache");
+        Log.Information("Purged Discord guild member and global user caches");
     }
 
     public async Task UpdateGuildMemberCounts()
@@ -270,7 +272,7 @@ public sealed class BackgroundService(UserService userService,
             {
                 try
                 {
-                    var discordUser = client.GetUser((ulong)user.UserId);
+                    var discordUser = await userResolver.GetUserAsync((ulong)user.UserId);
                     if (discordUser == null) continue;
                     await userService.UpdateUserAvatarAsync(discordUser);
                     updatedCount++;

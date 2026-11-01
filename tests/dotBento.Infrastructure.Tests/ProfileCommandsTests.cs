@@ -21,6 +21,50 @@ namespace dotBento.Infrastructure.Tests;
 
 public class ProfileCommandsTests
 {
+    [Fact]
+    public async Task GetProfileAsync_RestCompatibleMember_RendersAndCreatesGuildMemberWithoutSocketCache()
+    {
+        var factory = new InfrastructureTestDbFactory();
+        await SeedProfileRenderDataAsync(factory);
+        await using (var db = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken))
+        {
+            db.GuildMembers.RemoveRange(db.GuildMembers);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var member = new Mock<Discord.IGuildUser>(MockBehavior.Strict);
+        member.SetupGet(m => m.Id).Returns(10);
+        member.SetupGet(m => m.Discriminator).Returns("0001");
+        member.SetupGet(m => m.DisplayName).Returns("Display name");
+        member.SetupGet(m => m.Nickname).Returns("Server nickname");
+        member.Setup(m => m.GetDisplayAvatarUrl(Discord.ImageFormat.Auto, 128)).Returns("https://example.com/guild.png");
+        member.Setup(m => m.GetGuildAvatarUrl(Discord.ImageFormat.Auto, 512)).Returns("https://example.com/guild.png");
+        string? postedHtml = null;
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .Returns(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                postedHtml = await request.Content!.ReadAsStringAsync(token);
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3]) };
+            });
+        using var http = new HttpClient(handler.Object);
+        var command = CreateCommand(factory, sushiiClient: http);
+        var result = await command.GetProfileAsync("http://image.test/", "", 10, 100, member.Object, 1234, "bot.png");
+
+        Assert.True(result.IsSuccess);
+        await using var image = result.Value;
+        using var bytes = new MemoryStream();
+        await image.CopyToAsync(bytes, TestContext.Current.CancellationToken);
+        Assert.Equal(new byte[] { 1, 2, 3 }, bytes.ToArray());
+        Assert.Contains("Server nickname", postedHtml);
+        Assert.Contains("https://example.com/guild.png", postedHtml);
+        await using var verify = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var persisted = Assert.Single(verify.GuildMembers);
+        Assert.Equal(10, persisted.UserId);
+        Assert.Equal("https://example.com/guild.png", persisted.AvatarUrl);
+        member.VerifyGet(m => m.Guild, Times.Never);
+    }
+
     // Helper to invoke private static methods via reflection
     private static T? InvokePrivateStatic<T>(Type type, string methodName, params object?[]? args)
     {

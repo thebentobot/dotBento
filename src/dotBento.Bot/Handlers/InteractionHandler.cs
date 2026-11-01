@@ -28,6 +28,7 @@ public sealed class InteractionHandler : IDisposable
     private readonly GuildService _guildService;
     private readonly GuildSettingService _guildSettingService;
     private readonly PrivacyService? _privacyService;
+    private readonly IDiscordGuildMemberResolver _guildMembers;
 
     public InteractionHandler(DiscordSocketClient client,
         InteractionService interactionService,
@@ -36,6 +37,7 @@ public sealed class InteractionHandler : IDisposable
         UserService userService,
         GuildService guildService,
         GuildSettingService guildSettingService,
+        IDiscordGuildMemberResolver guildMembers,
         BotPresentation? presentation = null,
         PrivacyService? privacyService = null)
     {
@@ -47,6 +49,7 @@ public sealed class InteractionHandler : IDisposable
         _userService = userService;
         _guildService = guildService;
         _guildSettingService = guildSettingService;
+        _guildMembers = guildMembers;
         _privacyService = privacyService;
         _client.SlashCommandExecuted += SlashCommandExecuted;
         _client.AutocompleteExecuted += AutoCompleteExecuted;
@@ -267,11 +270,9 @@ public sealed class InteractionHandler : IDisposable
         {
             await _guildService.AddGuildAsync(context.Guild);
             await _userService.CreateOrAddUserToCache(context.User);
-            var guildUser = context.Guild.GetUser(context.User.Id);
-            if (guildUser != null)
-            {
-                await _guildService.AddGuildMemberAsync(guildUser);
-            }
+            var member = await context.ResolveMemberAsync(_guildMembers, context.User);
+            if (member.IsSuccess && member.Value.HasValue)
+                await _guildService.AddGuildMemberAsync(member.Value.Value);
         }
     }
 
@@ -370,8 +371,7 @@ public sealed class InteractionHandler : IDisposable
 
         if (permissions.AdminOnly.Contains(commandId, StringComparer.OrdinalIgnoreCase))
         {
-            var user = context.Guild.GetUser(context.User.Id);
-            if (!HasManageGuildPermission(user?.GuildPermissions))
+            if (!await GuildMemberPermissions.HasAsync(_guildMembers, context.Guild, context.User, GuildPermission.ManageGuild))
             {
                 await context.Interaction.RespondAsync(
                     $"The command `{_presentation.Brand.CommandPath(commandId).Replace(':', ' ')}` can only be used by members with the **Manage Server** permission.", ephemeral: true);
@@ -381,9 +381,6 @@ public sealed class InteractionHandler : IDisposable
 
         return true;
     }
-
-    internal static bool HasManageGuildPermission(GuildPermissions? permissions) =>
-        permissions?.ManageGuild == true;
 
     public void Dispose()
     {

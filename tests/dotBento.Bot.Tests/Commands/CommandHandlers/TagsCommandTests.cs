@@ -88,7 +88,7 @@ public sealed class TagsCommandTests
         var (command, factory) = CreateCommand();
         await SeedTagAsync(factory);
 
-        var list = await command.ListTagsAsync(100, top: false, CSharpFunctionalExtensions.Maybe<Discord.WebSocket.SocketGuildUser>.None);
+        var list = await command.ListTagsAsync(100, top: false, CSharpFunctionalExtensions.Maybe<Discord.IUser>.None);
         var info = await command.GetTagInfoAsync(100, "tag");
 
         Assert.Equal(ResponseType.Paginator, list.ResponseType);
@@ -107,7 +107,7 @@ public sealed class TagsCommandTests
             await SeedTagAsync(factory);
 
         var response = await command.ListTagsAsync(999, top,
-            CSharpFunctionalExtensions.Maybe<Discord.WebSocket.SocketGuildUser>.None);
+            CSharpFunctionalExtensions.Maybe<Discord.IUser>.None);
 
         Assert.Equal(ResponseType.Embed, response.ResponseType);
         Assert.Null(response.StaticPaginator);

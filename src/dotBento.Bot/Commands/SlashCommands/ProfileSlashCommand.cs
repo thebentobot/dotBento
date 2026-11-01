@@ -15,7 +15,7 @@ public sealed class ProfileSlashCommand(
     InteractiveService interactiveService,
     ProfileEditCommand profileEditCommand,
     UserCommand userCommand,
-    UserSettingService userSettingService, BotPresentation? presentation = null)
+    UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("user", "Show a user's Bento profile")]
@@ -23,10 +23,16 @@ public sealed class ProfileSlashCommand(
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
         user ??= Context.User;
-        await user.ReturnIfBot(Context, interactiveService);
-        var guildMember = Context.Guild.Users.First(x => x.Id == user.Id);
+        if (user.IsBot)
+        {
+            await user.ReturnIfBot(Context, interactiveService);
+            return;
+        }
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        var member = await Context.RequireMemberAsync(guildMembers, user);
+        if (member.HasNoValue) return;
+        var guildMember = member.Value;
         var botPfp = Context.Client.CurrentUser.GetDisplayAvatarUrl();
         await Context.SendFollowUpResponse(interactiveService,
             await userCommand.GetProfileAsync((long)user.Id,

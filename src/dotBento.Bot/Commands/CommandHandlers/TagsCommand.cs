@@ -149,7 +149,7 @@ public sealed class TagsCommand(TagCommands tagCommands, BotPresentation? presen
         return resultEmbed;
     }
     
-    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<SocketGuildUser> author)
+    public async Task<ResponseModel> ListTagsAsync(long guildId, bool top, Maybe<IUser> author)
     {
         var embed = new ResponseModel { ResponseType = ResponseType.Paginator };
         var authorId = author.HasValue ? (long)author.Value.Id : Maybe<long>.None;
@@ -188,7 +188,7 @@ public sealed class TagsCommand(TagCommands tagCommands, BotPresentation? presen
                 {
                     var embedAuthor = new EmbedAuthorBuilder
                     {
-                        Name = author.Value.DisplayName,
+                        Name = author.Value is IGuildUser member ? member.DisplayName : author.Value.GlobalName ?? author.Value.Username,
                         IconUrl = author.Value.GetDisplayAvatarUrl()
                     };
                     return new PageBuilder().WithTitle(title)

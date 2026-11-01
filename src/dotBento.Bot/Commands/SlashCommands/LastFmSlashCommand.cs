@@ -11,7 +11,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("lastfm", "Commands for Discord Users")]
-public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+public sealed class LastFmSlashCommand(InteractiveService interactiveService, LastFmCommand lastFmCommand, UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("nowplaying", "Show what you're currently listening to")]
@@ -21,18 +21,10 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id)
-                  .Nickname ??
-              user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id)
-                  .GetGuildAvatarUrl() ??
-              user.GetDisplayAvatarUrl();
-        await Context.SendResponse(interactiveService,
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
+        await Context.SendFollowUpResponse(interactiveService,
             await lastFmCommand.GetNowPlaying((long)user.Id,
                 username,
                 userAvatar),
@@ -56,14 +48,9 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
         try
         {
@@ -102,14 +89,9 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay ?? "Overall");
         try
         {
@@ -148,14 +130,9 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay);
         try
         {
@@ -184,14 +161,10 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        await Context.SendResponse(interactiveService,
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
+        await Context.SendFollowUpResponse(interactiveService,
             await lastFmCommand.GetUserInfo((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
@@ -202,14 +175,10 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show recent tracks for you")]
         bool? hide = null)
     {
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var username = Context.Guild is null
-            ? user.GlobalName
-            : Context.Guild.Users.First(x => x.Id == user.Id).Nickname ?? user.GlobalName;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
-        await Context.SendResponse(interactiveService,
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
+        await Context.SendFollowUpResponse(interactiveService,
             await lastFmCommand.GetRecentTracks((long)user.Id, username, userAvatar), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
@@ -253,11 +222,9 @@ public sealed class LastFmSlashCommand(InteractiveService interactiveService, La
         [Summary("hide", "Only show user info for you")]
         bool? hide = null)
     {
-        _ = DeferAsync();
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
         user ??= Context.User;
-        var userAvatar = Context.Guild is null
-            ? user.GetAvatarUrl()
-            : Context.Guild.Users.First(x => x.Id == user.Id).GetGuildAvatarUrl() ?? user.GetDisplayAvatarUrl();
+        var (_, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, user);
         var period = LastFmTimePeriodUtilities.LastFmTimeSpanFromUserOptionSlashCommand(timePeriodDisplay);
         var collage = type switch
         {

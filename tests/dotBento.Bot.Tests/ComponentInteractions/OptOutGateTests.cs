@@ -37,6 +37,8 @@ public sealed class OptOutGateTests
             if (serviceType == typeof(BotPresentation)) return new BotPresentation();
             if (serviceType == typeof(IServiceProvider) || serviceType == typeof(IServiceScopeFactory))
                 return this;
+            if (serviceType == typeof(IDiscordGuildMemberResolver))
+                return new DiscordGuildMemberResolver();
             return serviceType.IsValueType || serviceType.IsInterface || serviceType.IsAbstract
                 ? null
                 : RuntimeHelpers.GetUninitializedObject(serviceType);

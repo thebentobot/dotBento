@@ -7,5 +7,6 @@ public sealed class CacheConfig
 
 public sealed class RemoteLoggingConfig
 {
+    public const int LokiQueueLimit = 1_000;
     public bool LokiEnabled { get; set; } = true;
 }

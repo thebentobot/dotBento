@@ -14,7 +14,7 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("tag", "Tags for the server")]
-public sealed class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+public sealed class TagsSlashCommand(InteractiveService interactiveService, TagsCommand tagsCommand, UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("get", "Get a tag")]
@@ -85,7 +85,7 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
         [Summary("hide", "Only the result of the message to you")] bool? hide = null
     )
     {
-        var hasMessageEditPerms = Context.Guild.Users.Single(x => x.Id == Context.User.Id).GuildPermissions.ManageMessages;
+        var hasMessageEditPerms = await GuildMemberPermissions.HasAsync(guildMembers, Context.Guild, Context.User, GuildPermission.ManageMessages);
         var attachments = new[] {firstAttachment, secondAttachment, thirdAttachment};
         var tagContent = new TagContentDto(messageContent, attachments);
         await Context.SendResponse(
@@ -102,7 +102,7 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
         [Summary("hide", "Only the result of the message to you")] bool? hide = null
     )
     {
-        var hasMessageEditPerms = Context.Guild.Users.Single(x => x.Id == Context.User.Id).GuildPermissions.ManageMessages;
+        var hasMessageEditPerms = await GuildMemberPermissions.HasAsync(guildMembers, Context.Guild, Context.User, GuildPermission.ManageMessages);
         await Context.SendResponse(interactiveService,
             await tagsCommand.DeleteTagAsync((long)Context.User.Id, (long)Context.Guild.Id, name, hasMessageEditPerms),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
@@ -116,7 +116,7 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
         [Summary("hide", "Only the result of the message to you")] bool? hide = null
     )
     {
-        var hasMessageEditPerms = Context.Guild.Users.Single(x => x.Id == Context.User.Id).GuildPermissions.ManageMessages;
+        var hasMessageEditPerms = await GuildMemberPermissions.HasAsync(guildMembers, Context.Guild, Context.User, GuildPermission.ManageMessages);
         await Context.SendResponse(interactiveService,
             await tagsCommand.RenameTagAsync((long)Context.User.Id, (long)Context.Guild.Id, oldName, newName, hasMessageEditPerms),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
@@ -126,11 +126,11 @@ public sealed class TagsSlashCommand(InteractiveService interactiveService, Tags
     [GuildOnly]
     public async Task ListCommand(
         [Summary("top", "List the most used tags")] bool top = false,
-        [Summary("byAuthor", "List tags by tags author")] SocketGuildUser? user = null,
+        [Summary("byAuthor", "List tags by tags author")] SocketUser? user = null,
         [Summary("hide", "Only the result of the message to you")] bool? hide = null
     ) =>
         await Context.SendResponse(interactiveService,
-            await tagsCommand.ListTagsAsync((long)Context.Guild.Id, top, user.AsMaybe()),
+            await tagsCommand.ListTagsAsync((long)Context.Guild.Id, top, (user as IUser).AsMaybe()),
             hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
 
     [SlashCommand("info", "Get info about a tag")]

@@ -1,3 +1,4 @@
+using dotBento.Bot.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -12,7 +13,8 @@ namespace dotBento.Bot.ComponentInteractions;
 public sealed class ServerSettingsComponentInteraction(
     SettingsCommand settingsCommand,
     GuildSettingService guildSettingService,
-    InteractionService interactionService)
+    InteractionService interactionService,
+    IDiscordGuildMemberResolver guildMembers)
     : InteractionModuleBase<SocketInteractionContext>
 {
     [ComponentInteraction("server-settings:leaderboard-public")]
@@ -130,8 +132,7 @@ public sealed class ServerSettingsComponentInteraction(
             return false;
         }
 
-        var guildUser = Context.Guild.GetUser(Context.User.Id);
-        if (guildUser is null || !guildUser.GuildPermissions.ManageGuild)
+        if (!await GuildMemberPermissions.HasAsync(guildMembers, Context.Guild, Context.User, GuildPermission.ManageGuild))
         {
             await RespondAsync("You need the **Manage Server** permission to change server settings.",
                 ephemeral: true);

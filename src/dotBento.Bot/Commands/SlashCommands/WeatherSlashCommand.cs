@@ -8,16 +8,16 @@ using Fergun.Interactive;
 namespace dotBento.Bot.Commands.SlashCommands;
 
 [Group("weather", "Check the weather!")]
-public sealed class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand, UserSettingService userSettingService, BotPresentation? presentation = null)
+public sealed class WeatherSlashCommand(InteractiveService interactiveService, WeatherCommand weatherCommand, UserSettingService userSettingService, IDiscordGuildMemberResolver guildMembers, BotPresentation? presentation = null)
     : ConfiguredInteractionModule<SocketInteractionContext>(presentation)
 {
     [SlashCommand("check", "Check the weather for a user")]
     public async Task UserCommand([Summary("city", "Check the weather in a city. Add country if it returns falsely")] string? city = null,
         [Summary("hide", "Only show weather info for you")] bool? hide = null)
     {
-        var username = Context.Guild is null ? Context.User.GlobalName : Context.Guild.Users.First(x => x.Id == Context.User.Id).Nickname ?? Context.User.GlobalName;
-        var userAvatar = Context.Guild is null ? Context.User.GetAvatarUrl() : Context.Guild.Users.First(x => x.Id == Context.User.Id).GetGuildAvatarUrl() ?? Context.User.GetDisplayAvatarUrl();
-        await Context.SendResponse(interactiveService, await weatherCommand.GetWeatherAsync((long)Context.User.Id, username, userAvatar, city), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        await DeferAsync(ephemeral: hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
+        var (username, userAvatar) = await Context.MemberAppearanceAsync(guildMembers, Context.User);
+        await Context.SendFollowUpResponse(interactiveService, await weatherCommand.GetWeatherAsync((long)Context.User.Id, username, userAvatar, city), hide ?? await userSettingService.ShouldHideCommandsAsync((long)Context.User.Id));
     }
 
     [SlashCommand("set", "Set the city to check the weather for")]

@@ -84,12 +84,12 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
-    public async Task AddGuildMemberAsync(SocketGuildUser guildUser)
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET IGuildUser; internal overload covers the behavior.")]
+    public async Task AddGuildMemberAsync(IGuildUser guildUser)
     {
         var avatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ??
                         guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
-        await AddGuildMemberAsync(guildUser.Guild.Id, guildUser.Id, avatarUrl);
+        await AddGuildMemberAsync(guildUser.GuildId, guildUser.Id, avatarUrl);
     }
 
     internal async Task AddGuildMemberAsync(ulong guildId, ulong userId, string? avatarUrl)
@@ -182,8 +182,8 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         return listOfGuildsForUser;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
-    public async Task UpdateGuildMemberAvatarAsync(SocketGuildUser guildMember)
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET IGuildUser; internal overload covers the behavior.")]
+    public async Task UpdateGuildMemberAvatarAsync(IGuildUser guildMember)
     {
         var avatarUrl = guildMember.GetGuildAvatarUrl(ImageFormat.Auto, 512) ??
                         guildMember.GetDisplayAvatarUrl(ImageFormat.Auto, 512);
@@ -250,9 +250,9 @@ public sealed class GuildService(IDbContextFactory<BotDbContext> contextFactory,
         }
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET SocketGuildUser; internal overload covers the behavior.")]
+    [ExcludeFromCodeCoverage(Justification = "Thin adapter over Discord.NET IGuildUser; internal overload covers the behavior.")]
     public async Task<Maybe<GuildMember>> GetOrCreateGuildMemberAsync(ulong discordGuildId, ulong discordUserId,
-        SocketGuildUser guildUser)
+        IGuildUser guildUser)
     {
         var avatarUrl = guildUser.GetGuildAvatarUrl(ImageFormat.Auto, 512) ??
                         guildUser.GetDisplayAvatarUrl(ImageFormat.Auto, 512);

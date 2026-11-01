@@ -1,69 +1,66 @@
 using CSharpFunctionalExtensions;
 using dotBento.Bot.Models;
-using dotBento.Bot.Resources;
 using dotBento.Domain;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Http;
 
 namespace dotBento.Bot.Services;
 
-public sealed class SpotifyApiService(HttpClient httpClient, IMemoryCache cache, IOptions<BotEnvConfig> options)
+public sealed class SpotifyApiService
 {
+    private readonly SpotifyResultCache _cache;
+    private readonly Lazy<ISpotifyClient> _spotify;
+
+    public SpotifyApiService(HttpClient httpClient, SpotifyResultCache cache, IOptions<BotEnvConfig> options)
+    {
+        _cache = cache;
+        _spotify = new Lazy<ISpotifyClient>(() => new SpotifyClient(SpotifyClientConfig.CreateDefault()
+            .WithHTTPClient(new NetHttpClient(httpClient))
+            .WithAuthenticator(new ClientCredentialsAuthenticator(options.Value.Spotify.Key,
+                options.Value.Spotify.Secret))));
+    }
+
+    internal SpotifyApiService(ISpotifyClient spotify, SpotifyResultCache cache)
+    {
+        _spotify = new Lazy<ISpotifyClient>(() => spotify);
+        _cache = cache;
+    }
+
     public async Task<Result<FullArtist>> GetArtist(string artistName)
     {
-        var spotify = GetSpotifyWebApi();
-
-        var result = await cache.GetOrCreateAsync(artistName, async entry =>
+        var result = await _cache.GetOrCreateAsync($"artist:{artistName}", async () =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
-            return await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, artistName));
+            var response = await _spotify.Value.Search.Item(new SearchRequest(SearchRequest.Types.Artist, artistName));
+            return (response.Artists?.Items?.FirstOrDefault()).AsMaybe();
         });
         
-        if (result == null || result.Artists.Items?.Any() != true)
+        if (result.HasNoValue)
         {
             Statistics.SpotifyApiErrors.WithLabels("GetArtist").Inc();
             return Result.Failure<FullArtist>("No artist found");
         }
         
         Statistics.SpotifyApiCalls.WithLabels(nameof(GetArtist)).Inc();
-        return Result.Success(result.Artists.Items.First());
+        return Result.Success(result.Value);
     }
     
     public async Task<Result<FullTrack>> GetTrack(string trackName, string artistName)
     {
-        var spotify = GetSpotifyWebApi();
-
-        var result = await cache.GetOrCreateAsync($"{trackName} artist:{artistName}", async entry =>
+        var result = await _cache.GetOrCreateAsync($"track:{trackName} artist:{artistName}", async () =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
-            return await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, $"{trackName} artist:{artistName}"));
+            var response = await _spotify.Value.Search.Item(new SearchRequest(SearchRequest.Types.Track, $"{trackName} artist:{artistName}"));
+            return (response.Tracks?.Items?.FirstOrDefault()).AsMaybe();
         });
         
-        if (result == null || result.Tracks.Items?.Any() != true)
+        if (result.HasNoValue)
         {
             Statistics.SpotifyApiErrors.WithLabels("GetTrack").Inc();
             return Result.Failure<FullTrack>("No track found");
         }
         
         Statistics.SpotifyApiCalls.WithLabels(nameof(GetTrack)).Inc();
-        return Result.Success(result.Tracks.Items.First());
+        return Result.Success(result.Value);
     }
     
-    private SpotifyClient GetSpotifyWebApi()
-    {
-        InitApiClientConfig();
-
-        return new SpotifyClient(DiscordConstants.SpotifyConfig!);
-    }
-
-    private void InitApiClientConfig()
-    {
-        DiscordConstants.SpotifyConfig ??= SpotifyClientConfig
-            .CreateDefault()
-            .WithHTTPClient(new NetHttpClient(httpClient))
-            .WithAuthenticator(new ClientCredentialsAuthenticator(options.Value.Spotify.Key,
-                options.Value.Spotify.Secret));
-    }
 }

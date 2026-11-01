@@ -120,6 +120,8 @@ public static class CommandManifestBuilder
             if (serviceType == typeof(BotPresentation)) return presentation;
             if (serviceType == typeof(IServiceProvider) || serviceType == typeof(IServiceScopeFactory))
                 return this;
+            if (serviceType == typeof(IDiscordGuildMemberResolver))
+                return new DiscordGuildMemberResolver();
             return serviceType.IsValueType || serviceType.IsInterface || serviceType.IsAbstract
                 ? null
                 : RuntimeHelpers.GetUninitializedObject(serviceType);

@@ -15,13 +15,15 @@ public sealed class ClientJoinedGuildHandler : IDisposable
     private readonly DiscordSocketClient _client;
     private readonly GuildService _guildService;
     private readonly BotPresentation _presentation;
+    private readonly IDiscordUserResolver _users;
 
     public ClientJoinedGuildHandler(DiscordSocketClient client,
-        GuildService guildService, BotPresentation? presentation = null)
+        GuildService guildService, IDiscordUserResolver users, BotPresentation? presentation = null)
     {
         _client = client;
         _presentation = presentation ?? new();
         _guildService = guildService;
+        _users = users;
         _client.JoinedGuild += ClientJoinedGuildEvent;
     }
 
@@ -45,7 +47,9 @@ public sealed class ClientJoinedGuildHandler : IDisposable
         await _guildService.AddGuildAsync(guild);
         try
         {
-            await guild.Owner.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
+            var owner = await _users.GetUserAsync(guild.OwnerId);
+            if (owner is not null)
+                await owner.SendMessageAsync(embed: (await ResponseToNewGuild()).Embed.Build());
         }
         catch (Exception)
         {
@@ -55,7 +59,7 @@ public sealed class ClientJoinedGuildHandler : IDisposable
 
         try
         {
-            await guild.SystemChannel.SendMessageAsync(embed: ResponseToNewGuild().Result.Embed.Build());
+            await guild.SystemChannel.SendMessageAsync(embed: (await ResponseToNewGuild()).Embed.Build());
         }
         catch (Exception)
         {
