@@ -82,6 +82,16 @@
       "prBodyNotes": [
         "PostgreSQL major upgrades require a tested data migration. Review the volume/PGDATA layout before deploying; changing the image tag alone does not upgrade an existing database."
       ]
+    },
+    {
+      "description": "Only a moving latest tag is published for this image. Pin the digest so a recreate cannot silently pull unreviewed code, and let Renovate raise a PR when the digest moves.",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/thebentobot/bento-media-server"
+      ],
+      "pinDigests": true
     }
   ]
 }

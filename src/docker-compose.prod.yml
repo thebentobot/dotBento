@@ -174,7 +174,7 @@ services:
 
   # Optional private service; requires access to its image.
   bento-media-server:
-    image: ghcr.io/thebentobot/bento-media-server:latest
+    image: ghcr.io/thebentobot/bento-media-server:latest@sha256:339ff140888900b396347c9edb23d9faf8ff1d8b4bdd3b9aaa72a0469edf6564
     restart: unless-stopped
     logging: *default-logging
     ports:
