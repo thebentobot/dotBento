@@ -534,6 +534,46 @@
           "placement": "bottom"
         }
       }
+    },
+    {
+      "id": 15,
+      "title": "Image renderer memory",
+      "type": "timeseries",
+      "description": "Resident and Go heap memory for the image renderer. Chromium dominates RSS.",
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{job=\"image-renderer\"}",
+          "legendFormat": "RSS"
+        },
+        {
+          "refId": "B",
+          "expr": "go_memstats_heap_alloc_bytes{job=\"image-renderer\"}",
+          "legendFormat": "Go heap"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     }
   ]
 }

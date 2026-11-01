@@ -18,6 +18,14 @@ These findings establish host memory exhaustion and unnecessary cache pressure, 
 These files are reviewable artifacts; implementation does not modify the VPS or deploy application images.
 
 1. Merge `prometheus-memory.example.yml` into the existing VPS-managed Prometheus configuration. Keep existing scrape jobs and alert routing; avoid duplicate job names. The production API container is named `webapi`, not `webapi-prod`.
+   The example also adds the `image-renderer` job. The renderer is attached only to `render_net`, so add that network to the live Prometheus service and recreate it:
+   ```yaml
+   prometheus:
+     networks:
+       - bento_net
+       - render_net
+   ```
+   The renderer is shared by staging and production, so its panels show combined traffic.
 2. Mount/copy `memory-alerts.yml` under `/etc/prometheus/` and add its path to `rule_files`. Existing Compose mounts `./prometheus` there. Retain `honor_labels: false` for Pushgateway so the `exported_job` selectors remain valid. Verify node-exporter exposes `node_vmstat_oom_kill`.
 3. Validate with `promtool check rules memory-alerts.yml` and `promtool check config prometheus.yml` before reloading Prometheus through the existing deployment procedure. No API credentials are needed for `/metrics`.
 4. Provision the dashboards from files: mount `grafana-provisioning/` at `/etc/grafana/provisioning` (read-only) and copy `dotbento-memory.json` and `dotbento-bot-overview.json` into `grafana-provisioning/dashboards/`, next to `dashboards.yaml`. Grafana re-reads the directory every 30 seconds, so no restart is needed after a change. Do not replace existing provisioning or datasources; to import by hand instead, use the Grafana UI and pick the Prometheus and Loki datasources.
@@ -29,7 +37,7 @@ Staging targets are included so a controlled validation can observe them, but st
 
 Both dashboards are provisioned into the `dotBento` folder from `grafana-provisioning/dashboards/`.
 
-`dotBento memory investigation` (`dotbento-memory.json`) is the read-only investigation view described above: working set, managed heap, GC generation sizes and fragmentation, host RAM, swap, cache counts and metric age.
+`dotBento memory investigation` (`dotbento-memory.json`) is the read-only investigation view described above: working set, managed heap, GC generation sizes and fragmentation, host RAM, swap, cache counts and metric age. It also includes the image renderer's resident and Go heap memory, so Chromium's footprint is visible next to the bot and API.
 
 `dotBento bot overview` (`dotbento-bot-overview.json`) is the day-to-day view and refreshes every minute:
 
@@ -41,6 +49,7 @@ Both dashboards are provisioned into the `dotBento` folder from `grafana-provisi
 - **Database** — EF Core query and SaveChanges rates, Npgsql pool state, query p95 and execution-strategy failures.
 - **Host (VPS)** — available RAM, swap, CPU, load, disk, detected OOM kills and the API scrape state.
 - **Activity, reminders and media** — daily, weekly and monthly active users from the activity tracker, reminder delivery and failure rates, p95 image render/upload latency, and Discord 429 rate limits.
+- **Image renderer** — scrape and Chromium health, queue depth, in-flight renders, browser restarts, render rate by status, p95 render duration, resident/Go memory, CPU and goroutines. These panels read `bento_image_service_*`, `go_*` and `process_*` from `image-renderer:3000/metrics` and stay red or empty until the scrape target is reachable.
 - **Logs** — warning/error lines and recent logs from Loki.
 
 Active users are tracked per UTC day by `ActivityTracker`, which buffers the day sets in memory and flushes them to the distributed cache every two minutes; the cache retains 40 days. A restart loses at most the interactions recorded since the last flush, so `bot_active_users_count_1d` can dip briefly after a deployment.
