@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/thebentobot/dotBento/compare/v2.6.0...v2.7.0) (2026-11-01)
+
+
+### Features
+
+* **metrics:** track active users, reminders and media latency ([#626](https://github.com/thebentobot/dotBento/issues/626)) ([c63e3b0](https://github.com/thebentobot/dotBento/commit/c63e3b0a62dfed47567bd05f9a39766a91c45448))
+
 ## [2.6.0](https://github.com/thebentobot/dotBento/compare/v2.5.2...v2.6.0) (2026-11-01)
 
 
