@@ -33,6 +33,13 @@
       "minimumReleaseAge": "3 day"
     },
     {
+      "description": "Keep global.json in step with the published SDK container images so Docker builds do not fail on an SDK that is not yet in the image.",
+      "matchDatasources": [
+        "dotnet-version"
+      ],
+      "minimumReleaseAge": "3 day"
+    },
+    {
       "matchDatasources": [
         "docker"
       ],
