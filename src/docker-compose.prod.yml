@@ -178,7 +178,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     environment:
       REDIS_URL: redis://valkey-prod:6379
       CACHE_TTL: 3600
@@ -229,7 +229,7 @@ services:
     env_file:
       - .env-webapi-sta
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     networks:
       - bento_net
       - web
@@ -271,7 +271,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     volumes:
       - ./grafana:/var/lib/grafana
       # Dashboards and providers from monitoring/grafana-provisioning; read-only so Grafana
@@ -287,7 +287,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./prometheus:/etc/prometheus
     command:
@@ -300,7 +300,7 @@ services:
     image: grafana/loki:3.7.9
     container_name: loki
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"
     restart: unless-stopped
     logging: *default-logging
     command: -config.file=/etc/loki/local-config.yaml
@@ -314,7 +314,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     volumes:
       - ./alertmanager:/etc/alertmanager
     command:
@@ -329,7 +329,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     ports:
-      - "9091:9091"
+      - "127.0.0.1:9091:9091"
     networks:
       - bento_net
 
@@ -349,7 +349,7 @@ services:
     volumes:
       - "/:/host:ro,rslave"
     ports:
-      - "9100:9100"
+      - "127.0.0.1:9100:9100"
     networks:
       - bento_net
 
