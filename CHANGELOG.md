@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.2](https://github.com/thebentobot/dotBento/compare/v2.9.1...v2.9.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* Merge pull request [#648](https://github.com/thebentobot/dotBento/issues/648) from thebentobot/renovate/skiasharp-monorepo ([b15027b](https://github.com/thebentobot/dotBento/commit/b15027b0aa6e19f9cc37fb066df28b613dcb17bc))
+
 ## [2.9.1](https://github.com/thebentobot/dotBento/compare/v2.9.0...v2.9.1) (2026-11-01)
 
 
