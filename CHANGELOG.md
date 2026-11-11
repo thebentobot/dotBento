@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.9.3](https://github.com/thebentobot/dotBento/compare/v2.9.2...v2.9.3) (2026-11-11)
+
+
+### Bug Fixes
+
+* readme ([2f1761a](https://github.com/thebentobot/dotBento/commit/2f1761a9b92e7f4577a0a22626bbdc2707dad438))
+* readme ([cf1bb9c](https://github.com/thebentobot/dotBento/commit/cf1bb9c4d67beacd7494af3aad4a6bff17184935))
+
 ## [2.9.2](https://github.com/thebentobot/dotBento/compare/v2.9.1...v2.9.2) (2026-11-10)
 
 
