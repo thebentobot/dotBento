@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/thebentobot/dotBento/compare/v2.9.3...v2.10.0) (2026-11-12)
+
+
+### Features
+
+* Merge pull request [#655](https://github.com/thebentobot/dotBento/issues/655) from thebentobot/renovate/xunit-dotnet-monorepo ([c6f5212](https://github.com/thebentobot/dotBento/commit/c6f5212159f19d5242b845bb87653df995990ec7))
+
 ## [2.9.3](https://github.com/thebentobot/dotBento/compare/v2.9.2...v2.9.3) (2026-11-11)
 
 
