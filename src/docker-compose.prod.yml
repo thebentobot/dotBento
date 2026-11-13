@@ -312,7 +312,7 @@ services:
 
   # Optional routing and delivery of Prometheus alerts.
   alertmanager:
-    image: prom/alertmanager:v0.34.2
+    image: prom/alertmanager:v0.35.0
     container_name: alertmanager
     restart: unless-stopped
     logging: *default-logging
