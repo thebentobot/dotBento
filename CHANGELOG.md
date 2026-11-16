@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.10.1](https://github.com/thebentobot/dotBento/compare/v2.10.0...v2.10.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **ci:** stop Renovate holding the sdk image tag as pending ([ad12708](https://github.com/thebentobot/dotBento/commit/ad12708b6968fa88cf1f2fd83a0adef1853c6f10))
+* **docker:** bump bot SDK pin to 10.0.404 to match global.json ([57d9563](https://github.com/thebentobot/dotBento/commit/57d9563b3690c76f3adc14e406234fb6dec9f623))
+
 ## [2.10.0](https://github.com/thebentobot/dotBento/compare/v2.9.3...v2.10.0) (2026-11-12)
 
 
