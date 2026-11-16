@@ -40,13 +40,25 @@
       "minimumReleaseAge": "3 day"
     },
     {
+      "description": "MCR does not publish per-tag timestamps, so with the default minimumReleaseAgeBehaviour=timestamp-required every new sdk image tag is held as pending forever and the Dockerfile pin is never bumped. Allow timestamp-less releases here so the build stage can follow the sdk tag.",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
         "mcr.microsoft.com/dotnet/sdk"
       ],
-      "versioning": "loose"
+      "versioning": "loose",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "The WebApi Dockerfile deliberately follows the rolling sdk:10.0 tag, so Renovate must not pin it to an exact SDK patch.",
+      "matchFileNames": [
+        "src/dotBento.WebApi/Dockerfile"
+      ],
+      "matchPackageNames": [
+        "mcr.microsoft.com/dotnet/sdk"
+      ],
+      "enabled": false
     },
     {
       "description": "Bump the .NET SDK, the setup-dotnet version and the Docker build stage together. If the Dockerfile pin and global.json diverge, dotnet restore fails inside the image (see #603).",
