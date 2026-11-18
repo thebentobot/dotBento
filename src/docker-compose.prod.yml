@@ -51,7 +51,7 @@ services:
 
   # Automatic HTTPS renewal using the existing VPS-managed webroot renewal script.
   certbot:
-    image: certbot/certbot:v5.9.0
+    image: certbot/certbot:v5.10.0
     container_name: certbot
     restart: unless-stopped
     logging: *default-logging
@@ -268,7 +268,7 @@ services:
 
   # Optional dashboards; uses Prometheus and Loki. Not required for bot/API requests.
   grafana:
-    image: grafana/grafana:13.3.0
+    image: grafana/grafana:13.3.1
     container_name: grafana
     restart: unless-stopped
     logging: *default-logging
@@ -300,7 +300,7 @@ services:
 
   # Optional application log storage. Disable the application Loki sink if omitting it.
   loki:
-    image: grafana/loki:3.7.9
+    image: grafana/loki:3.7.10
     container_name: loki
     ports:
       - "127.0.0.1:3100:3100"
