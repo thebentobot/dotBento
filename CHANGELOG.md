@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.2](https://github.com/thebentobot/dotBento/compare/v2.10.1...v2.10.2) (2026-11-18)
+
+
+### Bug Fixes
+
+* **images:** keep the colour card reset when sanitizing render html ([beef79d](https://github.com/thebentobot/dotBento/commit/beef79d10daa3e3e0b51610c928e063ab00e57d8))
+
 ## [2.10.1](https://github.com/thebentobot/dotBento/compare/v2.10.0...v2.10.1) (2026-11-16)
 
 
