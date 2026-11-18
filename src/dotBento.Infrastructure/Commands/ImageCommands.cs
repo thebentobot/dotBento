@@ -6,13 +6,19 @@ using Ganss.Xss;
 
 namespace dotBento.Infrastructure.Commands;
 
-public sealed class ImageCommands(ImageRendererService imageRendererService, HtmlSanitizer htmlSanitizer)
+public sealed class ImageCommands(ImageRendererService imageRendererService)
 {
+    /// <summary>
+    /// Sanitizes the colour card before it is handed to the renderer. The
+    /// allowlist is deliberately narrower than the HtmlSanitizer defaults: the
+    /// card is a single styled <c>div</c> plus the stylesheet reset that
+    /// removes the browser's default body margin. Widen it before reusing this
+    /// profile for anything else.
+    /// </summary>
+    private static readonly HtmlSanitizer ColourCardSanitizer = CreateColourCardSanitizer();
+
     public async Task<Result<ColourResponseDto>> GetColour(string imageServerHost, string colour)
     {
-        string? hexColour = null;
-        int[]? rgbColour = null;
-
         var hexMatch = Regex.Match(colour, @"^(?:#|0x)([0-9a-f]{6})$", RegexOptions.IgnoreCase);
         var rgbMatch = Regex.Match(colour, @"(^\d{1,3})\s*,?\s*(\d{1,3})\s*,?\s*(\d{1,3}$)", RegexOptions.IgnoreCase);
 
@@ -20,52 +26,59 @@ public sealed class ImageCommands(ImageRendererService imageRendererService, Htm
         {
             return Result.Failure<ColourResponseDto>("Please provide a valid hexcode or RGB colour. Example: `#ff0000` or `255,0,0`");
         }
-        else if (hexMatch.Success)
+
+        var isHexInput = hexMatch.Success;
+        string hexColour;
+
+        if (isHexInput)
         {
             hexColour = hexMatch.Groups[1].Value;
-            var match = Regex.Match(hexColour, @"([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})", RegexOptions.IgnoreCase);
-            var red = int.Parse(match.Groups[1].Value, System.Globalization.NumberStyles.HexNumber);
-            var green = int.Parse(match.Groups[2].Value, System.Globalization.NumberStyles.HexNumber);
-            var blue = int.Parse(match.Groups[3].Value, System.Globalization.NumberStyles.HexNumber);
-            rgbColour = new[] { red, green, blue };
         }
         else
         {
-            if (rgbMatch.Success)
+            var rgbColour = new[]
             {
-                rgbColour =
-                [
-                    int.Parse(rgbMatch.Groups[1].Value), int.Parse(rgbMatch.Groups[2].Value),
-                    int.Parse(rgbMatch.Groups[3].Value)
-                ];
-                hexColour = $"{RgbToHex(rgbColour[0])}{RgbToHex(rgbColour[1])}{RgbToHex(rgbColour[2])}";
+                int.Parse(rgbMatch.Groups[1].Value), int.Parse(rgbMatch.Groups[2].Value),
+                int.Parse(rgbMatch.Groups[3].Value)
+            };
+
+            if (rgbColour.Any(component => component is < 0 or > 255))
+            {
+                return Result.Failure<ColourResponseDto>("Please provide a valid RGB colour, e.g. `255,0,0`");
             }
+
+            hexColour = string.Concat(rgbColour.Select(RgbToHex));
         }
 
-        if (rgbColour != null && rgbColour.Any(component => component is < 0 or > 255))
-        {
-            return Result.Failure<ColourResponseDto>("Please provide a valid RGB colour, e.g. `255,0,0`");
-        }
-
-        if (hexColour != null)
-        {
-            var hexValue = int.Parse(hexColour, System.Globalization.NumberStyles.HexNumber);
-            if (hexValue is < 0 or > 16777215)
-            {
-                return Result.Failure<ColourResponseDto>("Please provide a valid hexcode, e.g. `#ff0000`");
-            }
-        }
-        
-        var sanitizedHtml = htmlSanitizer.Sanitize($"<html><style>*{{margin:0;padding:0;}}</style><div style=\"background-color:{(hexColour != null ? $"#{hexColour}" : rgbColour)}; width:200px; height:200px\"></div></html>");
+        var sanitizedHtml = ColourCardSanitizer.Sanitize(
+            $"<style>*{{margin:0;padding:0;}}</style><div style=\"background-color:#{hexColour};width:200px;height:200px\"></div>");
 
         var image = await imageRendererService.GetImage(imageServerHost, sanitizedHtml, 200, 200);
-        
-        var result = image.IsSuccess ? new ColourResponseDto(image.Value, hexMatch.Success) : new ColourResponseDto(Stream.Null, false);
-        
+
+        var result = image.IsSuccess ? new ColourResponseDto(image.Value, isHexInput) : new ColourResponseDto(Stream.Null, false);
+
         return image.IsFailure ? Result.Failure<ColourResponseDto>("Could not get image from the image renderer") : Result.Success(result);
     }
-    
-    private string RgbToHex(int colour)
+
+    private static HtmlSanitizer CreateColourCardSanitizer()
+    {
+        var options = new HtmlSanitizerOptions();
+
+        options.AllowedTags.Clear();
+        options.AllowedTags.Add("div");
+
+        // The reset has to survive sanitization. Without it the browser's
+        // default body margin offsets the 200x200 card inside the 200x200
+        // viewport. HtmlSanitizer still filters the rules inside the element.
+        options.AllowedTags.Add("style");
+
+        options.AllowedAttributes.Clear();
+        options.AllowedAttributes.Add("style");
+
+        return new HtmlSanitizer(options);
+    }
+
+    private static string RgbToHex(int colour)
     {
         return colour.ToString("X2");
     }
