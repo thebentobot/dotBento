@@ -15,7 +15,6 @@ using dotBento.Infrastructure.Services;
 using dotBento.Infrastructure.Services.Api;
 using dotBento.Infrastructure.Utilities;
 using Fergun.Interactive;
-using Ganss.Xss;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -259,7 +258,6 @@ public sealed class Startup
             .AddSingleton<GuildSettingService>()
             .AddSingleton<UserSettingService>()
             .AddSingleton<SettingsCommand>()
-            .AddSingleton<HtmlSanitizer>()
             .AddSingleton(Configuration);
 
         services.AddSingleton<InteractionHandler>();

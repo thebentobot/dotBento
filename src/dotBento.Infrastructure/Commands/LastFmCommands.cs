@@ -9,7 +9,6 @@ namespace dotBento.Infrastructure.Commands;
 
 public sealed class LastFmCommands(
     LastFmApiService lastFmApiService,
-    //HtmlSanitizer htmlSanitizer,
     ImageRendererService imageRendererService)
 {
     public async Task<Result<List<BentoLastFmTopArtist>>> GetTopArtists(
@@ -155,9 +154,10 @@ public sealed class LastFmCommands(
 
         var htmlString = GenerateCollageHtml(collection, dimension);
 
-        // TODO: Sanitize HTML. Currently disabled due to it sanitizing too well
-        //var sanitizedHtml = htmlSanitizer.Sanitize(htmlString);
-
+        // Not run through HtmlSanitizer: its default profile drops <style>, which
+        // the collage relies on for its layout. Every interpolated value is
+        // escaped with HtmlText instead, so keep it that way if the template
+        // changes.
         var image = await imageRendererService.GetImage(imageServerHost, htmlString, screenWidth,
             screenHeight);
 
